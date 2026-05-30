@@ -599,8 +599,12 @@ function NewClientModal({ onClose, onSave }) {
   const handleSave = async () => {
     if (!form.name.trim()) { setError('Name is required'); return }
     setSaving(true)
-    await fetch('/api/clients', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) })
-    onSave()
+    try {
+      const res = await fetch('/api/clients', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) })
+      const data = await res.json()
+      if (!res.ok) { setError(data.error || 'Failed to save client'); setSaving(false); return }
+      onSave()
+    } catch(e) { setError('Network error — please try again'); setSaving(false) }
   }
 
   return (
