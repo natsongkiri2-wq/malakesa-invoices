@@ -1,4 +1,3 @@
-import { LOGO } from './logo'
 'use client'
 import { useEffect, useState } from 'react'
 
@@ -67,9 +66,17 @@ export default function App() {
     <div style={{ display: 'flex', height: '100vh', fontFamily: '-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif', fontSize: 14, color: '#1a1a1a', background: '#f4f3f0' }}>
       {/* Sidebar */}
       <div style={{ width: 210, minWidth: 210, background: '#fff', borderRight: '0.5px solid rgba(0,0,0,0.09)', display: 'flex', flexDirection: 'column' }}>
-        <div style={{ padding: '14px 16px', borderBottom: '0.5px solid rgba(0,0,0,0.09)', background: '#fff', textAlign: 'center' }}>
-          <img src={LOGO} alt="Malakesa Transfer & Tour" style={{ width: '100%', maxWidth: 170, height: 'auto', objectFit: 'contain' }} />
-          <div style={{ fontSize: 11, color: '#8B6914', marginTop: 6, fontWeight: 500, letterSpacing: '0.5px' }}>INVOICE MANAGER</div>
+        <div style={{ padding: '14px 16px', borderBottom: '0.5px solid rgba(0,0,0,0.09)', background: 'linear-gradient(135deg, #6B5010 0%, #8B6914 50%, #A07820 100%)', textAlign: 'center' }}>
+          <div style={{ fontSize: 20, fontWeight: 900, color: '#FFD700', letterSpacing: '2px', fontFamily: 'Georgia, serif', textShadow: '1px 1px 2px rgba(0,0,0,0.4)' }}>MALAKESA</div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, margin: '4px 0' }}>
+            <div style={{ height: 1, flex: 1, background: 'rgba(255,215,0,0.4)' }}></div>
+            <div style={{ fontSize: 16, color: '#FFD700' }}>★</div>
+            <div style={{ height: 1, flex: 1, background: 'rgba(255,215,0,0.4)' }}></div>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9, fontWeight: 700, color: '#FFD700', letterSpacing: '3px' }}>
+            <span>TRANSFERS</span><span>TOURS</span>
+          </div>
+          <div style={{ fontSize: 9, color: 'rgba(255,215,0,0.7)', marginTop: 6, letterSpacing: '2px', fontWeight: 500 }}>INVOICE MANAGER</div>
         </div>
         <nav style={{ flex: 1, padding: '8px 0' }}>
           {nav.map(item => (
