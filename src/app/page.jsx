@@ -446,6 +446,8 @@ function NewInvoiceModal({ clients, onClose, onSave }) {
     return u
   }))
   const subtotal = items.reduce((s, i) => s + (i.total || 0), 0)
+  const tax = Math.round(subtotal * 0.15)
+  const total = subtotal + tax
 
   const handleSave = async () => {
     setError('')
@@ -453,7 +455,7 @@ function NewInvoiceModal({ clients, onClose, onSave }) {
     const validItems = items.filter(i => i.description.trim())
     if (!validItems.length) { setError('Add at least one line item'); return }
     setSaving(true)
-    const res = await fetch('/api/invoices', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...form, items: validItems.map(({ id, ...r }) => r), subtotal, tax: 0, total: subtotal }) })
+    const res = await fetch('/api/invoices', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...form, items: validItems.map(({ id, ...r }) => r), subtotal, tax, total }) })
     if (!res.ok) { const d = await res.json(); setError(d.error || 'Failed to save'); setSaving(false); return }
     onSave()
   }
@@ -488,7 +490,7 @@ function NewInvoiceModal({ clients, onClose, onSave }) {
       </table>
       <button className="btn btn-sm" onClick={() => setItems(i => [...i, { id: uid(), description: '', qty: 1, rate: '', total: 0 }])}><i className="ti ti-plus"></i> Add item</button>
       <div style={{ marginLeft: 'auto', width: 260, marginTop: 12 }}>
-        {[['Subtotal', fmt(subtotal)], ['Tax (0%)', 'VT 0'], ['Total', fmt(subtotal)]].map(([l, v], i) => (
+        {[['Subtotal', fmt(subtotal)], ['VAT (15%)', fmt(tax)], ['Total', fmt(total)]].map(([l, v], i) => (
           <div key={l} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: i < 2 ? '0.5px solid rgba(0,0,0,0.09)' : 'none', fontWeight: i === 2 ? 500 : 400, fontSize: i === 2 ? 15 : 13 }}><span style={{ color: i < 2 ? '#666' : 'inherit' }}>{l}</span><span>{v}</span></div>
         ))}
       </div>
@@ -545,7 +547,7 @@ function ViewInvoiceModal({ invoice, payments, onClose, onPay }) {
     <div class="header"><div><div class="company">Malakesa Transfer &amp; Tour</div><div style="color:#888;font-size:12px">Port Vila, Vanuatu | info@malakesa.vu</div></div><div style="text-align:right"><div style="font-size:26px;font-weight:bold;color:#5340B7">${invoice.number}</div><div style="color:#888;font-size:12px">Issue: ${fmtDate(invoice.date)}</div><div style="color:#888;font-size:12px">Due: ${fmtDate(invoice.due_date)}</div></div></div>
     <div style="margin-bottom:24px"><strong>Bill to:</strong><br>${invoice.client_name}<br><span style="color:#888;font-size:13px">${invoice.client_email || ''}</span></div>
     <table><thead><tr><th>Description</th><th>Qty</th><th>Rate (VT)</th><th>Total (VT)</th></tr></thead><tbody>${(invoice.items || []).map(it => `<tr><td>${it.description}</td><td>${it.qty}</td><td>${Number(it.rate).toLocaleString()}</td><td>${Number(it.total).toLocaleString()}</td></tr>`).join('')}</tbody></table>
-    <div class="totals"><div class="tr"><span>Subtotal</span><span>VT ${Number(invoice.subtotal).toLocaleString()}</span></div><div class="tr"><span>Tax</span><span>VT 0</span></div><div class="tr last"><span>Total</span><span>VT ${Number(invoice.total).toLocaleString()}</span></div><div class="tr" style="color:${balance>0?'#D85A30':'#3B6D11'};font-weight:bold"><span>Balance due</span><span>VT ${Number(balance).toLocaleString()}</span></div></div>
+    <div class="totals"><div class="tr"><span>Subtotal</span><span>VT ${Number(invoice.subtotal).toLocaleString()}</span></div><div class="tr"><span>VAT (15%)</span><span>VT ${Number(invoice.subtotal * 0.15).toLocaleString()}</span></div><div class="tr last"><span>Total</span><span>VT ${Number(invoice.total).toLocaleString()}</span></div><div class="tr" style="color:${balance>0?'#D85A30':'#3B6D11'};font-weight:bold"><span>Balance due</span><span>VT ${Number(balance).toLocaleString()}</span></div></div>
     ${invoice.notes ? `<div style="margin-top:20px;padding:12px;background:#f9f9f9;border-radius:6px;font-size:13px;color:#555">${invoice.notes}</div>` : ''}
     ${invPayments.length > 0 ? `<div style="margin-top:20px"><strong>Payments received:</strong>${invPayments.map(p => `<div style="padding:6px 0;border-bottom:1px solid #eee;display:flex;justify-content:space-between;font-size:13px"><span>${fmtDate(p.date)} — ${p.method}</span><span style="color:#3B6D11;font-weight:bold">VT ${Number(p.amount).toLocaleString()}</span></div>`).join('')}</div>` : ''}
     <script>window.onload=()=>window.print()<\/script></body></html>`)
@@ -577,7 +579,7 @@ function ViewInvoiceModal({ invoice, payments, onClose, onPay }) {
         <tbody>{(invoice.items || []).map((it, i) => <tr key={i} style={{ borderBottom: '0.5px solid rgba(0,0,0,0.09)' }}><Td>{it.description}</Td><Td style={{ textAlign: 'center' }}>{it.qty}</Td><Td style={{ textAlign: 'right' }}>{fmt(it.rate)}</Td><Td style={{ textAlign: 'right', fontWeight: 500 }}>{fmt(it.total)}</Td></tr>)}</tbody>
       </table>
       <div style={{ marginLeft: 'auto', width: 260 }}>
-        {[['Subtotal', fmt(invoice.subtotal)], ['Tax (0%)', 'VT 0'], ['Total', fmt(invoice.total)]].map(([l, v], i) => <div key={l} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: i < 2 ? '0.5px solid rgba(0,0,0,0.09)' : 'none', fontWeight: i === 2 ? 500 : 400 }}><span style={{ color: i < 2 ? '#666' : 'inherit' }}>{l}</span><span>{v}</span></div>)}
+        {[['Subtotal', fmt(invoice.subtotal)], ['VAT (15%)', fmt(Math.round(Number(invoice.subtotal)*0.15))], ['Total', fmt(invoice.total)]].map(([l, v], i) => <div key={l} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: i < 2 ? '0.5px solid rgba(0,0,0,0.09)' : 'none', fontWeight: i === 2 ? 500 : 400 }}><span style={{ color: i < 2 ? '#666' : 'inherit' }}>{l}</span><span>{v}</span></div>)}
         <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', fontWeight: 500, color: balance > 0 ? '#D85A30' : '#3B6D11' }}><span>Balance due</span><span>{fmt(balance)}</span></div>
       </div>
       {invoice.notes && <div style={{ marginTop: 12, padding: '10px 14px', background: '#f4f3f0', borderRadius: 8, fontSize: 13, color: '#666' }}>{invoice.notes}</div>}
