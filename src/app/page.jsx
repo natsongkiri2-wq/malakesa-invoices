@@ -436,6 +436,7 @@ function Clients({ clients, invoices, reload, setModal }) {
 function NewInvoiceModal({ clients, onClose, onSave }) {
   const [form, setForm] = useState({ client_id: '', client_name: '', client_email: '', date: todayStr(), due_date: addDays(todayStr(), 14), notes: '' })
   const [items, setItems] = useState([{ id: uid(), description: '', qty: 1, rate: '', total: 0 }, { id: uid(), description: '', qty: 1, rate: '', total: 0 }])
+  const [applyVat, setApplyVat] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
@@ -446,7 +447,7 @@ function NewInvoiceModal({ clients, onClose, onSave }) {
     return u
   }))
   const subtotal = items.reduce((s, i) => s + (i.total || 0), 0)
-  const tax = Math.round(subtotal * 0.15)
+  const tax = applyVat ? Math.round(subtotal * 0.15) : 0
   const total = subtotal + tax
 
   const handleSave = async () => {
@@ -455,7 +456,7 @@ function NewInvoiceModal({ clients, onClose, onSave }) {
     const validItems = items.filter(i => i.description.trim())
     if (!validItems.length) { setError('Add at least one line item'); return }
     setSaving(true)
-    const res = await fetch('/api/invoices', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...form, items: validItems.map(({ id, ...r }) => r), subtotal, tax, total }) })
+    const res = await fetch('/api/invoices', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...form, items: validItems.map(({ id, ...r }) => r), subtotal, tax, total, vat_applied: applyVat }) })
     if (!res.ok) { const d = await res.json(); setError(d.error || 'Failed to save'); setSaving(false); return }
     onSave()
   }
@@ -475,7 +476,13 @@ function NewInvoiceModal({ clients, onClose, onSave }) {
         <Field label="Due date"><input type="date" value={form.due_date} onChange={e => setForm(f => ({ ...f, due_date: e.target.value }))} style={inputStyle} /></Field>
         <Field label="Notes / trip details" style={{ gridColumn: '1/-1' }}><textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} style={{ ...inputStyle, minHeight: 60, resize: 'vertical' }} placeholder="Route, pickup time, special instructions..." /></Field>
       </div>
-      <div style={{ fontWeight: 500, marginBottom: 10 }}>Line items</div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+        <div style={{ fontWeight: 500 }}>Line items</div>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer', fontWeight: 400 }}>
+          <input type="checkbox" checked={applyVat} onChange={e => setApplyVat(e.target.checked)} style={{ width: 16, height: 16, cursor: 'pointer' }} />
+          Apply 15% VAT
+        </label>
+      </div>
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, marginBottom: 8 }}>
         <thead><tr style={{ background: '#f4f3f0' }}><Th style={{ width: '42%' }}>Description</Th><Th style={{ width: '12%' }}>Qty</Th><Th style={{ width: '20%' }}>Rate (VT)</Th><Th style={{ width: '18%' }}>Total</Th><Th style={{ width: '8%' }}></Th></tr></thead>
         <tbody>{items.map(item => (
@@ -490,7 +497,7 @@ function NewInvoiceModal({ clients, onClose, onSave }) {
       </table>
       <button className="btn btn-sm" onClick={() => setItems(i => [...i, { id: uid(), description: '', qty: 1, rate: '', total: 0 }])}><i className="ti ti-plus"></i> Add item</button>
       <div style={{ marginLeft: 'auto', width: 260, marginTop: 12 }}>
-        {[['Subtotal', fmt(subtotal)], ['VAT (15%)', fmt(tax)], ['Total', fmt(total)]].map(([l, v], i) => (
+        {[['Subtotal', fmt(subtotal)], [applyVat ? 'VAT (15%)' : 'VAT', applyVat ? fmt(tax) : 'Not applicable'], ['Total', fmt(total)]].map(([l, v], i) => (
           <div key={l} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: i < 2 ? '0.5px solid rgba(0,0,0,0.09)' : 'none', fontWeight: i === 2 ? 500 : 400, fontSize: i === 2 ? 15 : 13 }}><span style={{ color: i < 2 ? '#666' : 'inherit' }}>{l}</span><span>{v}</span></div>
         ))}
       </div>
