@@ -1,3 +1,4 @@
+import { LOGO } from './logo'
 'use client'
 import { useEffect, useState } from 'react'
 
@@ -66,9 +67,9 @@ export default function App() {
     <div style={{ display: 'flex', height: '100vh', fontFamily: '-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif', fontSize: 14, color: '#1a1a1a', background: '#f4f3f0' }}>
       {/* Sidebar */}
       <div style={{ width: 210, minWidth: 210, background: '#fff', borderRight: '0.5px solid rgba(0,0,0,0.09)', display: 'flex', flexDirection: 'column' }}>
-        <div style={{ padding: '18px 16px', borderBottom: '0.5px solid rgba(0,0,0,0.09)' }}>
-          <div style={{ fontSize: 13, fontWeight: 500, lineHeight: 1.4 }}>Malakesa Transfer<br />&amp; Tour</div>
-          <div style={{ fontSize: 11, color: '#666', marginTop: 2 }}>Invoice Manager</div>
+        <div style={{ padding: '14px 16px', borderBottom: '0.5px solid rgba(0,0,0,0.09)', background: '#fff', textAlign: 'center' }}>
+          <img src={LOGO} alt="Malakesa Transfer & Tour" style={{ width: '100%', maxWidth: 170, height: 'auto', objectFit: 'contain' }} />
+          <div style={{ fontSize: 11, color: '#8B6914', marginTop: 6, fontWeight: 500, letterSpacing: '0.5px' }}>INVOICE MANAGER</div>
         </div>
         <nav style={{ flex: 1, padding: '8px 0' }}>
           {nav.map(item => (
@@ -79,7 +80,7 @@ export default function App() {
             </div>
           ))}
         </nav>
-        <div style={{ padding: '12px 16px', borderTop: '0.5px solid rgba(0,0,0,0.09)', fontSize: 11, color: '#999' }}>Port Vila, Vanuatu</div>
+        <div style={{ padding: '12px 16px', borderTop: '0.5px solid rgba(0,0,0,0.09)', fontSize: 11, color: '#8B6914', fontWeight: 500, textAlign: 'center' }}>Port Vila, Vanuatu</div>
       </div>
 
       {/* Main */}
@@ -143,7 +144,7 @@ function Dashboard({ invoices, payments, loading, setPage, setModal }) {
                 {monthData.map(m => (
                   <div key={m.label} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
                     <div style={{ fontSize: 10, color: '#666' }}>{m.amt > 0 ? 'VT ' + Math.round(m.amt / 1000) + 'k' : ''}</div>
-                    <div style={{ width: '100%', background: '#5340B7', borderRadius: '4px 4px 0 0', height: Math.max(4, Math.round((m.amt / maxAmt) * 90)) + 'px' }}></div>
+                    <div style={{ width: '100%', background: '#8B6914', borderRadius: '4px 4px 0 0', height: Math.max(4, Math.round((m.amt / maxAmt) * 90)) + 'px' }}></div>
                     <div style={{ fontSize: 10, color: '#666' }}>{m.label}</div>
                   </div>
                 ))}
@@ -396,7 +397,7 @@ function Unpaid({ invoices, payments, reload, setModal, setSelected }) {
     const title = 'Unpaid Invoices Report' + (filterClient ? ' — ' + filterClient : '') + (filterMonth ? ' — ' + filterMonth : '')
     w.document.write(`<!DOCTYPE html><html><head><title>${title}</title>
     <style>body{font-family:Arial,sans-serif;margin:40px;color:#222;font-size:13px}
-    h1{font-size:20px;font-weight:bold;color:#5340B7;margin-bottom:4px}
+    h1{font-size:20px;font-weight:bold;color:#8B6914;margin-bottom:4px}
     .sub{color:#888;font-size:12px;margin-bottom:24px}
     table{width:100%;border-collapse:collapse;margin-top:16px}
     th{background:#f5f5f5;padding:8px 12px;text-align:left;font-size:11px;color:#666;text-transform:uppercase;letter-spacing:0.4px}
@@ -547,7 +548,7 @@ function Reports({ invoices, payments }) {
     w.document.write(`<!DOCTYPE html><html><head><title>${title}</title>
     <style>
       body{font-family:Arial,sans-serif;margin:40px;color:#222;font-size:13px}
-      h1{font-size:22px;font-weight:bold;color:#5340B7;margin-bottom:2px}
+      h1{font-size:22px;font-weight:bold;color:#8B6914;margin-bottom:2px}
       .sub{color:#888;font-size:12px;margin-bottom:28px}
       .stats{display:flex;gap:20px;margin-bottom:28px;flex-wrap:wrap}
       .stat{background:#f5f5f5;border-radius:8px;padding:12px 18px;min-width:140px}
@@ -614,14 +615,14 @@ function Reports({ invoices, payments }) {
           <StatCard label="Total invoiced" value={fmt(totalInv)} />
           <StatCard label="Collected" value={fmt(totalCol)} color="#3B6D11" />
           <StatCard label="Outstanding" value={fmt(outstanding)} color="#D85A30" />
-          <StatCard label="VAT collected" value={fmt(totalVat)} color="#5340B7" />
+          <StatCard label="VAT collected" value={fmt(totalVat)} color="#8B6914" />
         </div>
 
         <Card>
           <div style={{ fontWeight: 500, marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span>Monthly trend</span>
             <div style={{ display: 'flex', gap: 16 }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#666' }}><span style={{ width: 12, height: 12, background: '#5340B7', borderRadius: 2, display: 'inline-block' }}></span>Invoiced</span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#666' }}><span style={{ width: 12, height: 12, background: '#8B6914', borderRadius: 2, display: 'inline-block' }}></span>Invoiced</span>
               <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#666' }}><span style={{ width: 12, height: 12, background: '#3B6D11', borderRadius: 2, display: 'inline-block' }}></span>Collected</span>
             </div>
           </div>
@@ -629,7 +630,7 @@ function Reports({ invoices, payments }) {
             {monthData.map(m => (
               <div key={m.label} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
                 <div style={{ width: '100%', display: 'flex', gap: 3, alignItems: 'flex-end', height: 110 }}>
-                  <div style={{ flex: 1, background: '#5340B7', borderRadius: '3px 3px 0 0', height: Math.max(2, Math.round((m.invoiced / maxAmt) * 110)) + 'px' }}></div>
+                  <div style={{ flex: 1, background: '#8B6914', borderRadius: '3px 3px 0 0', height: Math.max(2, Math.round((m.invoiced / maxAmt) * 110)) + 'px' }}></div>
                   <div style={{ flex: 1, background: '#3B6D11', borderRadius: '3px 3px 0 0', height: Math.max(2, Math.round((m.collected / maxAmt) * 110)) + 'px' }}></div>
                 </div>
                 <div style={{ fontSize: 10, color: '#666' }}>{m.label}</div>
@@ -767,7 +768,7 @@ function NewInvoiceModal({ clients, onClose, onSave }) {
         <Field label="Due date"><input type="date" value={form.due_date} onChange={e => setForm(f => ({ ...f, due_date: e.target.value }))} style={inputStyle} /></Field>
         <Field label="Notes / trip details" style={{ gridColumn: '1/-1' }}><textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} style={{ ...inputStyle, minHeight: 60, resize: 'vertical' }} placeholder="Route, pickup time, special instructions..." /></Field>
         <div style={{ gridColumn: '1/-1', display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: applyVat ? '#EAF3DE' : '#f4f3f0', borderRadius: 8, border: '0.5px solid ' + (applyVat ? '#C0DD97' : 'rgba(0,0,0,0.1)') }}>
-          <input type="checkbox" id="vatcheck" checked={applyVat} onChange={e => setApplyVat(e.target.checked)} style={{ width: 18, height: 18, cursor: 'pointer', accentColor: '#5340B7' }} />
+          <input type="checkbox" id="vatcheck" checked={applyVat} onChange={e => setApplyVat(e.target.checked)} style={{ width: 18, height: 18, cursor: 'pointer', accentColor: '#8B6914' }} />
           <label htmlFor="vatcheck" style={{ cursor: 'pointer', fontSize: 13, fontWeight: 500, color: applyVat ? '#27500A' : '#666', userSelect: 'none' }}>
             {applyVat ? '✓ Apply 15% VAT to this invoice' : 'No VAT — zero rated invoice'}
           </label>
@@ -846,8 +847,8 @@ function ViewInvoiceModal({ invoice, payments, onClose, onPay }) {
 
   const printInvoice = () => {
     const w = window.open('', '_blank')
-    w.document.write(`<!DOCTYPE html><html><head><title>${invoice.number}</title><style>body{font-family:Arial,sans-serif;margin:40px;color:#222;font-size:14px}.header{display:flex;justify-content:space-between;margin-bottom:32px}.company{font-size:22px;font-weight:bold;color:#5340B7}table{width:100%;border-collapse:collapse;margin:20px 0}th{background:#f5f5f5;padding:8px 12px;text-align:left;font-size:12px;color:#666}td{padding:10px 12px;border-bottom:1px solid #eee}.totals{margin-left:auto;width:280px}.tr{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #eee;font-size:13px}.last{font-weight:bold;font-size:15px;border-bottom:none!important}</style></head><body>
-    <div class="header"><div><div class="company">Malakesa Transfer &amp; Tour</div><div style="color:#888;font-size:12px">Port Vila, Vanuatu | info@malakesa.vu</div></div><div style="text-align:right"><div style="font-size:26px;font-weight:bold;color:#5340B7">${invoice.number}</div><div style="color:#888;font-size:12px">Issue: ${fmtDate(invoice.date)}</div><div style="color:#888;font-size:12px">Due: ${fmtDate(invoice.due_date)}</div></div></div>
+    w.document.write(`<!DOCTYPE html><html><head><title>${invoice.number}</title><style>body{font-family:Arial,sans-serif;margin:40px;color:#222;font-size:14px}.header{display:flex;justify-content:space-between;margin-bottom:32px}.company{font-size:22px;font-weight:bold;color:#8B6914}table{width:100%;border-collapse:collapse;margin:20px 0}th{background:#f5f5f5;padding:8px 12px;text-align:left;font-size:12px;color:#666}td{padding:10px 12px;border-bottom:1px solid #eee}.totals{margin-left:auto;width:280px}.tr{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #eee;font-size:13px}.last{font-weight:bold;font-size:15px;border-bottom:none!important}</style></head><body>
+    <div class="header"><div><div class="company">Malakesa Transfer &amp; Tour</div><div style="color:#888;font-size:12px">Port Vila, Vanuatu | info@malakesa.vu</div></div><div style="text-align:right"><div style="font-size:26px;font-weight:bold;color:#8B6914">${invoice.number}</div><div style="color:#888;font-size:12px">Issue: ${fmtDate(invoice.date)}</div><div style="color:#888;font-size:12px">Due: ${fmtDate(invoice.due_date)}</div></div></div>
     <div style="margin-bottom:24px"><strong>Bill to:</strong><br>${invoice.client_name}<br><span style="color:#888;font-size:13px">${invoice.client_email || ''}</span></div>
     <table><thead><tr><th>Description</th><th>Qty</th><th>Rate (VT)</th><th>Total (VT)</th></tr></thead><tbody>${(invoice.items || []).map(it => `<tr><td>${it.description}</td><td>${it.qty}</td><td>${Number(it.rate).toLocaleString()}</td><td>${Number(it.total).toLocaleString()}</td></tr>`).join('')}</tbody></table>
     <div class="totals"><div class="tr"><span>Subtotal</span><span>VT ${Number(invoice.subtotal).toLocaleString()}</span></div><div class="tr"><span>VAT (15%)</span><span>VT ${Number(invoice.subtotal * 0.15).toLocaleString()}</span></div><div class="tr last"><span>Total</span><span>VT ${Number(invoice.total).toLocaleString()}</span></div><div class="tr" style="color:${balance>0?'#D85A30':'#3B6D11'};font-weight:bold"><span>Balance due</span><span>VT ${Number(balance).toLocaleString()}</span></div></div>
