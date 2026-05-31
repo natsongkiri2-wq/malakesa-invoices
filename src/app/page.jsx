@@ -57,7 +57,7 @@ export default function App() {
     { id: 'dashboard', label: 'Dashboard', icon: 'ti-layout-dashboard' },
     { id: 'invoices', label: 'Invoices', icon: 'ti-file-invoice' },
     { id: 'payments', label: 'Payments Received', icon: 'ti-cash' },
-    { id: 'unpaid', label: 'Unpaid', icon: 'ti-alert-circle' },
+    { id: 'unpaid', label: 'Unpaid Invoices', icon: 'ti-alert-circle' },
     { id: 'reports', label: 'Reports', icon: 'ti-chart-bar' },
     { id: 'clients', label: 'Clients', icon: 'ti-users' },
   ]
@@ -285,50 +285,121 @@ function Payments({ payments, invoices, reload, setModal, setSelected }) {
 
 // ── Unpaid ────────────────────────────────────────────────
 function Unpaid({ invoices, payments, reload, setModal, setSelected }) {
+  const [filterClient, setFilterClient] = useState('')
+  const [filterMonth, setFilterMonth] = useState('')
+  const [sending, setSending] = useState(null)
   const [notice, setNotice] = useState('')
-  const unpaid = invoices.filter(i => ['unpaid', 'overdue', 'partial'].includes(getStatus(i, payments))).sort((a, b) => a.due_date > b.due_date ? 1 : -1)
-  const overdue = unpaid.filter(i => getStatus(i, payments) === 'overdue')
-  const totalOut = unpaid.reduce((s, i) => s + getBalance(i, payments), 0)
+
+  const allUnpaid = invoices.filter(i => ['unpaid','overdue','partial'].includes(getStatus(i, payments)))
+  const clients = [...new Set(allUnpaid.map(i => i.client_name))].sort()
+
+  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+  const now = new Date()
+  const monthOptions = Array.from({length: 6}, (_, i) => {
+    const d = new Date(now.getFullYear(), now.getMonth() - 5 + i, 1)
+    return { value: d.toISOString().slice(0,7), label: MONTHS[d.getMonth()] + ' ' + d.getFullYear() }
+  }).reverse()
+
+  let filtered = allUnpaid
+  if (filterClient) filtered = filtered.filter(i => i.client_name === filterClient)
+  if (filterMonth) filtered = filtered.filter(i => i.due_date?.startsWith(filterMonth))
+  filtered = filtered.sort((a,b) => a.due_date > b.due_date ? 1 : -1)
+
+  const overdue = filtered.filter(i => getStatus(i, payments) === 'overdue')
+  const totalOut = filtered.reduce((s,i) => s + getBalance(i, payments), 0)
 
   const sendReminder = async (inv) => {
+    setSending(inv.id)
     try {
       const res = await fetch('/api/send-reminder', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ invoiceId: inv.id }) })
-      if (res.ok) { setNotice(`Reminder sent to ${inv.client_name}`); setTimeout(() => setNotice(''), 4000); return }
+      if (res.ok) { setNotice('Reminder sent to ' + inv.client_name); setTimeout(() => setNotice(''), 4000); setSending(null); return }
     } catch(e) {}
     const bal = getBalance(inv, payments)
-    const subject = encodeURIComponent(`Payment Reminder — ${inv.number}`)
-    const body = encodeURIComponent(`Dear ${inv.client_name},\n\nThis is a friendly reminder that invoice ${inv.number} has an outstanding balance of VT ${Number(bal).toLocaleString()} due on ${fmtDate(inv.due_date)}.\n\nThank you,\nMalakesa Transfer and Tour`)
-    window.open(`mailto:${inv.client_email || ''}?subject=${subject}&body=${body}`, '_blank')
-    setNotice('Email app opened'); setTimeout(() => setNotice(''), 4000)
+    const subject = encodeURIComponent('Payment Reminder — ' + inv.number)
+    const body = encodeURIComponent('Dear ' + inv.client_name + ',\n\nThis is a friendly reminder that invoice ' + inv.number + ' has an outstanding balance of VT ' + Number(bal).toLocaleString() + ' due on ' + fmtDate(inv.due_date) + '.\n\nPlease arrange payment at your earliest convenience.\n\nThank you,\nMalakesa Transfer and Tour')
+    window.open('mailto:' + (inv.client_email || '') + '?subject=' + subject + '&body=' + body, '_blank')
+    setNotice('Email app opened for ' + inv.client_name)
+    setTimeout(() => setNotice(''), 4000)
+    setSending(null)
+  }
+
+  const sendAllReminders = async () => {
+    const withEmail = filtered.filter(i => i.client_email)
+    if (withEmail.length === 0) { alert('No email addresses found on these invoices.'); return }
+    if (!confirm('Send reminders to ' + withEmail.length + ' client(s)?')) return
+    for (const inv of withEmail) { await sendReminder(inv) }
+  }
+
+  const printReport = () => {
+    const w = window.open('', '_blank')
+    const title = 'Unpaid Invoices Report' + (filterClient ? ' — ' + filterClient : '') + (filterMonth ? ' — ' + filterMonth : '')
+    w.document.write(`<!DOCTYPE html><html><head><title>${title}</title>
+    <style>body{font-family:Arial,sans-serif;margin:40px;color:#222;font-size:13px}
+    h1{font-size:20px;font-weight:bold;color:#5340B7;margin-bottom:4px}
+    .sub{color:#888;font-size:12px;margin-bottom:24px}
+    table{width:100%;border-collapse:collapse;margin-top:16px}
+    th{background:#f5f5f5;padding:8px 12px;text-align:left;font-size:11px;color:#666;text-transform:uppercase;letter-spacing:0.4px}
+    td{padding:9px 12px;border-bottom:1px solid #eee;font-size:13px}
+    .overdue{color:#A32D2D;font-weight:500}
+    .total{margin-top:20px;text-align:right;font-size:15px;font-weight:bold}
+    .badge{display:inline-block;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:500}
+    .unpaid{background:#FAECE7;color:#712B13}.overdue-b{background:#FCEBEB;color:#791F1F}.partial{background:#FAEEDA;color:#633806}
+    </style></head><body>
+    <div style="display:flex;justify-content:space-between">
+      <div><h1>Malakesa Transfer &amp; Tour</h1><div class="sub">Unpaid Invoices Report — Generated ${new Date().toLocaleDateString('en-GB', {day:'2-digit',month:'short',year:'numeric'})}</div></div>
+      <div style="text-align:right;font-size:12px;color:#888">${filterClient ? 'Client: ' + filterClient + '<br>' : ''}${filterMonth ? 'Month: ' + filterMonth : ''}</div>
+    </div>
+    <table><thead><tr><th>Invoice #</th><th>Client</th><th>Due Date</th><th>Amount</th><th>Balance</th><th>Status</th></tr></thead>
+    <tbody>${filtered.map(inv => {
+      const st = getStatus(inv, payments); const bal = getBalance(inv, payments)
+      return '<tr><td><strong>' + inv.number + '</strong></td><td>' + inv.client_name + '</td><td class="' + (st==='overdue'?'overdue':'') + '">' + fmtDate(inv.due_date) + '</td><td>VT ' + Number(inv.total).toLocaleString() + '</td><td style="font-weight:500">VT ' + Number(bal).toLocaleString() + '</td><td><span class="badge ' + (st==='overdue'?'overdue-b':st) + '">' + st + '</span></td></tr>'
+    }).join('')}</tbody></table>
+    <div class="total">Total outstanding: VT ${Number(totalOut).toLocaleString()}</div>
+    <script>window.onload=()=>window.print()<\/script></body></html>`)
+    w.document.close()
   }
 
   return (
     <>
-      <Topbar title="Unpaid Invoices" />
+      <Topbar title="Unpaid Invoices">
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <select value={filterClient} onChange={e => setFilterClient(e.target.value)} style={{ padding: '6px 10px', borderRadius: 8, border: '0.5px solid rgba(0,0,0,0.15)', fontSize: 13, fontFamily: 'inherit', background: '#fff' }}>
+            <option value="">All clients</option>
+            {clients.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
+          <select value={filterMonth} onChange={e => setFilterMonth(e.target.value)} style={{ padding: '6px 10px', borderRadius: 8, border: '0.5px solid rgba(0,0,0,0.15)', fontSize: 13, fontFamily: 'inherit', background: '#fff' }}>
+            <option value="">All months</option>
+            {monthOptions.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+          </select>
+          <button className="btn btn-sm" onClick={printReport}><i className="ti ti-printer"></i> Print</button>
+          <button className="btn btn-sm" onClick={sendAllReminders}><i className="ti ti-mail"></i> Email All</button>
+        </div>
+      </Topbar>
       <div style={{ padding: 20 }}>
-        {notice && <Alert type="success">{notice}</Alert>}
-        {overdue.length > 0 && <Alert type="danger"><strong>{overdue.length}</strong> invoice{overdue.length > 1 ? 's are' : ' is'} overdue.</Alert>}
+        {notice && <div style={{ background: '#EAF3DE', color: '#27500A', border: '0.5px solid #C0DD97', padding: '10px 14px', borderRadius: 8, fontSize: 13, marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8 }}><i className="ti ti-check"></i>{notice}</div>}
+        {overdue.length > 0 && <div style={{ background: '#FCEBEB', color: '#791F1F', border: '0.5px solid #F7C1C1', padding: '10px 14px', borderRadius: 8, fontSize: 13, marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8 }}><i className="ti ti-alert-triangle"></i><strong>{overdue.length}</strong> invoice{overdue.length > 1 ? 's are' : ' is'} overdue.</div>}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12, marginBottom: 16 }}>
           <StatCard label="Total outstanding" value={fmt(totalOut)} color="#D85A30" />
-          <StatCard label="Unpaid invoices" value={unpaid.length} />
+          <StatCard label="Unpaid invoices" value={filtered.length} />
           <StatCard label="Overdue" value={overdue.length} color="#A32D2D" />
         </div>
         <Card style={{ padding: 0, overflow: 'hidden' }}>
-          {unpaid.length === 0 ? <Empty icon="ti-circle-check" msg="All invoices are paid!" msgColor="#3B6D11" /> : (
+          {filtered.length === 0 ? <Empty icon="ti-circle-check" msg="All invoices are paid!" msgColor="#3B6D11" /> : (
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-              <thead><tr style={{ background: '#f4f3f0' }}><Th>Invoice #</Th><Th>Client</Th><Th>Email</Th><Th>Due Date</Th><Th>Balance</Th><Th>Status</Th><Th>Actions</Th></tr></thead>
-              <tbody>{unpaid.map(inv => {
+              <thead><tr style={{ background: '#f4f3f0' }}><Th>Invoice #</Th><Th>Client</Th><Th>Due Date</Th><Th>Balance</Th><Th>Status</Th><Th>Actions</Th></tr></thead>
+              <tbody>{filtered.map(inv => {
                 const st = getStatus(inv, payments)
                 return (
                   <tr key={inv.id} style={{ borderBottom: '0.5px solid rgba(0,0,0,0.09)' }}>
-                    <Td><strong>{inv.number}</strong></Td><Td>{inv.client_name}</Td>
-                    <Td style={{ color: '#666', fontSize: 12 }}>{inv.client_email || '—'}</Td>
+                    <Td><strong>{inv.number}</strong></Td>
+                    <Td>{inv.client_name}</Td>
                     <Td style={st === 'overdue' ? { color: '#A32D2D', fontWeight: 500 } : {}}>{fmtDate(inv.due_date)}</Td>
                     <Td style={{ fontWeight: 500 }}>{fmt(getBalance(inv, payments))}</Td>
                     <Td><Badge status={st} /></Td>
                     <Td><div style={{ display: 'flex', gap: 5 }}>
                       <button className="btn btn-sm" style={{ borderColor: '#3B6D11', color: '#3B6D11' }} onClick={() => { setSelected(inv); setModal('payment') }}><i className="ti ti-cash"></i> Pay</button>
-                      <button className="btn btn-sm" onClick={() => sendReminder(inv)}><i className="ti ti-mail"></i> Remind</button>
+                      <button className="btn btn-sm" onClick={() => sendReminder(inv)} disabled={sending === inv.id}><i className="ti ti-mail"></i> {sending === inv.id ? '...' : 'Remind'}</button>
+                      <button className="btn btn-sm" onClick={() => { setSelected(inv); setModal('viewInvoice') }}><i className="ti ti-eye"></i></button>
                     </div></Td>
                   </tr>
                 )
