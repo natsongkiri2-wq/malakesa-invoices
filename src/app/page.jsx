@@ -415,6 +415,10 @@ function Unpaid({ invoices, payments, reload, setModal, setSelected }) {
 // ── Reports ───────────────────────────────────────────────
 function Reports({ invoices, payments }) {
   const [period, setPeriod] = useState('all')
+  const [filterClient, setFilterClient] = useState('')
+
+  const allClients = [...new Set(invoices.map(i => i.client_name))].sort()
+
   const filterDate = (list, field) => {
     if (period === 'all') return list
     const now = new Date(); const start = new Date()
@@ -423,17 +427,28 @@ function Reports({ invoices, payments }) {
     if (period === 'year') start.setMonth(0, 1)
     return list.filter(i => i[field] && new Date(i[field] + 'T00:00:00') >= start)
   }
-  const fi = filterDate(invoices, 'date'); const fp = filterDate(payments, 'date')
+
+  let fi = filterDate(invoices, 'date')
+  let fp = filterDate(payments, 'date')
+  if (filterClient) {
+    fi = fi.filter(i => i.client_name === filterClient)
+    const clientInvIds = new Set(fi.map(i => i.id))
+    fp = fp.filter(p => clientInvIds.has(p.invoice_id))
+  }
+
   const totalInv = fi.reduce((s, i) => s + Number(i.total), 0)
   const totalCol = fp.reduce((s, p) => s + Number(p.amount), 0)
   const outstanding = fi.reduce((s, i) => s + getBalance(i, payments), 0)
   const overdueAmt = fi.filter(i => getStatus(i, payments) === 'overdue').reduce((s, i) => s + getBalance(i, payments), 0)
+  const totalVat = fi.reduce((s, i) => s + Number(i.tax || 0), 0)
+  const totalSubtotal = fi.reduce((s, i) => s + Number(i.subtotal || 0), 0)
 
   const byClient = {}
   fi.forEach(inv => {
-    if (!byClient[inv.client_name]) byClient[inv.client_name] = { name: inv.client_name, total: 0, collected: 0, count: 0 }
+    if (!byClient[inv.client_name]) byClient[inv.client_name] = { name: inv.client_name, total: 0, collected: 0, outstanding: 0, count: 0 }
     byClient[inv.client_name].total += Number(inv.total)
     byClient[inv.client_name].collected += Number(inv.total) - getBalance(inv, payments)
+    byClient[inv.client_name].outstanding += getBalance(inv, payments)
     byClient[inv.client_name].count++
   })
   const clientRows = Object.values(byClient).sort((a, b) => b.total - a.total)
@@ -441,25 +456,96 @@ function Reports({ invoices, payments }) {
   const byService = {}
   fi.forEach(inv => { (inv.items || []).forEach(it => {
     const svc = it.description || 'Other'
-    if (!byService[svc]) byService[svc] = { desc: svc, revenue: 0 }
+    if (!byService[svc]) byService[svc] = { desc: svc, qty: 0, revenue: 0 }
+    byService[svc].qty += Number(it.qty) || 0
     byService[svc].revenue += (Number(it.qty) || 0) * (Number(it.rate) || 0)
   })})
-  const serviceRows = Object.values(byService).sort((a, b) => b.revenue - a.revenue).slice(0, 8)
+  const serviceRows = Object.values(byService).sort((a, b) => b.revenue - a.revenue).slice(0, 10)
 
   const byMethod = {}
   fp.forEach(p => { const m = p.method || 'Cash'; byMethod[m] = (byMethod[m] || 0) + Number(p.amount) })
 
+  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+  const now = new Date()
+  const monthData = Array.from({length: 6}, (_, i) => {
+    const d = new Date(now.getFullYear(), now.getMonth() - 5 + i, 1)
+    const m = d.getMonth(); const y = d.getFullYear()
+    const invs = fi.filter(inv => { const id = new Date(inv.date + 'T00:00:00'); return id.getMonth() === m && id.getFullYear() === y })
+    const invoiced = invs.reduce((s, inv) => s + Number(inv.total), 0)
+    const pmts = fp.filter(p => { const pd = new Date(p.date + 'T00:00:00'); return pd.getMonth() === m && pd.getFullYear() === y })
+    const collected = pmts.reduce((s, p) => s + Number(p.amount), 0)
+    return { label: MONTHS[m], invoiced, collected }
+  })
+  const maxAmt = Math.max(...monthData.map(m => Math.max(m.invoiced, m.collected)), 1)
+
+  const periodLabel = { all: 'All time', month: 'This month', quarter: 'This quarter', year: 'This year' }[period]
+
+  const printReport = () => {
+    const w = window.open('', '_blank')
+    const title = 'Revenue Report' + (filterClient ? ' — ' + filterClient : '') + ' — ' + periodLabel
+    w.document.write(`<!DOCTYPE html><html><head><title>${title}</title>
+    <style>
+      body{font-family:Arial,sans-serif;margin:40px;color:#222;font-size:13px}
+      h1{font-size:22px;font-weight:bold;color:#5340B7;margin-bottom:2px}
+      .sub{color:#888;font-size:12px;margin-bottom:28px}
+      .stats{display:flex;gap:20px;margin-bottom:28px;flex-wrap:wrap}
+      .stat{background:#f5f5f5;border-radius:8px;padding:12px 18px;min-width:140px}
+      .stat-label{font-size:11px;color:#666;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.4px}
+      .stat-value{font-size:18px;font-weight:bold}
+      h2{font-size:14px;font-weight:bold;margin:24px 0 8px;color:#333;border-bottom:1px solid #eee;padding-bottom:4px}
+      table{width:100%;border-collapse:collapse;margin-bottom:24px;font-size:13px}
+      th{background:#f5f5f5;padding:8px 12px;text-align:left;font-size:11px;color:#666;text-transform:uppercase;letter-spacing:0.3px}
+      td{padding:9px 12px;border-bottom:1px solid #eee}
+      .right{text-align:right}
+      .green{color:#3B6D11;font-weight:500}
+      .red{color:#A32D2D}
+      .footer{margin-top:30px;padding-top:16px;border-top:1px solid #eee;font-size:11px;color:#999}
+    </style></head><body>
+    <h1>Malakesa Transfer &amp; Tour</h1>
+    <div class="sub">Revenue Report &nbsp;|&nbsp; ${periodLabel}${filterClient ? ' &nbsp;|&nbsp; Client: ' + filterClient : ''} &nbsp;|&nbsp; Generated ${new Date().toLocaleDateString('en-GB', {day:'2-digit',month:'long',year:'numeric'})}</div>
+
+    <div class="stats">
+      <div class="stat"><div class="stat-label">Total Invoiced</div><div class="stat-value">VT ${Number(totalInv).toLocaleString()}</div></div>
+      <div class="stat"><div class="stat-label">Subtotal (ex-VAT)</div><div class="stat-value">VT ${Number(totalSubtotal).toLocaleString()}</div></div>
+      <div class="stat"><div class="stat-label">VAT Collected</div><div class="stat-value">VT ${Number(totalVat).toLocaleString()}</div></div>
+      <div class="stat"><div class="stat-label">Collected</div><div class="stat-value" style="color:#3B6D11">VT ${Number(totalCol).toLocaleString()}</div></div>
+      <div class="stat"><div class="stat-label">Outstanding</div><div class="stat-value" style="color:#D85A30">VT ${Number(outstanding).toLocaleString()}</div></div>
+    </div>
+
+    <h2>Revenue by Client</h2>
+    <table><thead><tr><th>Client</th><th>Invoices</th><th class="right">Total</th><th class="right">Collected</th><th class="right">Outstanding</th></tr></thead>
+    <tbody>${clientRows.map(c => '<tr><td><strong>' + c.name + '</strong></td><td>' + c.count + '</td><td class="right">VT ' + Number(c.total).toLocaleString() + '</td><td class="right green">VT ' + Number(c.collected).toLocaleString() + '</td><td class="right ' + (c.outstanding > 0 ? 'red' : '') + '">VT ' + Number(c.outstanding).toLocaleString() + '</td></tr>').join('')}
+    <tr style="font-weight:bold;background:#f9f9f9"><td>TOTAL</td><td>${fi.length}</td><td class="right">VT ${Number(totalInv).toLocaleString()}</td><td class="right green">VT ${Number(totalCol).toLocaleString()}</td><td class="right red">VT ${Number(outstanding).toLocaleString()}</td></tr>
+    </tbody></table>
+
+    <h2>Top Services</h2>
+    <table><thead><tr><th>Service / Description</th><th class="right">Qty</th><th class="right">Revenue (ex-VAT)</th></tr></thead>
+    <tbody>${serviceRows.map(s => '<tr><td>' + s.desc + '</td><td class="right">' + s.qty + '</td><td class="right green">VT ' + Number(s.revenue).toLocaleString() + '</td></tr>').join('')}</tbody></table>
+
+    <h2>Payment Methods</h2>
+    <table><thead><tr><th>Method</th><th class="right">Amount</th><th class="right">% of collected</th></tr></thead>
+    <tbody>${Object.entries(byMethod).map(([m, a]) => '<tr><td>' + m + '</td><td class="right green">VT ' + Number(a).toLocaleString() + '</td><td class="right">' + (totalCol > 0 ? Math.round((a/totalCol)*100) : 0) + '%</td></tr>').join('')}</tbody></table>
+
+    <div class="footer">Malakesa Transfer and Tour &nbsp;|&nbsp; Port Vila, Vanuatu &nbsp;|&nbsp; This report is confidential</div>
+    <script>window.onload=()=>window.print()<\/script></body></html>`)
+    w.document.close()
+  }
+
   return (
     <>
       <Topbar title="Reports">
-        <div style={{ display: 'flex', gap: 8 }}>
-          <select value={period} onChange={e => setPeriod(e.target.value)} style={{ padding: '6px 10px', borderRadius: 8, border: '0.5px solid rgba(0,0,0,0.15)', fontSize: 13, fontFamily: 'inherit' }}>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <select value={filterClient} onChange={e => setFilterClient(e.target.value)} style={{ padding: '6px 10px', borderRadius: 8, border: '0.5px solid rgba(0,0,0,0.15)', fontSize: 13, fontFamily: 'inherit', background: '#fff' }}>
+            <option value="">All clients</option>
+            {allClients.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
+          <select value={period} onChange={e => setPeriod(e.target.value)} style={{ padding: '6px 10px', borderRadius: 8, border: '0.5px solid rgba(0,0,0,0.15)', fontSize: 13, fontFamily: 'inherit', background: '#fff' }}>
             <option value="all">All time</option>
             <option value="month">This month</option>
             <option value="quarter">This quarter</option>
             <option value="year">This year</option>
           </select>
-          <button className="btn btn-sm" onClick={() => window.print()}><i className="ti ti-printer"></i> Print</button>
+          <button className="btn btn-sm" onClick={printReport}><i className="ti ti-printer"></i> Print Report</button>
         </div>
       </Topbar>
       <div style={{ padding: 20 }}>
@@ -467,15 +553,44 @@ function Reports({ invoices, payments }) {
           <StatCard label="Total invoiced" value={fmt(totalInv)} />
           <StatCard label="Collected" value={fmt(totalCol)} color="#3B6D11" />
           <StatCard label="Outstanding" value={fmt(outstanding)} color="#D85A30" />
-          <StatCard label="Overdue" value={fmt(overdueAmt)} color="#A32D2D" />
+          <StatCard label="VAT collected" value={fmt(totalVat)} color="#5340B7" />
         </div>
+
+        <Card>
+          <div style={{ fontWeight: 500, marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span>Monthly trend</span>
+            <div style={{ display: 'flex', gap: 16 }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#666' }}><span style={{ width: 12, height: 12, background: '#5340B7', borderRadius: 2, display: 'inline-block' }}></span>Invoiced</span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#666' }}><span style={{ width: 12, height: 12, background: '#3B6D11', borderRadius: 2, display: 'inline-block' }}></span>Collected</span>
+            </div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 12, height: 130, marginBottom: 4 }}>
+            {monthData.map(m => (
+              <div key={m.label} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+                <div style={{ width: '100%', display: 'flex', gap: 3, alignItems: 'flex-end', height: 110 }}>
+                  <div style={{ flex: 1, background: '#5340B7', borderRadius: '3px 3px 0 0', height: Math.max(2, Math.round((m.invoiced / maxAmt) * 110)) + 'px' }}></div>
+                  <div style={{ flex: 1, background: '#3B6D11', borderRadius: '3px 3px 0 0', height: Math.max(2, Math.round((m.collected / maxAmt) * 110)) + 'px' }}></div>
+                </div>
+                <div style={{ fontSize: 10, color: '#666' }}>{m.label}</div>
+              </div>
+            ))}
+          </div>
+        </Card>
+
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
           <Card>
             <div style={{ fontWeight: 500, marginBottom: 12 }}>Revenue by client</div>
             {clientRows.length === 0 ? <div style={{ color: '#666', fontSize: 13 }}>No data yet</div> : (
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-                <thead><tr><Th>Client</Th><Th style={{ textAlign: 'right' }}>Total</Th><Th style={{ textAlign: 'right' }}>Collected</Th></tr></thead>
-                <tbody>{clientRows.map(c => <tr key={c.name} style={{ borderBottom: '0.5px solid rgba(0,0,0,0.09)' }}><Td>{c.name}</Td><Td style={{ textAlign: 'right' }}>{fmt(c.total)}</Td><Td style={{ textAlign: 'right', color: '#3B6D11' }}>{fmt(c.collected)}</Td></tr>)}</tbody>
+                <thead><tr><Th>Client</Th><Th style={{ textAlign: 'right' }}>Total</Th><Th style={{ textAlign: 'right' }}>Collected</Th><Th style={{ textAlign: 'right' }}>Outstanding</Th></tr></thead>
+                <tbody>{clientRows.map(c => (
+                  <tr key={c.name} style={{ borderBottom: '0.5px solid rgba(0,0,0,0.09)' }}>
+                    <Td>{c.name}<div style={{ fontSize: 11, color: '#999' }}>{c.count} invoice{c.count > 1 ? 's' : ''}</div></Td>
+                    <Td style={{ textAlign: 'right' }}>{fmt(c.total)}</Td>
+                    <Td style={{ textAlign: 'right', color: '#3B6D11' }}>{fmt(c.collected)}</Td>
+                    <Td style={{ textAlign: 'right', color: c.outstanding > 0 ? '#D85A30' : '#3B6D11' }}>{fmt(c.outstanding)}</Td>
+                  </tr>
+                ))}</tbody>
               </table>
             )}
           </Card>
@@ -483,20 +598,33 @@ function Reports({ invoices, payments }) {
             <div style={{ fontWeight: 500, marginBottom: 12 }}>Top services</div>
             {serviceRows.length === 0 ? <div style={{ color: '#666', fontSize: 13 }}>No data yet</div> : (
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-                <thead><tr><Th>Service</Th><Th style={{ textAlign: 'right' }}>Revenue</Th></tr></thead>
-                <tbody>{serviceRows.map(s => <tr key={s.desc} style={{ borderBottom: '0.5px solid rgba(0,0,0,0.09)' }}><Td>{s.desc}</Td><Td style={{ textAlign: 'right', fontWeight: 500 }}>{fmt(s.revenue)}</Td></tr>)}</tbody>
+                <thead><tr><Th>Service</Th><Th style={{ textAlign: 'right' }}>Qty</Th><Th style={{ textAlign: 'right' }}>Revenue</Th></tr></thead>
+                <tbody>{serviceRows.map(s => (
+                  <tr key={s.desc} style={{ borderBottom: '0.5px solid rgba(0,0,0,0.09)' }}>
+                    <Td>{s.desc}</Td>
+                    <Td style={{ textAlign: 'right' }}>{s.qty}</Td>
+                    <Td style={{ textAlign: 'right', fontWeight: 500 }}>{fmt(s.revenue)}</Td>
+                  </tr>
+                ))}</tbody>
               </table>
             )}
           </Card>
         </div>
-        {Object.keys(byMethod).length > 0 && (
-          <Card style={{ marginTop: 16 }}>
-            <div style={{ fontWeight: 500, marginBottom: 12 }}>Payment methods</div>
+
+        <Card style={{ marginTop: 0 }}>
+          <div style={{ fontWeight: 500, marginBottom: 12 }}>Payment methods breakdown</div>
+          {Object.keys(byMethod).length === 0 ? <div style={{ color: '#666', fontSize: 13 }}>No payments yet</div> : (
             <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-              {Object.entries(byMethod).map(([m, a]) => <StatCard key={m} label={m} value={fmt(a)} color="#3B6D11" style={{ minWidth: 140 }} />)}
+              {Object.entries(byMethod).map(([m, a]) => (
+                <div key={m} style={{ background: '#f4f3f0', borderRadius: 8, padding: '14px 18px', minWidth: 150 }}>
+                  <div style={{ fontSize: 12, color: '#666', marginBottom: 4 }}>{m}</div>
+                  <div style={{ fontSize: 18, fontWeight: 500, color: '#3B6D11' }}>{fmt(a)}</div>
+                  <div style={{ fontSize: 11, color: '#999', marginTop: 2 }}>{totalCol > 0 ? Math.round((a / totalCol) * 100) : 0}% of collected</div>
+                </div>
+              ))}
             </div>
-          </Card>
-        )}
+          )}
+        </Card>
       </div>
     </>
   )
