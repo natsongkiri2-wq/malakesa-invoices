@@ -56,7 +56,7 @@ export default function App() {
   const nav = [
     { id: 'dashboard', label: 'Dashboard', icon: 'ti-layout-dashboard' },
     { id: 'invoices', label: 'Invoices', icon: 'ti-file-invoice' },
-    { id: 'payments', label: 'Payments', icon: 'ti-cash' },
+    { id: 'payments', label: 'Payments Received', icon: 'ti-cash' },
     { id: 'unpaid', label: 'Unpaid', icon: 'ti-alert-circle' },
     { id: 'reports', label: 'Reports', icon: 'ti-chart-bar' },
     { id: 'clients', label: 'Clients', icon: 'ti-users' },
@@ -90,7 +90,7 @@ export default function App() {
           <>
             {page === 'dashboard' && <Dashboard invoices={invoices} payments={payments} loading={loading} setPage={setPage} setModal={setModal} />}
             {page === 'invoices' && <Invoices invoices={invoices} payments={payments} reload={reload} setModal={setModal} setSelected={setSelected} />}
-            {page === 'payments' && <Payments payments={payments} invoices={invoices} />}
+            {page === 'payments' && <Payments payments={payments} invoices={invoices} reload={reload} setModal={setModal} setSelected={setSelected} />}
             {page === 'unpaid' && <Unpaid invoices={invoices} payments={payments} reload={reload} setModal={setModal} setSelected={setSelected} />}
             {page === 'reports' && <Reports invoices={invoices} payments={payments} />}
             {page === 'clients' && <Clients clients={clients} invoices={invoices} reload={reload} setModal={setModal} />}
@@ -216,20 +216,51 @@ function Invoices({ invoices, payments, reload, setModal, setSelected }) {
 }
 
 // ── Payments ──────────────────────────────────────────────
-function Payments({ payments, invoices }) {
+function Payments({ payments, invoices, reload, setModal, setSelected }) {
   const total = payments.reduce((s, p) => s + Number(p.amount), 0)
   const thisMonth = payments.filter(p => p.date?.startsWith(new Date().toISOString().slice(0, 7))).reduce((s, p) => s + Number(p.amount), 0)
   const getInv = (id) => invoices.find(i => i.id === id) || {}
+  const unpaidInvoices = invoices.filter(i => ['unpaid','overdue','partial'].includes(getStatus(i, payments)))
   return (
     <>
-      <Topbar title="Payments" />
+      <Topbar title="Payments Received">
+        <button className="btn btn-primary" onClick={() => {
+          if (unpaidInvoices.length === 0) { alert('No unpaid invoices found. Create an invoice first.'); return }
+          setSelected(unpaidInvoices[0])
+          setModal('payment')
+        }}><i className="ti ti-plus"></i> Record Payment</button>
+      </Topbar>
       <div style={{ padding: 20 }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12, marginBottom: 16 }}>
           <StatCard label="Total collected" value={fmt(total)} color="#3B6D11" />
           <StatCard label="Payments recorded" value={payments.length} />
           <StatCard label="This month" value={fmt(thisMonth)} color="#3B6D11" />
         </div>
+        {unpaidInvoices.length > 0 && (
+          <div style={{ background: '#FAEEDA', border: '0.5px solid #FAC775', borderRadius: 8, padding: '10px 16px', marginBottom: 16, fontSize: 13, color: '#633806', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span><strong>{unpaidInvoices.length}</strong> unpaid invoice{unpaidInvoices.length > 1 ? 's' : ''} outstanding — select an invoice to record payment against:</span>
+          </div>
+        )}
+        {unpaidInvoices.length > 0 && (
+          <Card style={{ padding: 0, overflow: 'hidden', marginBottom: 16 }}>
+            <div style={{ padding: '12px 20px', borderBottom: '0.5px solid rgba(0,0,0,0.09)', fontWeight: 500, fontSize: 13 }}>Unpaid invoices — click to record payment</div>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+              <thead><tr style={{ background: '#f4f3f0' }}><Th>Invoice #</Th><Th>Client</Th><Th>Due Date</Th><Th>Balance</Th><Th>Status</Th><Th></Th></tr></thead>
+              <tbody>{unpaidInvoices.map(inv => (
+                <tr key={inv.id} style={{ borderBottom: '0.5px solid rgba(0,0,0,0.09)' }}>
+                  <Td><strong>{inv.number}</strong></Td>
+                  <Td>{inv.client_name}</Td>
+                  <Td>{fmtDate(inv.due_date)}</Td>
+                  <Td style={{ fontWeight: 500 }}>{fmt(getBalance(inv, payments))}</Td>
+                  <Td><Badge status={getStatus(inv, payments)} /></Td>
+                  <Td><button className="btn btn-sm btn-primary" onClick={() => { setSelected(inv); setModal('payment') }}><i className="ti ti-cash"></i> Record Payment</button></Td>
+                </tr>
+              ))}</tbody>
+            </table>
+          </Card>
+        )}
         <Card style={{ padding: 0, overflow: 'hidden' }}>
+          <div style={{ padding: '12px 20px', borderBottom: '0.5px solid rgba(0,0,0,0.09)', fontWeight: 500, fontSize: 13 }}>Payment history</div>
           {payments.length === 0 ? <Empty icon="ti-cash-off" msg="No payments recorded yet" /> : (
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
               <thead><tr style={{ background: '#f4f3f0' }}><Th>Date</Th><Th>Invoice #</Th><Th>Client</Th><Th>Method</Th><Th>Amount</Th><Th>Note</Th></tr></thead>
