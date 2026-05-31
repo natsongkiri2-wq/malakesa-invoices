@@ -732,6 +732,119 @@ function Clients({ clients, invoices, reload, setModal }) {
 }
 
 // ── Modals ────────────────────────────────────────────────
+function previewInvoice(inv) {
+  const w = window.open('', '_blank')
+  const balance = inv.total
+  w.document.write(`<!DOCTYPE html><html><head><title>Invoice Preview — ${inv.number || 'DRAFT'}</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Open+Sans:wght@400;500;600&display=swap');
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Open Sans', Arial, sans-serif; color: #222; font-size: 13px; background: #f0ebe0; }
+    .page { max-width: 800px; margin: 30px auto; background: #fff; border-radius: 4px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.12); }
+    .header { background: linear-gradient(135deg, #5C3D0A 0%, #8B6914 60%, #A07820 100%); padding: 32px 40px; display: flex; justify-content: space-between; align-items: flex-start; }
+    .logo-area { color: #fff; }
+    .logo-name { font-size: 28px; font-weight: 900; letter-spacing: 3px; color: #FFD700; font-family: Georgia, serif; text-shadow: 1px 1px 3px rgba(0,0,0,0.4); }
+    .logo-star-row { display: flex; align-items: center; gap: 8px; margin: 4px 0; }
+    .logo-line { flex: 1; height: 1px; background: rgba(255,215,0,0.5); }
+    .logo-star { color: #FFD700; font-size: 18px; }
+    .logo-sub { display: flex; justify-content: space-between; font-size: 9px; letter-spacing: 4px; font-weight: 700; color: #FFD700; }
+    .logo-tagline { font-size: 10px; color: rgba(255,215,0,0.8); margin-top: 8px; letter-spacing: 1px; }
+    .inv-meta { text-align: right; color: #fff; }
+    .inv-num { font-size: 28px; font-weight: 700; color: #FFD700; }
+    .inv-meta-row { font-size: 11px; color: rgba(255,255,255,0.85); margin-top: 4px; }
+    .draft-badge { display: inline-block; background: rgba(255,255,255,0.25); border: 1px solid rgba(255,255,255,0.5); color: #fff; padding: 3px 12px; border-radius: 99px; font-size: 11px; font-weight: 600; letter-spacing: 1px; margin-top: 8px; }
+    .body { padding: 36px 40px; }
+    .bill-row { display: flex; justify-content: space-between; margin-bottom: 32px; }
+    .bill-section { flex: 1; }
+    .bill-label { font-size: 10px; font-weight: 700; color: #8B6914; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 6px; border-bottom: 2px solid #8B6914; padding-bottom: 3px; display: inline-block; }
+    .bill-name { font-size: 15px; font-weight: 600; margin-bottom: 3px; }
+    .bill-detail { font-size: 12px; color: #666; margin-bottom: 2px; }
+    .dates-section { text-align: right; }
+    .date-row { display: flex; justify-content: flex-end; gap: 16px; margin-bottom: 4px; font-size: 12px; }
+    .date-label { color: #888; width: 80px; text-align: right; }
+    .date-val { font-weight: 600; width: 100px; text-align: right; }
+    table { width: 100%; border-collapse: collapse; margin: 8px 0 20px; }
+    thead { background: linear-gradient(135deg, #5C3D0A, #8B6914); }
+    th { padding: 10px 14px; text-align: left; font-size: 11px; font-weight: 600; color: #FFD700; letter-spacing: 0.8px; text-transform: uppercase; }
+    td { padding: 11px 14px; border-bottom: 1px solid #f0ebe0; font-size: 13px; }
+    tr:nth-child(even) td { background: #faf7f0; }
+    .text-right { text-align: right; }
+    .totals { margin-left: auto; width: 280px; margin-top: 8px; }
+    .total-row { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid #f0ebe0; font-size: 13px; }
+    .total-row.grand { border-bottom: none; font-size: 16px; font-weight: 700; color: #5C3D0A; padding-top: 10px; }
+    .total-row.balance { border-bottom: none; font-size: 14px; font-weight: 600; color: #8B6914; }
+    .notes-box { background: #faf7f0; border-left: 3px solid #8B6914; padding: 12px 16px; border-radius: 0 6px 6px 0; margin-top: 20px; font-size: 12px; color: #555; }
+    .footer { background: linear-gradient(135deg, #5C3D0A, #8B6914); padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; margin-top: 32px; }
+    .footer-left { color: rgba(255,255,255,0.9); font-size: 11px; line-height: 1.8; }
+    .footer-right { text-align: right; color: #FFD700; font-size: 11px; line-height: 1.8; }
+    .thank-you { text-align: center; font-size: 14px; font-weight: 600; color: #8B6914; margin: 24px 0 16px; font-style: italic; }
+    .watermark { position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%) rotate(-45deg); font-size: 80px; font-weight: 900; color: rgba(139,105,20,0.06); pointer-events: none; letter-spacing: 10px; z-index: 0; white-space: nowrap; }
+    @media print { body { background: #fff; } .page { box-shadow: none; margin: 0; border-radius: 0; } .no-print { display: none; } .watermark { display: none; } }
+  </style></head><body>
+  <div class="watermark">DRAFT</div>
+  <div class="no-print" style="background:#333;color:#fff;padding:10px 20px;display:flex;justify-content:space-between;align-items:center;font-size:13px">
+    <span>⚠️ This is a DRAFT preview — invoice has not been saved yet</span>
+    <button onclick="window.print()" style="background:#8B6914;color:#fff;border:none;padding:7px 16px;border-radius:6px;cursor:pointer;font-size:13px">🖨️ Print Preview</button>
+  </div>
+  <div class="page">
+    <div class="header">
+      <div class="logo-area">
+        <div class="logo-name">MALAKESA</div>
+        <div class="logo-star-row"><div class="logo-line"></div><div class="logo-star">★</div><div class="logo-line"></div></div>
+        <div class="logo-sub"><span>TRANSFERS</span><span>TOURS</span></div>
+        <div class="logo-tagline">Port Vila, Vanuatu</div>
+      </div>
+      <div class="inv-meta">
+        <div class="inv-num">${inv.number || 'DRAFT'}</div>
+        <div class="inv-meta-row">📅 Issue date: ${inv.date || new Date().toISOString().split('T')[0]}</div>
+        <div class="inv-meta-row">⏰ Due date: ${inv.due_date || ''}</div>
+        <div class="draft-badge">PREVIEW — NOT YET SAVED</div>
+      </div>
+    </div>
+    <div class="body">
+      <div class="bill-row">
+        <div class="bill-section">
+          <div class="bill-label">Bill to</div>
+          <div class="bill-name">${inv.client_name || '—'}</div>
+          <div class="bill-detail">${inv.client_email || ''}</div>
+        </div>
+        <div class="bill-section dates-section">
+          <div class="bill-label">From</div>
+          <div class="bill-name">Malakesa Transfer &amp; Tour</div>
+          <div class="bill-detail">📞 +678 00000</div>
+          <div class="bill-detail">✉️ info@malakesa.vu</div>
+          <div class="bill-detail">📍 Port Vila, Shefa, Vanuatu</div>
+        </div>
+      </div>
+      <table>
+        <thead><tr><th>Description</th><th class="text-right">Qty</th><th class="text-right">Rate (VT)</th><th class="text-right">Total (VT)</th></tr></thead>
+        <tbody>${(inv.items || []).map(it => '<tr><td>' + (it.description || '') + '</td><td class="text-right">' + it.qty + '</td><td class="text-right">VT ' + Number(it.rate||0).toLocaleString() + '</td><td class="text-right">VT ' + Number(it.total||0).toLocaleString() + '</td></tr>').join('')}</tbody>
+      </table>
+      <div class="totals">
+        <div class="total-row"><span style="color:#888">Subtotal</span><span>VT ${Number(inv.subtotal||0).toLocaleString()}</span></div>
+        <div class="total-row"><span style="color:#888">${inv.tax > 0 ? 'VAT (15%)' : 'VAT'}</span><span>${inv.tax > 0 ? 'VT ' + Number(inv.tax).toLocaleString() : 'Not applicable'}</span></div>
+        <div class="total-row grand"><span>TOTAL DUE</span><span>VT ${Number(inv.total||0).toLocaleString()}</span></div>
+      </div>
+      ${inv.notes ? '<div class="notes-box"><strong>Notes:</strong> ' + inv.notes + '</div>' : ''}
+      <div class="thank-you">Thank you for choosing Malakesa Transfer &amp; Tour!</div>
+    </div>
+    <div class="footer">
+      <div class="footer-left">
+        <div>📍 Malakesa Transfer &amp; Tour</div>
+        <div>Port Vila, Shefa Province, Vanuatu</div>
+        <div>📞 +678 00000 &nbsp;|&nbsp; ✉️ info@malakesa.vu</div>
+      </div>
+      <div class="footer-right">
+        <div>Payment due: ${inv.due_date || ''}</div>
+        <div>Bank transfer | Cash | Mobile money</div>
+        <div style="margin-top:4px;font-size:10px;color:rgba(255,215,0,0.7)">This invoice is computer generated</div>
+      </div>
+    </div>
+  </div>
+  </body></html>`)
+  w.document.close()
+}
+
 function NewInvoiceModal({ clients, onClose, onSave }) {
   const [form, setForm] = useState({ client_id: '', client_name: '', client_email: '', date: todayStr(), due_date: addDays(todayStr(), 14), notes: '' })
   const [items, setItems] = useState([{ id: uid(), description: '', qty: 1, rate: '', total: 0 }, { id: uid(), description: '', qty: 1, rate: '', total: 0 }])
@@ -805,9 +918,14 @@ function NewInvoiceModal({ clients, onClose, onSave }) {
           <div key={l} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: i < 2 ? '0.5px solid rgba(0,0,0,0.09)' : 'none', fontWeight: i === 2 ? 500 : 400, fontSize: i === 2 ? 15 : 13 }}><span style={{ color: i < 2 ? '#666' : 'inherit' }}>{l}</span><span>{v}</span></div>
         ))}
       </div>
-      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 20 }}>
-        <button className="btn" onClick={onClose}>Cancel</button>
-        <button className="btn btn-primary" onClick={handleSave} disabled={saving}><i className="ti ti-check"></i> {saving ? 'Saving...' : 'Save Invoice'}</button>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 20 }}>
+        <button className="btn" onClick={() => previewInvoice({ ...form, items: items.filter(i => i.description.trim()), subtotal, tax, total })}>
+          <i className="ti ti-eye"></i> Preview Invoice
+        </button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button className="btn" onClick={onClose}>Cancel</button>
+          <button className="btn btn-primary" onClick={handleSave} disabled={saving}><i className="ti ti-check"></i> {saving ? 'Saving...' : 'Save Invoice'}</button>
+        </div>
       </div>
     </Modal>
   )
