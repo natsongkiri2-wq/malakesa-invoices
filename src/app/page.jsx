@@ -176,33 +176,95 @@ function Dashboard({ invoices, payments, loading, setPage, setModal }) {
 
 // ── Invoices ──────────────────────────────────────────────
 function Invoices({ invoices, payments, reload, setModal, setSelected }) {
+  const [filterClient, setFilterClient] = useState('')
+  const [filterStatus, setFilterStatus] = useState('')
+  const [filterMonth, setFilterMonth] = useState('')
+  const [search, setSearch] = useState('')
+
+  const allClients = [...new Set(invoices.map(i => i.client_name))].sort()
+  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+  const now = new Date()
+  const monthOptions = Array.from({length: 12}, (_, i) => {
+    const d = new Date(now.getFullYear(), now.getMonth() - 11 + i, 1)
+    return { value: d.toISOString().slice(0,7), label: MONTHS[d.getMonth()] + ' ' + d.getFullYear() }
+  }).reverse()
+
+  let filtered = [...invoices].reverse()
+  if (search) filtered = filtered.filter(i => i.number?.toLowerCase().includes(search.toLowerCase()) || i.client_name?.toLowerCase().includes(search.toLowerCase()))
+  if (filterClient) filtered = filtered.filter(i => i.client_name === filterClient)
+  if (filterStatus) filtered = filtered.filter(i => getStatus(i, payments) === filterStatus)
+  if (filterMonth) filtered = filtered.filter(i => i.date?.startsWith(filterMonth))
+
+  const totalFiltered = filtered.reduce((s, i) => s + Number(i.total), 0)
+  const totalBalance = filtered.reduce((s, i) => s + getBalance(i, payments), 0)
+
+  const clearFilters = () => { setFilterClient(''); setFilterStatus(''); setFilterMonth(''); setSearch('') }
+  const hasFilters = filterClient || filterStatus || filterMonth || search
+
   const handleDelete = async (id) => {
     if (!confirm('Delete this invoice?')) return
-    await fetch(`/api/invoices/${id}`, { method: 'DELETE' })
-    reload()
+    await fetch('/api/invoices/' + id, { method: 'DELETE' }); reload()
   }
+
+  const selectStyle = { padding: '6px 10px', borderRadius: 8, border: '0.5px solid rgba(0,0,0,0.15)', fontSize: 13, fontFamily: 'inherit', background: '#fff' }
+
   return (
     <>
-      <Topbar title="Invoices"><button className="btn btn-primary" onClick={() => setModal('newInvoice')}><i className="ti ti-plus"></i> New Invoice</button></Topbar>
+      <Topbar title="Invoices">
+        <button className="btn btn-primary" onClick={() => setModal('newInvoice')}><i className="ti ti-plus"></i> New Invoice</button>
+      </Topbar>
       <div style={{ padding: 20 }}>
+        {/* Filter bar */}
+        <div style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.09)', borderRadius: 12, padding: '12px 16px', marginBottom: 16, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+          <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search invoice # or client..." style={{ ...selectStyle, minWidth: 200 }} />
+          <select value={filterClient} onChange={e => setFilterClient(e.target.value)} style={selectStyle}>
+            <option value="">All clients</option>
+            {allClients.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
+          <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} style={selectStyle}>
+            <option value="">All statuses</option>
+            <option value="unpaid">Unpaid</option>
+            <option value="paid">Paid</option>
+            <option value="overdue">Overdue</option>
+            <option value="partial">Partial</option>
+          </select>
+          <select value={filterMonth} onChange={e => setFilterMonth(e.target.value)} style={selectStyle}>
+            <option value="">All months</option>
+            {monthOptions.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+          </select>
+          {hasFilters && <button className="btn btn-sm" onClick={clearFilters} style={{ color: '#A32D2D', borderColor: '#A32D2D' }}><i className="ti ti-x"></i> Clear</button>}
+          <div style={{ marginLeft: 'auto', fontSize: 12, color: '#666' }}>
+            {filtered.length} invoice{filtered.length !== 1 ? 's' : ''} &nbsp;|&nbsp; {fmt(totalFiltered)} invoiced &nbsp;|&nbsp; <span style={{ color: totalBalance > 0 ? '#D85A30' : '#3B6D11' }}>{fmt(totalBalance)} outstanding</span>
+          </div>
+        </div>
+
         <Card style={{ padding: 0, overflow: 'hidden' }}>
-          {invoices.length === 0 ? <Empty icon="ti-file-invoice" msg="No invoices yet" /> : (
+          {filtered.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '48px 20px', color: '#666' }}>
+              <i className="ti ti-file-search" style={{ fontSize: 36, display: 'block', marginBottom: 10 }}></i>
+              <p>{hasFilters ? 'No invoices match your filters.' : 'No invoices yet.'}</p>
+              {hasFilters && <button className="btn btn-sm" onClick={clearFilters} style={{ marginTop: 10 }}>Clear filters</button>}
+            </div>
+          ) : (
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-              <thead><tr style={{ background: '#f4f3f0' }}><Th>Invoice #</Th><Th>Client</Th><Th>Issue Date</Th><Th>Due Date</Th><Th>Amount</Th><Th>Balance</Th><Th>Status</Th><Th>Actions</Th></tr></thead>
-              <tbody>{[...invoices].reverse().map(inv => {
+              <thead><tr style={{ background: '#f4f3f0' }}>
+                <Th>Invoice #</Th><Th>Client</Th><Th>Issue Date</Th><Th>Due Date</Th><Th>Amount</Th><Th>Balance</Th><Th>Status</Th><Th>Actions</Th>
+              </tr></thead>
+              <tbody>{filtered.map(inv => {
                 const st = getStatus(inv, payments); const bal = getBalance(inv, payments)
                 return (
                   <tr key={inv.id} style={{ borderBottom: '0.5px solid rgba(0,0,0,0.09)' }}>
-                    <Td><strong>{inv.number}</strong></Td><Td>{inv.client_name}</Td>
+                    <Td><strong>{inv.number}</strong></Td>
+                    <Td>{inv.client_name}</Td>
                     <Td>{fmtDate(inv.date)}</Td>
                     <Td style={st === 'overdue' ? { color: '#A32D2D', fontWeight: 500 } : {}}>{fmtDate(inv.due_date)}</Td>
                     <Td>{fmt(inv.total)}</Td>
-                    <Td style={{ color: bal > 0 ? '#D85A30' : '#3B6D11' }}>{fmt(bal)}</Td>
+                    <Td style={{ color: bal > 0 ? '#D85A30' : '#3B6D11', fontWeight: 500 }}>{fmt(bal)}</Td>
                     <Td><Badge status={st} /></Td>
                     <Td><div style={{ display: 'flex', gap: 5 }}>
-                      <button className="btn btn-sm" onClick={() => { setSelected(inv); setModal('viewInvoice') }}><i className="ti ti-eye"></i></button>
-                      {bal > 0 && <button className="btn btn-sm" style={{ borderColor: '#3B6D11', color: '#3B6D11' }} onClick={() => { setSelected(inv); setModal('payment') }}><i className="ti ti-cash"></i></button>}
-                      <button className="btn btn-sm" style={{ borderColor: '#A32D2D', color: '#A32D2D' }} onClick={() => handleDelete(inv.id)}><i className="ti ti-trash"></i></button>
+                      <button className="btn btn-sm" onClick={() => { setSelected(inv); setModal('viewInvoice') }} title="View"><i className="ti ti-eye"></i></button>
+                      {bal > 0 && <button className="btn btn-sm" style={{ borderColor: '#3B6D11', color: '#3B6D11' }} onClick={() => { setSelected(inv); setModal('payment') }} title="Record payment"><i className="ti ti-cash"></i></button>}
+                      <button className="btn btn-sm" style={{ borderColor: '#A32D2D', color: '#A32D2D' }} onClick={() => handleDelete(inv.id)} title="Delete"><i className="ti ti-trash"></i></button>
                     </div></Td>
                   </tr>
                 )
@@ -215,7 +277,6 @@ function Invoices({ invoices, payments, reload, setModal, setSelected }) {
   )
 }
 
-// ── Payments ──────────────────────────────────────────────
 function Payments({ payments, invoices, reload, setModal, setSelected }) {
   const total = payments.reduce((s, p) => s + Number(p.amount), 0)
   const thisMonth = payments.filter(p => p.date?.startsWith(new Date().toISOString().slice(0, 7))).reduce((s, p) => s + Number(p.amount), 0)
