@@ -475,12 +475,17 @@ function NewInvoiceModal({ clients, onClose, onSave }) {
         <Field label="Invoice date"><input type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} style={inputStyle} /></Field>
         <Field label="Due date"><input type="date" value={form.due_date} onChange={e => setForm(f => ({ ...f, due_date: e.target.value }))} style={inputStyle} /></Field>
         <Field label="Notes / trip details" style={{ gridColumn: '1/-1' }}><textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} style={{ ...inputStyle, minHeight: 60, resize: 'vertical' }} placeholder="Route, pickup time, special instructions..." /></Field>
+        <div style={{ gridColumn: '1/-1', display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: applyVat ? '#EAF3DE' : '#f4f3f0', borderRadius: 8, border: '0.5px solid ' + (applyVat ? '#C0DD97' : 'rgba(0,0,0,0.1)') }}>
+          <input type="checkbox" id="vatcheck" checked={applyVat} onChange={e => setApplyVat(e.target.checked)} style={{ width: 18, height: 18, cursor: 'pointer', accentColor: '#5340B7' }} />
+          <label htmlFor="vatcheck" style={{ cursor: 'pointer', fontSize: 13, fontWeight: 500, color: applyVat ? '#27500A' : '#666', userSelect: 'none' }}>
+            {applyVat ? '✓ Apply 15% VAT to this invoice' : 'No VAT — zero rated invoice'}
+          </label>
+        </div>
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
         <div style={{ fontWeight: 500 }}>Line items</div>
         <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer', fontWeight: 400 }}>
           <input type="checkbox" checked={applyVat} onChange={e => setApplyVat(e.target.checked)} style={{ width: 16, height: 16, cursor: 'pointer' }} />
-          Apply 15% VAT
         </label>
       </div>
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, marginBottom: 8 }}>
