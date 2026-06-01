@@ -1,7 +1,7 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
-.btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 8px; border: 0.5px solid rgba(0,0,0,0.15); background: transparent; color: #1a1a1a; font-size: 13px; cursor: pointer; font-family: inherit; transition: all 0.15s; white-space: nowrap; }
-.btn:hover { background: #f5f0e8; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #E8D5A3; }
+.btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 8px; border: 0.5px solid rgba(139,105,20,0.3); background: transparent; color: #1a1a1a; font-size: 13px; cursor: pointer; font-family: inherit; transition: all 0.15s; white-space: nowrap; }
+.btn:hover { background: #D4B87A; }
 .btn:active { transform: scale(0.98); }
 .btn-primary { background: #8B6914; border-color: #8B6914; color: #fff; }
 .btn-primary:hover { background: #6B5010; border-color: #6B5010; color: #fff; }

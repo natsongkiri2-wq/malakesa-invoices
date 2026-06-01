@@ -63,7 +63,7 @@ export default function App() {
   ]
 
   return (
-    <div style={{ display: 'flex', height: '100vh', fontFamily: '-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif', fontSize: 14, color: '#1a1a1a', background: '#f4f3f0' }}>
+    <div style={{ display: 'flex', height: '100vh', fontFamily: '-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif', fontSize: 14, color: '#1a1a1a', background: '#E8D5A3' }}>
       {/* Sidebar */}
       <div style={{ width: 210, minWidth: 210, background: '#fff', borderRight: '0.5px solid rgba(0,0,0,0.09)', display: 'flex', flexDirection: 'column' }}>
         <div style={{ padding: '14px 16px', borderBottom: '0.5px solid rgba(0,0,0,0.09)', background: 'linear-gradient(135deg, #6B5010 0%, #8B6914 50%, #A07820 100%)', textAlign: 'center' }}>
@@ -81,7 +81,7 @@ export default function App() {
         <nav style={{ flex: 1, padding: '8px 0' }}>
           {nav.map(item => (
             <div key={item.id} onClick={() => setPage(item.id)}
-              style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 16px', fontSize: 13, color: page === item.id ? '#1a1a1a' : '#666', cursor: 'pointer', borderLeft: page === item.id ? '2px solid #5340B7' : '2px solid transparent', background: page === item.id ? '#f4f3f0' : 'transparent', fontWeight: page === item.id ? 500 : 400 }}>
+              style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 16px', fontSize: 13, color: page === item.id ? '#1a1a1a' : '#666', cursor: 'pointer', borderLeft: page === item.id ? '2px solid #5340B7' : '2px solid transparent', background: page === item.id ? '#EDD9A3' : 'transparent', fontWeight: page === item.id ? 500 : 400 }}>
               <i className={`ti ${item.icon}`} style={{ fontSize: 16 }}></i>
               {item.label}
             </div>
@@ -164,7 +164,7 @@ function Dashboard({ invoices, payments, loading, setPage, setModal }) {
               </div>
               {recent.length === 0 ? <Empty icon="ti-file-off" msg="No invoices yet" /> : (
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-                  <thead><tr style={{ background: '#f4f3f0' }}><Th>Invoice #</Th><Th>Client</Th><Th>Date</Th><Th>Amount</Th><Th>Status</Th><Th></Th></tr></thead>
+                  <thead><tr style={{ background: '#E8D5A3' }}><Th>Invoice #</Th><Th>Client</Th><Th>Date</Th><Th>Amount</Th><Th>Status</Th><Th></Th></tr></thead>
                   <tbody>{recent.map(inv => (
                     <tr key={inv.id} style={{ borderBottom: '0.5px solid rgba(0,0,0,0.09)' }}>
                       <Td><strong>{inv.number}</strong></Td><Td>{inv.client_name}</Td><Td>{fmtDate(inv.date)}</Td><Td>{fmt(inv.total)}</Td>
@@ -223,7 +223,7 @@ function Invoices({ invoices, payments, reload, setModal, setSelected }) {
       </Topbar>
       <div style={{ padding: 20 }}>
         {/* Filter bar */}
-        <div style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.09)', borderRadius: 12, padding: '12px 16px', marginBottom: 16, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+        <div style={{ background: '#fff', border: '0.5px solid rgba(139,105,20,0.2)', borderRadius: 12, padding: '12px 16px', marginBottom: 16, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
           <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search invoice # or client..." style={{ ...selectStyle, minWidth: 200 }} />
           <select value={filterClient} onChange={e => setFilterClient(e.target.value)} style={selectStyle}>
             <option value="">All clients</option>
@@ -255,7 +255,7 @@ function Invoices({ invoices, payments, reload, setModal, setSelected }) {
             </div>
           ) : (
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-              <thead><tr style={{ background: '#f4f3f0' }}>
+              <thead><tr style={{ background: '#E8D5A3' }}>
                 <Th>Invoice #</Th><Th>Client</Th><Th>Issue Date</Th><Th>Due Date</Th><Th>Amount</Th><Th>Balance</Th><Th>Status</Th><Th>Actions</Th>
               </tr></thead>
               <tbody>{filtered.map(inv => {
@@ -314,7 +314,7 @@ function Payments({ payments, invoices, reload, setModal, setSelected }) {
           <Card style={{ padding: 0, overflow: 'hidden', marginBottom: 16 }}>
             <div style={{ padding: '12px 20px', borderBottom: '0.5px solid rgba(0,0,0,0.09)', fontWeight: 500, fontSize: 13 }}>Unpaid invoices — click to record payment</div>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-              <thead><tr style={{ background: '#f4f3f0' }}><Th>Invoice #</Th><Th>Client</Th><Th>Due Date</Th><Th>Balance</Th><Th>Status</Th><Th></Th></tr></thead>
+              <thead><tr style={{ background: '#E8D5A3' }}><Th>Invoice #</Th><Th>Client</Th><Th>Due Date</Th><Th>Balance</Th><Th>Status</Th><Th></Th></tr></thead>
               <tbody>{unpaidInvoices.map(inv => (
                 <tr key={inv.id} style={{ borderBottom: '0.5px solid rgba(0,0,0,0.09)' }}>
                   <Td><strong>{inv.number}</strong></Td>
@@ -332,13 +332,13 @@ function Payments({ payments, invoices, reload, setModal, setSelected }) {
           <div style={{ padding: '12px 20px', borderBottom: '0.5px solid rgba(0,0,0,0.09)', fontWeight: 500, fontSize: 13 }}>Payment history</div>
           {payments.length === 0 ? <Empty icon="ti-cash-off" msg="No payments recorded yet" /> : (
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-              <thead><tr style={{ background: '#f4f3f0' }}><Th>Date</Th><Th>Invoice #</Th><Th>Client</Th><Th>Method</Th><Th>Amount</Th><Th>Note</Th></tr></thead>
+              <thead><tr style={{ background: '#E8D5A3' }}><Th>Date</Th><Th>Invoice #</Th><Th>Client</Th><Th>Method</Th><Th>Amount</Th><Th>Note</Th></tr></thead>
               <tbody>{[...payments].reverse().map(p => {
                 const inv = getInv(p.invoice_id)
                 return (
                   <tr key={p.id} style={{ borderBottom: '0.5px solid rgba(0,0,0,0.09)' }}>
                     <Td>{fmtDate(p.date)}</Td><Td><strong>{inv.number || '—'}</strong></Td><Td>{inv.client_name || '—'}</Td>
-                    <Td><span style={{ background: '#f4f3f0', padding: '2px 8px', borderRadius: 99, fontSize: 11 }}>{p.method || 'Cash'}</span></Td>
+                    <Td><span style={{ background: '#E8D5A3', padding: '2px 8px', borderRadius: 99, fontSize: 11 }}>{p.method || 'Cash'}</span></Td>
                     <Td style={{ color: '#3B6D11', fontWeight: 500 }}>{fmt(p.amount)}</Td>
                     <Td style={{ color: '#666' }}>{p.note || ''}</Td>
                   </tr>
@@ -455,7 +455,7 @@ function Unpaid({ invoices, payments, reload, setModal, setSelected }) {
         <Card style={{ padding: 0, overflow: 'hidden' }}>
           {filtered.length === 0 ? <Empty icon="ti-circle-check" msg="All invoices are paid!" msgColor="#3B6D11" /> : (
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-              <thead><tr style={{ background: '#f4f3f0' }}><Th>Invoice #</Th><Th>Client</Th><Th>Due Date</Th><Th>Balance</Th><Th>Status</Th><Th>Actions</Th></tr></thead>
+              <thead><tr style={{ background: '#E8D5A3' }}><Th>Invoice #</Th><Th>Client</Th><Th>Due Date</Th><Th>Balance</Th><Th>Status</Th><Th>Actions</Th></tr></thead>
               <tbody>{filtered.map(inv => {
                 const st = getStatus(inv, payments)
                 return (
@@ -685,7 +685,7 @@ function Reports({ invoices, payments }) {
           {Object.keys(byMethod).length === 0 ? <div style={{ color: '#666', fontSize: 13 }}>No payments yet</div> : (
             <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
               {Object.entries(byMethod).map(([m, a]) => (
-                <div key={m} style={{ background: '#f4f3f0', borderRadius: 8, padding: '14px 18px', minWidth: 150 }}>
+                <div key={m} style={{ background: '#E8D5A3', borderRadius: 8, padding: '14px 18px', minWidth: 150 }}>
                   <div style={{ fontSize: 12, color: '#666', marginBottom: 4 }}>{m}</div>
                   <div style={{ fontSize: 18, fontWeight: 500, color: '#3B6D11' }}>{fmt(a)}</div>
                   <div style={{ fontSize: 11, color: '#999', marginTop: 2 }}>{totalCol > 0 ? Math.round((a / totalCol) * 100) : 0}% of collected</div>
@@ -748,7 +748,7 @@ function Clients({ clients, invoices, reload, setModal }) {
           ) : (
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
               <thead>
-                <tr style={{ background: '#f4f3f0' }}>
+                <tr style={{ background: '#E8D5A3' }}>
                   <Th>Name</Th><Th>Email</Th><Th>Phone</Th><Th>Address</Th><Th style={{ textAlign: 'center' }}>Invoices</Th><Th style={{ textAlign: 'center' }}>Actions</Th>
                 </tr>
               </thead>
@@ -851,7 +851,7 @@ function NewInvoiceModal({ clients, onClose, onSave }) {
         <Field label="Invoice date"><input type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} style={inputStyle} /></Field>
         <Field label="Due date"><input type="date" value={form.due_date} onChange={e => setForm(f => ({ ...f, due_date: e.target.value }))} style={inputStyle} /></Field>
         <Field label="Notes / trip details" style={{ gridColumn: '1/-1' }}><textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} style={{ ...inputStyle, minHeight: 60, resize: 'vertical' }} placeholder="Route, pickup time, special instructions..." /></Field>
-        <div style={{ gridColumn: '1/-1', display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: applyVat ? '#EAF3DE' : '#f4f3f0', borderRadius: 8, border: '0.5px solid ' + (applyVat ? '#C0DD97' : 'rgba(0,0,0,0.1)') }}>
+        <div style={{ gridColumn: '1/-1', display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: applyVat ? '#EAF3DE' : '#EDD9A3', borderRadius: 8, border: '0.5px solid ' + (applyVat ? '#C0DD97' : 'rgba(0,0,0,0.1)') }}>
           <input type="checkbox" id="vatcheck" checked={applyVat} onChange={e => setApplyVat(e.target.checked)} style={{ width: 18, height: 18, cursor: 'pointer', accentColor: '#8B6914' }} />
           <label htmlFor="vatcheck" style={{ cursor: 'pointer', fontSize: 13, fontWeight: 500, color: applyVat ? '#27500A' : '#666', userSelect: 'none' }}>
             {applyVat ? '✓ Apply 15% VAT to this invoice' : 'No VAT — zero rated invoice'}
@@ -865,7 +865,7 @@ function NewInvoiceModal({ clients, onClose, onSave }) {
         </label>
       </div>
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, marginBottom: 8 }}>
-        <thead><tr style={{ background: '#f4f3f0' }}><Th style={{ width: '42%' }}>Description</Th><Th style={{ width: '12%' }}>Qty</Th><Th style={{ width: '20%' }}>Rate (VT)</Th><Th style={{ width: '18%' }}>Total</Th><Th style={{ width: '8%' }}></Th></tr></thead>
+        <thead><tr style={{ background: '#E8D5A3' }}><Th style={{ width: '42%' }}>Description</Th><Th style={{ width: '12%' }}>Qty</Th><Th style={{ width: '20%' }}>Rate (VT)</Th><Th style={{ width: '18%' }}>Total</Th><Th style={{ width: '8%' }}></Th></tr></thead>
         <tbody>{items.map(item => (
           <tr key={item.id}>
             <td style={{ padding: '4px 4px' }}><input type="text" value={item.description} onChange={e => updateItem(item.id, 'description', e.target.value)} style={inputStyle} placeholder="e.g. Airport transfer..." /></td>
@@ -968,18 +968,18 @@ function ViewInvoiceModal({ invoice, payments, onClose, onPay }) {
         <div style={{ textAlign: 'right' }}><div style={{ fontSize: 12, color: '#666' }}>Issue date</div><div>{fmtDate(invoice.date)}</div><div style={{ fontSize: 12, color: '#666', marginTop: 6 }}>Due date</div><div style={status === 'overdue' ? { color: '#A32D2D', fontWeight: 500 } : {}}>{fmtDate(invoice.due_date)}</div></div>
       </div>
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, marginBottom: 12 }}>
-        <thead><tr style={{ background: '#f4f3f0' }}><Th>Description</Th><Th style={{ textAlign: 'center' }}>Qty</Th><Th style={{ textAlign: 'right' }}>Rate</Th><Th style={{ textAlign: 'right' }}>Total</Th></tr></thead>
+        <thead><tr style={{ background: '#E8D5A3' }}><Th>Description</Th><Th style={{ textAlign: 'center' }}>Qty</Th><Th style={{ textAlign: 'right' }}>Rate</Th><Th style={{ textAlign: 'right' }}>Total</Th></tr></thead>
         <tbody>{(invoice.items || []).map((it, i) => <tr key={i} style={{ borderBottom: '0.5px solid rgba(0,0,0,0.09)' }}><Td>{it.description}</Td><Td style={{ textAlign: 'center' }}>{it.qty}</Td><Td style={{ textAlign: 'right' }}>{fmt(it.rate)}</Td><Td style={{ textAlign: 'right', fontWeight: 500 }}>{fmt(it.total)}</Td></tr>)}</tbody>
       </table>
       <div style={{ marginLeft: 'auto', width: 260 }}>
         {[['Subtotal', fmt(invoice.subtotal)], ['VAT (15%)', fmt(Math.round(Number(invoice.subtotal)*0.15))], ['Total', fmt(invoice.total)]].map(([l, v], i) => <div key={l} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: i < 2 ? '0.5px solid rgba(0,0,0,0.09)' : 'none', fontWeight: i === 2 ? 500 : 400 }}><span style={{ color: i < 2 ? '#666' : 'inherit' }}>{l}</span><span>{v}</span></div>)}
         <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', fontWeight: 500, color: balance > 0 ? '#D85A30' : '#3B6D11' }}><span>Balance due</span><span>{fmt(balance)}</span></div>
       </div>
-      {invoice.notes && <div style={{ marginTop: 12, padding: '10px 14px', background: '#f4f3f0', borderRadius: 8, fontSize: 13, color: '#666' }}>{invoice.notes}</div>}
+      {invoice.notes && <div style={{ marginTop: 12, padding: '10px 14px', background: '#E8D5A3', borderRadius: 8, fontSize: 13, color: '#666' }}>{invoice.notes}</div>}
       {invPayments.length > 0 && (
         <div style={{ marginTop: 16 }}>
           <div style={{ fontWeight: 500, marginBottom: 8 }}>Payments received</div>
-          {invPayments.map(p => <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0', borderBottom: '0.5px solid rgba(0,0,0,0.09)', fontSize: 13 }}><span>{fmtDate(p.date)} — <span style={{ background: '#f4f3f0', padding: '1px 8px', borderRadius: 99, fontSize: 11 }}>{p.method}</span>{p.note ? ` · ${p.note}` : ''}</span><span style={{ color: '#3B6D11', fontWeight: 500 }}>{fmt(p.amount)}</span></div>)}
+          {invPayments.map(p => <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0', borderBottom: '0.5px solid rgba(0,0,0,0.09)', fontSize: 13 }}><span>{fmtDate(p.date)} — <span style={{ background: '#E8D5A3', padding: '1px 8px', borderRadius: 99, fontSize: 11 }}>{p.method}</span>{p.note ? ` · ${p.note}` : ''}</span><span style={{ color: '#3B6D11', fontWeight: 500 }}>{fmt(p.amount)}</span></div>)}
         </div>
       )}
     </Modal>
@@ -1037,7 +1037,7 @@ function Card({ children, style }) {
 
 function StatCard({ label, value, sub, color, style }) {
   return (
-    <div style={{ background: '#f4f3f0', borderRadius: 8, padding: '14px 16px', ...style }}>
+    <div style={{ background: '#E8D5A3', borderRadius: 8, padding: '14px 16px', ...style }}>
       <div style={{ fontSize: 12, color: '#666', marginBottom: 4 }}>{label}</div>
       <div style={{ fontSize: 20, fontWeight: 500, color: color || '#1a1a1a' }}>{value}</div>
       {sub && <div style={{ fontSize: 11, color: '#999', marginTop: 2 }}>{sub}</div>}
