@@ -54,29 +54,31 @@ export default function App() {
   useEffect(() => { reload() }, [])
 
   const nav = [
-    { id: 'dashboard', label: 'Dashboard', icon: 'ti-layout-dashboard' },
-    { id: 'invoices', label: 'Invoices', icon: 'ti-file-invoice' },
-    { id: 'payments', label: 'Payments Received', icon: 'ti-cash' },
-    { id: 'unpaid', label: 'Unpaid Invoices', icon: 'ti-alert-circle' },
-    { id: 'reports', label: 'Reports', icon: 'ti-chart-bar' },
-    { id: 'clients', label: 'Clients', icon: 'ti-users' },
+    { id: 'dashboard', label: 'Dashboard', icon: 'ti-home' },
+    { id: 'invoices', label: 'Invoices', icon: 'ti-file-dollar' },
+    { id: 'payments', label: 'Payments Received', icon: 'ti-coin' },
+    { id: 'unpaid', label: 'Unpaid Invoices', icon: 'ti-clock-exclamation' },
+    { id: 'reports', label: 'Reports', icon: 'ti-chart-pie' },
+    { id: 'clients', label: 'Clients', icon: 'ti-address-book' },
   ]
 
   return (
     <div style={{ display: 'flex', height: '100vh', fontFamily: '-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif', fontSize: 14, color: '#1a1a1a', background: '#E8D5A3' }}>
       {/* Sidebar */}
-      <div style={{ width: 210, minWidth: 210, background: '#fff', borderRight: '0.5px solid rgba(0,0,0,0.09)', display: 'flex', flexDirection: 'column' }}>
-        <div style={{ padding: '14px 16px', borderBottom: '0.5px solid rgba(0,0,0,0.09)', background: 'linear-gradient(135deg, #6B5010 0%, #8B6914 50%, #A07820 100%)', textAlign: 'center' }}>
-          <div style={{ fontSize: 20, fontWeight: 900, color: '#FFD700', letterSpacing: '2px', fontFamily: 'Georgia, serif', textShadow: '1px 1px 2px rgba(0,0,0,0.4)' }}>MALAKESA</div>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, margin: '4px 0' }}>
-            <div style={{ height: 1, flex: 1, background: 'rgba(255,215,0,0.4)' }}></div>
-            <div style={{ fontSize: 16, color: '#FFD700' }}>★</div>
-            <div style={{ height: 1, flex: 1, background: 'rgba(255,215,0,0.4)' }}></div>
+      <div style={{ width: 220, minWidth: 220, background: 'linear-gradient(180deg, #2C1810 0%, #3D2214 40%, #4A2D18 70%, #5C3D0A 100%)', display: 'flex', flexDirection: 'column', boxShadow: '4px 0 20px rgba(0,0,0,0.25)' }}>
+        <div style={{ padding: '20px 16px 16px', borderBottom: '1px solid rgba(255,215,0,0.15)', textAlign: 'center', background: 'linear-gradient(135deg, #1A0D06 0%, #3D2214 100%)' }}>
+          <div style={{ fontSize: 22, fontWeight: 900, color: '#FFD700', letterSpacing: '3px', fontFamily: 'Georgia, serif', textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}>MALAKESA</div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, margin: '6px 0' }}>
+            <div style={{ height: 1, flex: 1, background: 'linear-gradient(90deg, transparent, rgba(255,215,0,0.6))' }}></div>
+            <div style={{ fontSize: 18, color: '#FFD700', textShadow: '0 0 10px rgba(255,215,0,0.5)' }}>★</div>
+            <div style={{ height: 1, flex: 1, background: 'linear-gradient(90deg, rgba(255,215,0,0.6), transparent)' }}></div>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9, fontWeight: 700, color: '#FFD700', letterSpacing: '3px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 8, fontWeight: 800, color: 'rgba(255,215,0,0.85)', letterSpacing: '4px', padding: '0 4px' }}>
             <span>TRANSFERS</span><span>TOURS</span>
           </div>
-          <div style={{ fontSize: 9, color: 'rgba(255,215,0,0.7)', marginTop: 6, letterSpacing: '2px', fontWeight: 500 }}>INVOICE MANAGER</div>
+          <div style={{ marginTop: 10, background: 'rgba(255,215,0,0.1)', border: '0.5px solid rgba(255,215,0,0.3)', borderRadius: 4, padding: '3px 8px', display: 'inline-block' }}>
+            <div style={{ fontSize: 8, color: 'rgba(255,215,0,0.8)', letterSpacing: '2.5px', fontWeight: 700 }}>INVOICE MANAGER</div>
+          </div>
         </div>
         <nav style={{ flex: 1, padding: '8px 0' }}>
           {nav.map(item => (
@@ -87,7 +89,7 @@ export default function App() {
             </div>
           ))}
         </nav>
-        <div style={{ padding: '12px 16px', borderTop: '0.5px solid rgba(0,0,0,0.09)', fontSize: 11, color: '#8B6914', fontWeight: 500, textAlign: 'center' }}>Port Vila, Vanuatu</div>
+        <div style={{ padding: '14px 16px', borderTop: '1px solid rgba(255,215,0,0.15)', fontSize: 11, color: 'rgba(255,215,0,0.6)', fontWeight: 500, textAlign: 'center', letterSpacing: '1px' }}>📍 Port Vila, Vanuatu</div>
       </div>
 
       {/* Main */}
