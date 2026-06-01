@@ -440,8 +440,8 @@ function Unpaid({ invoices, payments, reload, setModal, setSelected }) {
             <option value="">All months</option>
             {monthOptions.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
           </select>
-          <button className="btn btn-sm" onClick={printReport}><i className="ti ti-printer"></i> Print</button>
-          <button className="btn btn-sm" onClick={sendAllReminders}><i className="ti ti-mail"></i> Email All</button>
+          <button className="btn btn-sm" style={{ background: "#8B6914", borderColor: "#6B5010", color: "#fff", fontWeight: 500 }} onClick={printReport}><i className="ti ti-printer"></i> Print</button>
+          <button className="btn btn-sm" style={{ background: "#8B6914", borderColor: "#6B5010", color: "#fff", fontWeight: 500 }} onClick={sendAllReminders}><i className="ti ti-mail"></i> Email All</button>
         </div>
       </Topbar>
       <div style={{ padding: 20 }}>
@@ -614,7 +614,7 @@ function Reports({ invoices, payments }) {
             <option value="quarter">This quarter</option>
             <option value="year">This year</option>
           </select>
-          <button className="btn btn-sm" onClick={printReport}><i className="ti ti-printer"></i> Print Report</button>
+          <button className="btn btn-sm" style={{ background: "#8B6914", borderColor: "#6B5010", color: "#fff", fontWeight: 500 }} onClick={printReport}><i className="ti ti-printer"></i> Print Report</button>
         </div>
       </Topbar>
       <div style={{ padding: 20 }}>
