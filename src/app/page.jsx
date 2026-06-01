@@ -811,6 +811,114 @@ function Clients({ clients, invoices, reload, setModal }) {
   )
 }
 
+function previewInvoice(inv) {
+  const w = window.open('', '_blank')
+  if (!w) { alert('Please allow popups for this site to preview invoices.'); return }
+  w.document.write(`<!DOCTYPE html><html><head><title>Invoice Preview</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; color: #222; font-size: 13px; background: #f0ebe0; }
+    .page { max-width: 800px; margin: 20px auto; background: #fff; border-radius: 4px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.15); }
+    .header { background: linear-gradient(135deg, #1A0D06 0%, #3D2214 50%, #5C3D0A 100%); padding: 28px 40px; display: flex; justify-content: space-between; align-items: flex-start; }
+    .logo-name { font-size: 26px; font-weight: 900; color: #FFD700; letter-spacing: 3px; font-family: Georgia, serif; text-shadow: 0 2px 8px rgba(0,0,0,0.4); }
+    .logo-star-row { display: flex; align-items: center; gap: 8px; margin: 5px 0; }
+    .logo-line { flex: 1; height: 1px; background: rgba(255,215,0,0.5); }
+    .logo-sub { display: flex; justify-content: space-between; font-size: 8px; font-weight: 800; color: rgba(255,215,0,0.85); letter-spacing: 4px; }
+    .logo-contact { font-size: 10px; color: rgba(255,255,255,0.7); margin-top: 10px; line-height: 1.8; }
+    .inv-meta { text-align: right; color: #fff; }
+    .inv-num { font-size: 26px; font-weight: 700; color: #FFD700; }
+    .inv-date { font-size: 11px; color: rgba(255,255,255,0.8); margin-top: 5px; line-height: 1.8; }
+    .draft-badge { display: inline-block; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); color: #FFD700; padding: 3px 12px; border-radius: 99px; font-size: 10px; font-weight: 700; letter-spacing: 1px; margin-top: 8px; }
+    .body { padding: 32px 40px; }
+    .bill-row { display: flex; justify-content: space-between; margin-bottom: 28px; gap: 20px; }
+    .bill-label { font-size: 9px; font-weight: 800; color: #8B6914; text-transform: uppercase; letter-spacing: 2px; border-bottom: 2px solid #8B6914; padding-bottom: 3px; margin-bottom: 8px; display: inline-block; }
+    .bill-name { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+    .bill-detail { font-size: 12px; color: #555; line-height: 1.7; }
+    table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+    thead tr { background: linear-gradient(135deg, #3D2214, #8B6914); }
+    th { padding: 10px 14px; text-align: left; font-size: 10px; font-weight: 700; color: #FFD700; letter-spacing: 1px; text-transform: uppercase; }
+    td { padding: 11px 14px; border-bottom: 1px solid #f0ebe0; font-size: 13px; }
+    tr:nth-child(even) td { background: #faf6ee; }
+    .text-right { text-align: right; }
+    .totals { margin-left: auto; width: 280px; margin-top: 12px; }
+    .trow { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid #eee; font-size: 13px; color: #555; }
+    .trow.grand { border-bottom: none; font-size: 17px; font-weight: 800; color: #3D2214; padding-top: 12px; }
+    .notes { background: #faf6ee; border-left: 4px solid #8B6914; padding: 12px 16px; border-radius: 0 6px 6px 0; margin-top: 20px; font-size: 12px; color: #555; }
+    .thankyou { text-align: center; font-size: 14px; font-weight: 600; color: #8B6914; margin: 24px 0 16px; font-style: italic; }
+    .footer { background: linear-gradient(135deg, #1A0D06, #5C3D0A); padding: 18px 40px; display: flex; justify-content: space-between; align-items: center; }
+    .footer-l { color: rgba(255,255,255,0.85); font-size: 11px; line-height: 1.9; }
+    .footer-r { text-align: right; color: #FFD700; font-size: 11px; line-height: 1.9; }
+    .noprint { background: #333; color: #fff; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; }
+    .printbtn { background: #8B6914; color: #fff; border: none; padding: 7px 18px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; }
+    @media print { .noprint { display: none; } body { background: #fff; } .page { box-shadow: none; margin: 0; } }
+  </style></head><body>
+  <div class="noprint">
+    <span>⚠️ DRAFT PREVIEW — Invoice not saved yet</span>
+    <button class="printbtn" onclick="window.print()">🖨️ Print / Save PDF</button>
+  </div>
+  <div class="page">
+    <div class="header">
+      <div>
+        <div class="logo-name">MALAKESA</div>
+        <div class="logo-star-row"><div class="logo-line"></div><span style="color:#FFD700;font-size:16px">★</span><div class="logo-line"></div></div>
+        <div class="logo-sub"><span>TRANSFERS</span><span>TOURS</span></div>
+        <div class="logo-contact">
+          📍 Port Vila, Shefa Province, Vanuatu<br>
+          📞 +678 00000 &nbsp;|&nbsp; ✉️ info@malakesa.vu
+        </div>
+      </div>
+      <div class="inv-meta">
+        <div class="inv-num">${inv.number || 'DRAFT'}</div>
+        <div class="inv-date">
+          Issue date: <strong>${inv.date || ''}</strong><br>
+          Due date: <strong>${inv.due_date || ''}</strong>
+        </div>
+        <div class="draft-badge">PREVIEW</div>
+      </div>
+    </div>
+    <div class="body">
+      <div class="bill-row">
+        <div>
+          <div class="bill-label">Bill to</div>
+          <div class="bill-name">${inv.client_name || '—'}</div>
+          <div class="bill-detail">${inv.client_email || ''}</div>
+        </div>
+        <div style="text-align:right">
+          <div class="bill-label">Invoice details</div>
+          <div class="bill-detail">Invoice #: <strong>${inv.number || 'DRAFT'}</strong></div>
+          <div class="bill-detail">Issue: <strong>${inv.date || ''}</strong></div>
+          <div class="bill-detail">Due: <strong>${inv.due_date || ''}</strong></div>
+        </div>
+      </div>
+      <table>
+        <thead><tr><th>Description</th><th class="text-right">Qty</th><th class="text-right">Rate (VT)</th><th class="text-right">Amount (VT)</th></tr></thead>
+        <tbody>${(inv.items || []).map(it => '<tr><td>' + (it.description || '') + '</td><td class="text-right">' + (it.qty || 0) + '</td><td class="text-right">VT ' + Number(it.rate || 0).toLocaleString() + '</td><td class="text-right">VT ' + Number(it.total || 0).toLocaleString() + '</td></tr>').join('')}</tbody>
+      </table>
+      <div class="totals">
+        <div class="trow"><span>Subtotal</span><span>VT ${Number(inv.subtotal || 0).toLocaleString()}</span></div>
+        <div class="trow"><span>${inv.tax > 0 ? 'VAT (15%)' : 'VAT'}</span><span>${inv.tax > 0 ? 'VT ' + Number(inv.tax).toLocaleString() : 'Not applicable'}</span></div>
+        <div class="trow grand"><span>TOTAL DUE</span><span>VT ${Number(inv.total || 0).toLocaleString()}</span></div>
+      </div>
+      ${inv.notes ? '<div class="notes"><strong>Notes:</strong> ' + inv.notes + '</div>' : ''}
+      <div class="thankyou">Thank you for choosing Malakesa Transfer &amp; Tour!</div>
+    </div>
+    <div class="footer">
+      <div class="footer-l">
+        <div><strong style="color:#FFD700">Malakesa Transfer &amp; Tour</strong></div>
+        <div>Port Vila, Shefa Province, Vanuatu</div>
+        <div>📞 +678 00000 &nbsp;|&nbsp; ✉️ info@malakesa.vu</div>
+      </div>
+      <div class="footer-r">
+        <div>Payment due: ${inv.due_date || ''}</div>
+        <div>Cash | Bank Transfer | Mobile Money</div>
+        <div style="font-size:10px;color:rgba(255,215,0,0.6);margin-top:4px">Computer generated invoice</div>
+      </div>
+    </div>
+  </div>
+  <script>window.document.close()<\/script>
+  </body></html>`)
+}
+
 function NewInvoiceModal({ clients, onClose, onSave }) {
   const [form, setForm] = useState({ client_id: '', client_name: '', client_email: '', date: todayStr(), due_date: addDays(todayStr(), 14), notes: '' })
   const [items, setItems] = useState([{ id: uid(), description: '', qty: 1, rate: '', total: 0 }, { id: uid(), description: '', qty: 1, rate: '', total: 0 }])
