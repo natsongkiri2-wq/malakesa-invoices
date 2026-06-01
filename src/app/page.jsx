@@ -54,12 +54,12 @@ export default function App() {
   useEffect(() => { reload() }, [])
 
   const nav = [
-    { id: 'dashboard', label: 'Dashboard', icon: 'ti-home' },
-    { id: 'invoices', label: 'Invoices', icon: 'ti-file-dollar' },
-    { id: 'payments', label: 'Payments Received', icon: 'ti-coin' },
-    { id: 'unpaid', label: 'Unpaid Invoices', icon: 'ti-clock-exclamation' },
-    { id: 'reports', label: 'Reports', icon: 'ti-chart-pie' },
-    { id: 'clients', label: 'Clients', icon: 'ti-address-book' },
+    { id: 'dashboard', label: 'Dashboard', icon: 'ti-layout-dashboard', emoji: '⊞' },
+    { id: 'invoices', label: 'Invoices', icon: 'ti-file-invoice', emoji: '🧾' },
+    { id: 'payments', label: 'Payments Received', icon: 'ti-cash-register', emoji: '💳' },
+    { id: 'unpaid', label: 'Unpaid Invoices', icon: 'ti-alert-triangle', emoji: '⚠️' },
+    { id: 'reports', label: 'Reports', icon: 'ti-chart-bar', emoji: '📊' },
+    { id: 'clients', label: 'Clients', icon: 'ti-users', emoji: '👥' },
   ]
 
   return (
@@ -89,7 +89,7 @@ export default function App() {
             </div>
           ))}
         </nav>
-        <div style={{ padding: '14px 16px', borderTop: '1px solid rgba(255,215,0,0.15)', fontSize: 11, color: 'rgba(255,215,0,0.6)', fontWeight: 500, textAlign: 'center', letterSpacing: '1px' }}>📍 Port Vila, Vanuatu</div>
+        <div style={{ padding: '14px 16px', borderTop: '1px solid rgba(255,215,0,0.2)', fontSize: 11, color: '#C9A84C', fontWeight: 600, textAlign: 'center', letterSpacing: '1.5px' }}>📍 PORT VILA, VANUATU</div>
       </div>
 
       {/* Main */}
