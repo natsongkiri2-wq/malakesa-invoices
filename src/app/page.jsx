@@ -214,7 +214,7 @@ function Invoices({ invoices, payments, reload, setModal, setSelected }) {
     await fetch('/api/invoices/' + id, { method: 'DELETE' }); reload()
   }
 
-  const selectStyle = { padding: '6px 10px', borderRadius: 8, border: '0.5px solid rgba(0,0,0,0.15)', fontSize: 13, fontFamily: 'inherit', background: '#fff' }
+  const selectStyle = { padding: '6px 10px', borderRadius: 8, border: '0.5px solid #8B6914', fontSize: 13, fontFamily: 'inherit', background: '#8B6914', color: '#fff', fontWeight: 500, cursor: 'pointer' }
 
   return (
     <>
@@ -224,7 +224,7 @@ function Invoices({ invoices, payments, reload, setModal, setSelected }) {
       <div style={{ padding: 20 }}>
         {/* Filter bar */}
         <div style={{ background: '#fff', border: '0.5px solid rgba(139,105,20,0.2)', borderRadius: 12, padding: '12px 16px', marginBottom: 16, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-          <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search invoice # or client..." style={{ ...selectStyle, minWidth: 200 }} />
+          <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search invoice # or client..." style={{ ...selectStyle, background: '#fff', color: '#1a1a1a', minWidth: 200 }} />
           <select value={filterClient} onChange={e => setFilterClient(e.target.value)} style={selectStyle}>
             <option value="">All clients</option>
             {allClients.map(c => <option key={c} value={c}>{c}</option>)}
@@ -432,11 +432,11 @@ function Unpaid({ invoices, payments, reload, setModal, setSelected }) {
     <>
       <Topbar title="Unpaid Invoices">
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          <select value={filterClient} onChange={e => setFilterClient(e.target.value)} style={{ padding: '6px 10px', borderRadius: 8, border: '0.5px solid rgba(0,0,0,0.15)', fontSize: 13, fontFamily: 'inherit', background: '#fff' }}>
+          <select value={filterClient} onChange={e => setFilterClient(e.target.value)} style={{ padding: '6px 10px', borderRadius: 8, border: '0.5px solid #8B6914', fontSize: 13, fontFamily: 'inherit', background: '#8B6914', color: '#fff', fontWeight: 500, cursor: 'pointer' }}>
             <option value="">All clients</option>
             {clients.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
-          <select value={filterMonth} onChange={e => setFilterMonth(e.target.value)} style={{ padding: '6px 10px', borderRadius: 8, border: '0.5px solid rgba(0,0,0,0.15)', fontSize: 13, fontFamily: 'inherit', background: '#fff' }}>
+          <select value={filterMonth} onChange={e => setFilterMonth(e.target.value)} style={{ padding: '6px 10px', borderRadius: 8, border: '0.5px solid #8B6914', fontSize: 13, fontFamily: 'inherit', background: '#8B6914', color: '#fff', fontWeight: 500, cursor: 'pointer' }}>
             <option value="">All months</option>
             {monthOptions.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
           </select>
@@ -604,11 +604,11 @@ function Reports({ invoices, payments }) {
     <>
       <Topbar title="Reports">
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          <select value={filterClient} onChange={e => setFilterClient(e.target.value)} style={{ padding: '6px 10px', borderRadius: 8, border: '0.5px solid rgba(0,0,0,0.15)', fontSize: 13, fontFamily: 'inherit', background: '#fff' }}>
+          <select value={filterClient} onChange={e => setFilterClient(e.target.value)} style={{ padding: '6px 10px', borderRadius: 8, border: '0.5px solid #8B6914', fontSize: 13, fontFamily: 'inherit', background: '#8B6914', color: '#fff', fontWeight: 500, cursor: 'pointer' }}>
             <option value="">All clients</option>
             {allClients.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
-          <select value={period} onChange={e => setPeriod(e.target.value)} style={{ padding: '6px 10px', borderRadius: 8, border: '0.5px solid rgba(0,0,0,0.15)', fontSize: 13, fontFamily: 'inherit', background: '#fff' }}>
+          <select value={period} onChange={e => setPeriod(e.target.value)} style={{ padding: '6px 10px', borderRadius: 8, border: '0.5px solid #8B6914', fontSize: 13, fontFamily: 'inherit', background: '#8B6914', color: '#fff', fontWeight: 500, cursor: 'pointer' }}>
             <option value="all">All time</option>
             <option value="month">This month</option>
             <option value="quarter">This quarter</option>
