@@ -69,7 +69,7 @@ export async function POST(req) {
         ${inv.notes ? `<div style="margin-top:20px;padding:12px;background:#f9f9f9;border-radius:6px;font-size:13px;color:#555">${inv.notes}</div>` : ''}
         <div style="margin-top:28px;padding-top:20px;border-top:1px solid #eee;font-size:12px;color:#888">
           <p>Please make payment by <strong>${fmtDate(inv.due_date)}</strong>.</p>
-          <p>Malakesa Transfer and Tour | Port Vila, Vanuatu | info@malakesa.vu</p>
+          <p>Malakesa Transfer and Tour | Port Vila, Vanuatu | accounts@malakesa.vu</p>
         </div>
       </div></body></html>`
 

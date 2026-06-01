@@ -52,7 +52,7 @@ export async function POST(req) {
         <p style="font-size:14px;color:#555">Please arrange payment at your earliest convenience. If you have already made payment, please disregard this notice.</p>
         <p style="font-size:14px;color:#555">If you have any questions, please don't hesitate to contact us.</p>
         <div style="margin-top:28px;padding-top:16px;border-top:1px solid #eee;font-size:12px;color:#999">
-          Malakesa Transfer and Tour | Port Vila, Vanuatu | info@malakesa.vu
+          Malakesa Transfer and Tour | Port Vila, Vanuatu | accounts@malakesa.vu
         </div>
       </div></body></html>`
 

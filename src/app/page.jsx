@@ -864,7 +864,7 @@ function previewInvoice(inv) {
         <div class="logo-sub"><span>TRANSFERS</span><span>TOURS</span></div>
         <div class="logo-contact">
           📍 Port Vila, Shefa Province, Vanuatu<br>
-          📞 +678 00000 &nbsp;|&nbsp; ✉️ info@malakesa.vu
+          📞 +678 22712 &nbsp;|&nbsp; 📱 +678 7798712 &nbsp;|&nbsp; ✉️ accounts@malakesa.vu
         </div>
       </div>
       <div class="inv-meta">
@@ -906,7 +906,7 @@ function previewInvoice(inv) {
       <div class="footer-l">
         <div><strong style="color:#FFD700">Malakesa Transfer &amp; Tour</strong></div>
         <div>Port Vila, Shefa Province, Vanuatu</div>
-        <div>📞 +678 00000 &nbsp;|&nbsp; ✉️ info@malakesa.vu</div>
+        <div>📞 +678 22712 &nbsp;|&nbsp; 📱 +678 7798712 &nbsp;|&nbsp; ✉️ accounts@malakesa.vu</div>
       </div>
       <div class="footer-r">
         <div>Payment due: ${inv.due_date || ''}</div>
@@ -1047,7 +1047,7 @@ function ViewInvoiceModal({ invoice, payments, onClose, onPay }) {
   const printInvoice = () => {
     const w = window.open('', '_blank')
     w.document.write(`<!DOCTYPE html><html><head><title>${invoice.number}</title><style>body{font-family:Arial,sans-serif;margin:40px;color:#222;font-size:14px}.header{display:flex;justify-content:space-between;margin-bottom:32px}.company{font-size:22px;font-weight:bold;color:#8B6914}table{width:100%;border-collapse:collapse;margin:20px 0}th{background:#f5f5f5;padding:8px 12px;text-align:left;font-size:12px;color:#666}td{padding:10px 12px;border-bottom:1px solid #eee}.totals{margin-left:auto;width:280px}.tr{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #eee;font-size:13px}.last{font-weight:bold;font-size:15px;border-bottom:none!important}</style></head><body>
-    <div class="header"><div><div class="company">Malakesa Transfer &amp; Tour</div><div style="color:#888;font-size:12px">Port Vila, Vanuatu | info@malakesa.vu</div></div><div style="text-align:right"><div style="font-size:26px;font-weight:bold;color:#8B6914">${invoice.number}</div><div style="color:#888;font-size:12px">Issue: ${fmtDate(invoice.date)}</div><div style="color:#888;font-size:12px">Due: ${fmtDate(invoice.due_date)}</div></div></div>
+    <div class="header"><div><div class="company">Malakesa Transfer &amp; Tour</div><div style="color:#888;font-size:12px">+678 22712 | 7798712 | accounts@malakesa.vu</div></div><div style="text-align:right"><div style="font-size:26px;font-weight:bold;color:#8B6914">${invoice.number}</div><div style="color:#888;font-size:12px">Issue: ${fmtDate(invoice.date)}</div><div style="color:#888;font-size:12px">Due: ${fmtDate(invoice.due_date)}</div></div></div>
     <div style="margin-bottom:24px"><strong>Bill to:</strong><br>${invoice.client_name}<br><span style="color:#888;font-size:13px">${invoice.client_email || ''}</span></div>
     <table><thead><tr><th>Description</th><th>Qty</th><th>Rate (VT)</th><th>Total (VT)</th></tr></thead><tbody>${(invoice.items || []).map(it => `<tr><td>${it.description}</td><td>${it.qty}</td><td>${Number(it.rate).toLocaleString()}</td><td>${Number(it.total).toLocaleString()}</td></tr>`).join('')}</tbody></table>
     <div class="totals"><div class="tr"><span>Subtotal</span><span>VT ${Number(invoice.subtotal).toLocaleString()}</span></div><div class="tr"><span>VAT (15%)</span><span>VT ${Number(invoice.subtotal * 0.15).toLocaleString()}</span></div><div class="tr last"><span>Total</span><span>VT ${Number(invoice.total).toLocaleString()}</span></div><div class="tr" style="color:${balance>0?'#D85A30':'#3B6D11'};font-weight:bold"><span>Balance due</span><span>VT ${Number(balance).toLocaleString()}</span></div></div>
