@@ -714,7 +714,7 @@ function Clients({ clients, invoices, reload, setModal }) {
 
   const startEdit = (client) => {
     setEditingClient(client.id)
-    setEditForm({ name: client.name, email: client.email || '', phone: client.phone || '', address: client.address || '' })
+    setEditForm({ name: client.name, email: client.email || '', email2: client.email2 || '', email3: client.email3 || '', phone: client.phone || '', address: client.address || '' })
   }
 
   const cancelEdit = () => { setEditingClient(null); setEditForm({}) }
@@ -725,7 +725,7 @@ function Clients({ clients, invoices, reload, setModal }) {
     await fetch('/api/clients/' + id, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(editForm)
+      body: JSON.stringify({ ...editForm, all_emails: [editForm.email, editForm.email2, editForm.email3].filter(Boolean).join(', ') })
     })
     setSaving(false)
     setEditingClient(null)
@@ -762,7 +762,9 @@ function Clients({ clients, invoices, reload, setModal }) {
                         <input type="text" value={editForm.name} onChange={e => setEditForm(f => ({ ...f, name: e.target.value }))} style={{ ...inputStyle, fontWeight: 600 }} placeholder="Client name *" />
                       </td>
                       <td style={{ padding: '8px 6px' }}>
-                        <input type="email" value={editForm.email} onChange={e => setEditForm(f => ({ ...f, email: e.target.value }))} style={inputStyle} placeholder="email@example.com" />
+                        <input type="email" value={editForm.email} onChange={e => setEditForm(f => ({ ...f, email: e.target.value }))} style={{ ...inputStyle, marginBottom: 3 }} placeholder="Primary email" />
+                        <input type="email" value={editForm.email2 || ''} onChange={e => setEditForm(f => ({ ...f, email2: e.target.value }))} style={{ ...inputStyle, marginBottom: 3 }} placeholder="Email 2 (optional)" />
+                        <input type="email" value={editForm.email3 || ''} onChange={e => setEditForm(f => ({ ...f, email3: e.target.value }))} style={inputStyle} placeholder="Email 3 (optional)" />
                       </td>
                       <td style={{ padding: '8px 6px' }}>
                         <input type="tel" value={editForm.phone} onChange={e => setEditForm(f => ({ ...f, phone: e.target.value }))} style={inputStyle} placeholder="+678 ..." />
@@ -785,7 +787,7 @@ function Clients({ clients, invoices, reload, setModal }) {
                   ) : (
                     <tr key={c.id} style={{ borderBottom: '0.5px solid rgba(0,0,0,0.09)' }}>
                       <td style={{ padding: '11px 14px' }}><strong>{c.name}</strong></td>
-                      <td style={{ padding: '11px 14px', color: '#666' }}>{c.email || '—'}</td>
+                      <td style={{ padding: '11px 14px', color: '#666' }}>{[c.email, c.email2, c.email3].filter(Boolean).join(', ') || '—'}</td>
                       <td style={{ padding: '11px 14px', color: '#666' }}>{c.phone || '—'}</td>
                       <td style={{ padding: '11px 14px', color: '#666' }}>{c.address || '—'}</td>
                       <td style={{ padding: '11px 14px', textAlign: 'center' }}>{invoices.filter(i => i.client_id === c.id).length}</td>
@@ -1097,15 +1099,31 @@ function ViewInvoiceModal({ invoice, payments, onClose, onPay }) {
 }
 
 function NewClientModal({ onClose, onSave }) {
-  const [form, setForm] = useState({ name: '', email: '', phone: '', address: '' })
+  const [form, setForm] = useState({ name: '', phone: '', address: '' })
+  const [emails, setEmails] = useState([''])
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
+  const addEmail = () => setEmails(e => [...e, ''])
+  const removeEmail = (idx) => setEmails(e => e.filter((_, i) => i !== idx))
+  const updateEmail = (idx, val) => setEmails(e => e.map((em, i) => i === idx ? val : em))
+
   const handleSave = async () => {
     if (!form.name.trim()) { setError('Name is required'); return }
+    const validEmails = emails.filter(e => e.trim())
     setSaving(true)
     try {
-      const res = await fetch('/api/clients', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) })
+      const res = await fetch('/api/clients', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...form,
+          email: validEmails[0] || '',
+          email2: validEmails[1] || null,
+          email3: validEmails[2] || null,
+          all_emails: validEmails.join(', ')
+        })
+      })
       const data = await res.json()
       if (!res.ok) { setError(data.error || 'Failed to save client'); setSaving(false); return }
       onSave()
@@ -1116,14 +1134,53 @@ function NewClientModal({ onClose, onSave }) {
     <Modal title="Add Client" onClose={onClose}>
       {error && <Alert type="danger">{error}</Alert>}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <Field label="Business / client name *"><input type="text" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} style={inputStyle} placeholder="e.g. Blue Lagoon Resorts" /></Field>
-        <Field label="Email"><input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} style={inputStyle} placeholder="contact@client.vu" /></Field>
-        <Field label="Phone"><input type="tel" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} style={inputStyle} placeholder="+678 ..." /></Field>
-        <Field label="Address"><input type="text" value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} style={inputStyle} placeholder="Port Vila, Vanuatu" /></Field>
+        <Field label="Business / client name *">
+          <input type="text" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} style={inputStyle} placeholder="e.g. Blue Lagoon Resorts" />
+        </Field>
+        <div>
+          <label style={{ fontSize: 12, color: '#666', fontWeight: 500, marginBottom: 6, display: 'block' }}>
+            Email address(es)
+            <span style={{ fontSize: 11, color: '#999', fontWeight: 400, marginLeft: 8 }}>— invoices & reminders sent to all</span>
+          </label>
+          {emails.map((em, idx) => (
+            <div key={idx} style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
+              <input
+                type="email"
+                value={em}
+                onChange={e => updateEmail(idx, e.target.value)}
+                style={{ ...inputStyle, flex: 1 }}
+                placeholder={idx === 0 ? 'primary@client.vu' : `additional${idx + 1}@client.vu`}
+              />
+              {idx === 0 ? (
+                <button className="btn btn-sm" onClick={addEmail} title="Add another email"
+                  style={{ background: '#8B6914', borderColor: '#6B5010', color: '#fff', whiteSpace: 'nowrap' }}>
+                  <i className="ti ti-plus"></i>
+                </button>
+              ) : (
+                <button className="btn btn-sm btn-danger" onClick={() => removeEmail(idx)} title="Remove email">
+                  <i className="ti ti-x"></i>
+                </button>
+              )}
+            </div>
+          ))}
+          {emails.length > 1 && (
+            <div style={{ fontSize: 11, color: '#8B6914', marginTop: 2 }}>
+              ✓ Emails & reminders will be sent to all {emails.filter(e=>e.trim()).length} addresses
+            </div>
+          )}
+        </div>
+        <Field label="Phone">
+          <input type="tel" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} style={inputStyle} placeholder="+678 ..." />
+        </Field>
+        <Field label="Address">
+          <input type="text" value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} style={inputStyle} placeholder="Port Vila, Vanuatu" />
+        </Field>
       </div>
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 20 }}>
         <button className="btn" onClick={onClose}>Cancel</button>
-        <button className="btn btn-primary" onClick={handleSave} disabled={saving}><i className="ti ti-check"></i> {saving ? 'Saving...' : 'Save Client'}</button>
+        <button className="btn btn-primary" onClick={handleSave} disabled={saving}>
+          <i className="ti ti-check"></i> {saving ? 'Saving...' : 'Save Client'}
+        </button>
       </div>
     </Modal>
   )
