@@ -18,69 +18,111 @@ export async function POST(req) {
       .from('invoices').select('*').eq('id', invoiceId).single()
     if (error || !inv) return NextResponse.json({ error: 'Invoice not found' }, { status: 404 })
 
+    // Get client to find ALL email addresses
+    const { data: client } = await supabase
+      .from('clients').select('*').eq('id', inv.client_id).single()
+
     const { data: payments } = await supabase
       .from('payments').select('*').eq('invoice_id', invoiceId)
 
     const totalPaid = (payments || []).reduce((s, p) => s + Number(p.amount), 0)
     const balance = Math.max(0, Number(inv.total) - totalPaid)
 
+    // Collect ALL valid email addresses
+    const allEmails = [
+      inv.client_email,
+      client?.email,
+      client?.email2,
+      client?.email3
+    ].filter(Boolean).filter(e => e.trim() !== '')
+    const uniqueEmails = [...new Set(allEmails)]
+
+    if (uniqueEmails.length === 0) {
+      return NextResponse.json({ error: 'No email address found for this client' }, { status: 400 })
+    }
+
     const itemsHtml = (inv.items || []).map(it => `
       <tr>
-        <td style="padding:8px 12px;border-bottom:1px solid #eee">${it.description}</td>
-        <td style="padding:8px 12px;border-bottom:1px solid #eee;text-align:center">${it.qty}</td>
-        <td style="padding:8px 12px;border-bottom:1px solid #eee;text-align:right">${fmt(it.rate)}</td>
-        <td style="padding:8px 12px;border-bottom:1px solid #eee;text-align:right;font-weight:500">${fmt(it.total)}</td>
+        <td style="padding:9px 12px;border-bottom:1px solid #f0ebe0">${it.description}</td>
+        <td style="padding:9px 12px;border-bottom:1px solid #f0ebe0;text-align:center">${it.qty}</td>
+        <td style="padding:9px 12px;border-bottom:1px solid #f0ebe0;text-align:right">${fmt(it.rate)}</td>
+        <td style="padding:9px 12px;border-bottom:1px solid #f0ebe0;text-align:right;font-weight:600">${fmt(it.total)}</td>
       </tr>`).join('')
 
-    const html = `
-      <!DOCTYPE html><html><body style="font-family:Arial,sans-serif;color:#222;max-width:620px;margin:0 auto;padding:20px">
-      <div style="background:#5340B7;padding:24px 28px;border-radius:8px 8px 0 0">
-        <div style="color:#fff;font-size:20px;font-weight:bold">Malakesa Transfer &amp; Tour</div>
-        <div style="color:rgba(255,255,255,0.8);font-size:13px;margin-top:4px">Port Vila, Vanuatu</div>
+    const html = `<!DOCTYPE html><html><body style="font-family:Arial,sans-serif;color:#222;max-width:640px;margin:0 auto;padding:20px;background:#f0ebe0">
+    <div style="background:linear-gradient(135deg,#1A0D06,#3D2214,#5C3D0A);padding:28px 32px;border-radius:8px 8px 0 0">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div>
+          <div style="font-size:26px;font-weight:900;color:#FFD700;letter-spacing:3px;font-family:Georgia,serif">MALAKESA</div>
+          <div style="display:flex;align-items:center;gap:8px;margin:5px 0">
+            <div style="height:1px;width:40px;background:rgba(255,215,0,0.5)"></div>
+            <span style="color:#FFD700;font-size:14px">★</span>
+            <div style="height:1px;width:40px;background:rgba(255,215,0,0.5)"></div>
+          </div>
+          <div style="font-size:8px;color:rgba(255,215,0,0.85);letter-spacing:4px;font-weight:800">TRANSFERS &nbsp;&nbsp; TOURS</div>
+          <div style="font-size:11px;color:rgba(255,255,255,0.75);margin-top:10px;line-height:1.9">
+            📍 Port Vila, Shefa Province, Vanuatu<br>
+            📞 +678 22712 &nbsp;|&nbsp; 📱 7798712<br>
+            ✉️ accounts@malakesa.vu
+          </div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:10px;color:rgba(255,255,255,0.6);letter-spacing:2px;margin-bottom:4px">TAX INVOICE</div>
+          <div style="font-size:28px;font-weight:700;color:#FFD700">${inv.number}</div>
+          <div style="font-size:11px;color:rgba(255,255,255,0.8);margin-top:6px;line-height:1.9">
+            Issue: ${fmtDate(inv.date)}<br>
+            Due: <strong style="color:#FFD700">${fmtDate(inv.due_date)}</strong>
+          </div>
+        </div>
       </div>
-      <div style="background:#fff;border:1px solid #eee;padding:28px;border-radius:0 0 8px 8px">
-        <div style="display:flex;justify-content:space-between;margin-bottom:24px">
-          <div>
-            <div style="font-size:13px;color:#888">Invoice number</div>
-            <div style="font-size:22px;font-weight:bold;color:#5340B7">${inv.number}</div>
-          </div>
-          <div style="text-align:right">
-            <div style="font-size:12px;color:#888">Issue date: ${fmtDate(inv.date)}</div>
-            <div style="font-size:12px;color:#888;margin-top:2px">Due date: <strong style="color:#D85A30">${fmtDate(inv.due_date)}</strong></div>
-          </div>
+    </div>
+    <div style="background:#fff;padding:28px 32px;border-radius:0 0 8px 8px;border:1px solid #e0d5c0;border-top:none">
+      <div style="display:flex;justify-content:space-between;margin-bottom:24px;padding-bottom:20px;border-bottom:1px solid #f0ebe0">
+        <div>
+          <div style="font-size:9px;font-weight:800;color:#8B6914;text-transform:uppercase;letter-spacing:2px;margin-bottom:6px;border-bottom:2px solid #8B6914;padding-bottom:3px;display:inline-block">Bill To</div>
+          <div style="font-size:15px;font-weight:700">${inv.client_name}</div>
+          ${uniqueEmails.length > 1
+            ? `<div style="font-size:11px;color:#888;margin-top:3px">${uniqueEmails.join(' &nbsp;|&nbsp; ')}</div>`
+            : `<div style="font-size:12px;color:#888;margin-top:3px">${uniqueEmails[0]}</div>`}
         </div>
-        <p>Dear <strong>${inv.client_name}</strong>,</p>
-        <p style="color:#555;font-size:14px">Please find below your invoice from Malakesa Transfer and Tour.</p>
-        <table style="width:100%;border-collapse:collapse;margin:20px 0;font-size:14px">
-          <thead><tr style="background:#f5f5f5">
-            <th style="padding:8px 12px;text-align:left;font-size:12px;color:#666">Description</th>
-            <th style="padding:8px 12px;text-align:center;font-size:12px;color:#666">Qty</th>
-            <th style="padding:8px 12px;text-align:right;font-size:12px;color:#666">Rate</th>
-            <th style="padding:8px 12px;text-align:right;font-size:12px;color:#666">Total</th>
-          </tr></thead>
-          <tbody>${itemsHtml}</tbody>
-        </table>
-        <div style="margin-left:auto;width:260px">
-          <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #eee;font-size:13px"><span style="color:#888">Subtotal</span><span>${fmt(inv.subtotal)}</span></div>
-          <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #eee;font-size:13px"><span style="color:#888">Tax (0%)</span><span>VT 0</span></div>
-          <div style="display:flex;justify-content:space-between;padding:8px 0;font-weight:bold;font-size:16px"><span>Total</span><span>${fmt(inv.total)}</span></div>
-          <div style="display:flex;justify-content:space-between;padding:6px 0;font-weight:bold;color:${balance > 0 ? '#D85A30' : '#3B6D11'}"><span>Balance due</span><span>${fmt(balance)}</span></div>
+      </div>
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <thead><tr style="background:linear-gradient(135deg,#3D2214,#8B6914)">
+          <th style="padding:10px 12px;text-align:left;color:#FFD700;font-size:10px;letter-spacing:1px;font-weight:700">DESCRIPTION</th>
+          <th style="padding:10px 12px;text-align:center;color:#FFD700;font-size:10px;letter-spacing:1px;font-weight:700">QTY</th>
+          <th style="padding:10px 12px;text-align:right;color:#FFD700;font-size:10px;letter-spacing:1px;font-weight:700">RATE (VT)</th>
+          <th style="padding:10px 12px;text-align:right;color:#FFD700;font-size:10px;letter-spacing:1px;font-weight:700">TOTAL (VT)</th>
+        </tr></thead>
+        <tbody>${itemsHtml}</tbody>
+      </table>
+      <div style="margin-left:auto;width:270px;margin-top:16px">
+        <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #f0ebe0;font-size:13px"><span style="color:#888">Subtotal</span><span>${fmt(inv.subtotal)}</span></div>
+        <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #f0ebe0;font-size:13px"><span style="color:#888">${Number(inv.tax) > 0 ? 'VAT (15%)' : 'VAT'}</span><span>${Number(inv.tax) > 0 ? fmt(inv.tax) : 'Not applicable'}</span></div>
+        <div style="display:flex;justify-content:space-between;padding:12px 16px;background:linear-gradient(135deg,#3D2214,#8B6914);border-radius:6px;margin-top:10px">
+          <span style="font-weight:700;color:#fff;font-size:15px">TOTAL DUE</span>
+          <span style="font-weight:700;color:#FFD700;font-size:15px">${fmt(inv.total)}</span>
         </div>
-        ${inv.notes ? `<div style="margin-top:20px;padding:12px;background:#f9f9f9;border-radius:6px;font-size:13px;color:#555">${inv.notes}</div>` : ''}
-        <div style="margin-top:28px;padding-top:20px;border-top:1px solid #eee;font-size:12px;color:#888">
-          <p>Please make payment by <strong>${fmtDate(inv.due_date)}</strong>.</p>
-          <p>Malakesa Transfer and Tour | Port Vila, Vanuatu | accounts@malakesa.vu</p>
-        </div>
-      </div></body></html>`
+        ${balance < inv.total && totalPaid > 0 ? `
+        <div style="display:flex;justify-content:space-between;padding:7px 0;font-size:13px;color:#3B6D11;font-weight:600"><span>Amount paid</span><span>- ${fmt(totalPaid)}</span></div>
+        <div style="display:flex;justify-content:space-between;padding:8px 12px;background:${balance > 0 ? '#FAEEDA' : '#EAF3DE'};border-radius:6px;font-size:14px;font-weight:700;color:${balance > 0 ? '#8B6914' : '#27500A'}"><span>Balance due</span><span>${fmt(balance)}</span></div>
+        ` : ''}
+      </div>
+      ${inv.notes ? `<div style="margin-top:20px;padding:12px 16px;background:#faf6ee;border-left:4px solid #8B6914;border-radius:0 6px 6px 0;font-size:12px;color:#555"><strong>Notes:</strong> ${inv.notes}</div>` : ''}
+      <p style="text-align:center;font-size:13px;font-style:italic;color:#8B6914;margin:28px 0 16px">Thank you for choosing Malakesa Transfer &amp; Tour!</p>
+      <div style="padding-top:16px;border-top:1px solid #f0ebe0;font-size:11px;color:#999;text-align:center;line-height:1.9">
+        Malakesa Transfer and Tour &nbsp;|&nbsp; Port Vila, Vanuatu<br>
+        📞 +678 22712 &nbsp;|&nbsp; 📱 7798712 &nbsp;|&nbsp; ✉️ accounts@malakesa.vu
+      </div>
+    </div></body></html>`
 
     await resend.emails.send({
-      from: `${process.env.COMPANY_NAME} <${process.env.COMPANY_EMAIL}>`,
-      to: [inv.client_email],
+      from: `${process.env.COMPANY_NAME || 'Malakesa Transfer and Tour'} <${process.env.COMPANY_EMAIL || 'accounts@malakesa.vu'}>`,
+      to: uniqueEmails,
       subject: `Invoice ${inv.number} from Malakesa Transfer and Tour`,
       html,
     })
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ success: true, sentTo: uniqueEmails })
   } catch (err) {
     return NextResponse.json({ error: err.message }, { status: 500 })
   }
