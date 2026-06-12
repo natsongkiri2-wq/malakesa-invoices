@@ -1059,7 +1059,31 @@ function ViewInvoiceModal({ invoice, payments, onClose, onPay }) {
     w.document.close()
   }
 
-  const emailInvoice = () => {
+  const [emailStatus, setEmailStatus] = useState('')
+
+  const emailInvoice = async () => {
+    setEmailStatus('sending')
+    try {
+      const res = await fetch('/api/send-invoice', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ invoiceId: invoice.id })
+      })
+      const data = await res.json()
+      if (res.ok) {
+        setEmailStatus('Sent to ' + (data.sentTo || []).join(', '))
+        setTimeout(() => setEmailStatus(''), 5000)
+        return
+      }
+      setEmailStatus('error: ' + (data.error || 'Failed to send'))
+      setTimeout(() => setEmailStatus(''), 6000)
+    } catch (e) {
+      setEmailStatus('error: ' + e.message)
+      setTimeout(() => setEmailStatus(''), 6000)
+    }
+  }
+
+  const mailtoFallback = () => {
     const subject = encodeURIComponent(`Invoice ${invoice.number} from Malakesa Transfer and Tour`)
     const body = encodeURIComponent(`Dear ${invoice.client_name},\n\nPlease find your invoice ${invoice.number} for ${fmt(invoice.total)}, due ${fmtDate(invoice.due_date)}.\n\nServices:\n${(invoice.items || []).map(it => `- ${it.description}: ${fmt(it.total)}`).join('\n')}\n\nTotal: ${fmt(invoice.total)}\nBalance due: ${fmt(balance)}\n\nThank you,\nMalakesa Transfer and Tour`)
     window.open(`mailto:${invoice.client_email || ''}?subject=${subject}&body=${body}`, '_blank')
@@ -1071,7 +1095,15 @@ function ViewInvoiceModal({ invoice, payments, onClose, onPay }) {
         <Badge status={status} />
         <div style={{ display: 'flex', gap: 6 }}>
           <button className="btn btn-sm" onClick={printInvoice}><i className="ti ti-printer"></i> Print</button>
-          <button className="btn btn-sm" onClick={emailInvoice}><i className="ti ti-mail"></i> Email</button>
+          <button className="btn btn-sm" onClick={emailInvoice} disabled={emailStatus === 'sending'}><i className="ti ti-mail"></i> {emailStatus === 'sending' ? 'Sending...' : 'Email'}</button>
+          {emailStatus && emailStatus !== 'sending' && (
+            <span style={{ fontSize: 12, color: emailStatus.startsWith('error') ? '#D85A30' : '#3B6D11', display: 'flex', alignItems: 'center', gap: 6 }}>
+              {emailStatus.startsWith('error') ? emailStatus.replace('error: ', '') : emailStatus}
+              {emailStatus.startsWith('error') && (
+                <button className="btn btn-sm" onClick={mailtoFallback} style={{ fontSize: 11 }}>Open in mail app</button>
+              )}
+            </span>
+          )}
           {balance > 0 && <button className="btn btn-sm" style={{ borderColor: '#3B6D11', color: '#3B6D11' }} onClick={onPay}><i className="ti ti-cash"></i> Record payment</button>}
         </div>
       </div>
