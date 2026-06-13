@@ -823,9 +823,8 @@ function previewInvoice(inv) {
     .page { max-width: 800px; margin: 20px auto; background: #fff; border-radius: 4px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.15); }
     .header { background: linear-gradient(135deg, #1A0D06 0%, #3D2214 50%, #5C3D0A 100%); padding: 28px 40px; display: flex; justify-content: space-between; align-items: flex-start; }
     .logo-name { font-size: 26px; font-weight: 900; color: #FFD700; letter-spacing: 3px; font-family: Georgia, serif; text-shadow: 0 2px 8px rgba(0,0,0,0.4); }
-    .logo-star-row { display: flex; align-items: center; gap: 8px; margin: 5px 0; }
-    .logo-line { flex: 1; height: 1px; background: rgba(255,215,0,0.5); }
-    .logo-sub { display: flex; justify-content: space-between; font-size: 8px; font-weight: 800; color: rgba(255,215,0,0.85); letter-spacing: 4px; }
+    .logo-star-row { display: flex; align-items: center; justify-content: center; gap: 12px; margin: 5px 0; font-size: 8px; font-weight: 800; color: rgba(255,215,0,0.85); letter-spacing: 4px; }
+    .logo-line { flex: 1; height: 1px; background: rgba(255,215,0,0.5); max-width: 60px; }
     .logo-contact { font-size: 10px; color: rgba(255,255,255,0.7); margin-top: 10px; line-height: 1.8; }
     .inv-meta { text-align: right; color: #fff; }
     .inv-num { font-size: 26px; font-weight: 700; color: #FFD700; }
@@ -862,8 +861,7 @@ function previewInvoice(inv) {
     <div class="header">
       <div>
         <div class="logo-name">MALAKESA</div>
-        <div class="logo-star-row"><div class="logo-line"></div><span style="color:#FFD700;font-size:16px">★</span><div class="logo-line"></div></div>
-        <div class="logo-sub"><span>TRANSFERS</span><span>TOURS</span></div>
+        <div class="logo-star-row"><span>TRANSFERS</span><div class="logo-line"></div><span style="color:#FFD700;font-size:16px">★</span><div class="logo-line"></div><span>TOURS</span></div>
         <div class="logo-contact">
           📍 Port Vila, Shefa Province, Vanuatu<br>
           📞 +678 22712 &nbsp;|&nbsp; 📱 +678 7798712 &nbsp;|&nbsp; ✉️ accounts@malakesa.vu
@@ -1058,9 +1056,8 @@ function ViewInvoiceModal({ invoice, payments, onClose, onPay }) {
     .page { max-width: 800px; margin: 20px auto; background: #fff; border-radius: 4px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.15); }
     .header { background: linear-gradient(135deg, #1A0D06 0%, #3D2214 50%, #5C3D0A 100%); padding: 28px 40px; display: flex; justify-content: space-between; align-items: flex-start; }
     .logo-name { font-size: 26px; font-weight: 900; color: #FFD700; letter-spacing: 3px; font-family: Georgia, serif; text-shadow: 0 2px 8px rgba(0,0,0,0.4); }
-    .logo-star-row { display: flex; align-items: center; gap: 8px; margin: 5px 0; }
-    .logo-line { flex: 1; height: 1px; background: rgba(255,215,0,0.5); }
-    .logo-sub { display: flex; justify-content: space-between; font-size: 8px; font-weight: 800; color: rgba(255,215,0,0.85); letter-spacing: 4px; }
+    .logo-star-row { display: flex; align-items: center; justify-content: center; gap: 12px; margin: 5px 0; font-size: 8px; font-weight: 800; color: rgba(255,215,0,0.85); letter-spacing: 4px; }
+    .logo-line { flex: 1; height: 1px; background: rgba(255,215,0,0.5); max-width: 60px; }
     .logo-contact { font-size: 10px; color: rgba(255,255,255,0.7); margin-top: 10px; line-height: 1.8; }
     .inv-meta { text-align: right; color: #fff; }
     .inv-num { font-size: 26px; font-weight: 700; color: #FFD700; }
@@ -1101,8 +1098,7 @@ function ViewInvoiceModal({ invoice, payments, onClose, onPay }) {
     <div class="header">
       <div>
         <div class="logo-name">MALAKESA</div>
-        <div class="logo-star-row"><div class="logo-line"></div><span style="color:#FFD700;font-size:16px">★</span><div class="logo-line"></div></div>
-        <div class="logo-sub"><span>TRANSFERS</span><span>TOURS</span></div>
+        <div class="logo-star-row"><span>TRANSFERS</span><div class="logo-line"></div><span style="color:#FFD700;font-size:16px">★</span><div class="logo-line"></div><span>TOURS</span></div>
         <div class="logo-contact">
           📍 Port Vila, Shefa Province, Vanuatu<br>
           📞 +678 22712 &nbsp;|&nbsp; 📱 +678 7798712 &nbsp;|&nbsp; ✉️ accounts@malakesa.vu
