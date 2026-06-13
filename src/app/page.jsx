@@ -1048,13 +1048,116 @@ function ViewInvoiceModal({ invoice, payments, onClose, onPay }) {
 
   const printInvoice = () => {
     const w = window.open('', '_blank')
-    w.document.write(`<!DOCTYPE html><html><head><title>${invoice.number}</title><style>body{font-family:Arial,sans-serif;margin:40px;color:#222;font-size:14px}.header{display:flex;justify-content:space-between;margin-bottom:32px}.company{font-size:22px;font-weight:bold;color:#8B6914}table{width:100%;border-collapse:collapse;margin:20px 0}th{background:#f5f5f5;padding:8px 12px;text-align:left;font-size:12px;color:#666}td{padding:10px 12px;border-bottom:1px solid #eee}.totals{margin-left:auto;width:280px}.tr{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #eee;font-size:13px}.last{font-weight:bold;font-size:15px;border-bottom:none!important}</style></head><body>
-    <div class="header"><div><div class="company">Malakesa Transfer &amp; Tour</div><div style="color:#888;font-size:12px">+678 22712 | 7798712 | accounts@malakesa.vu</div></div><div style="text-align:right"><div style="font-size:26px;font-weight:bold;color:#8B6914">${invoice.number}</div><div style="color:#888;font-size:12px">Issue: ${fmtDate(invoice.date)}</div><div style="color:#888;font-size:12px">Due: ${fmtDate(invoice.due_date)}</div></div></div>
-    <div style="margin-bottom:24px"><strong>Bill to:</strong><br>${invoice.client_name}<br><span style="color:#888;font-size:13px">${invoice.client_email || ''}</span></div>
-    <table><thead><tr><th>Description</th><th>Qty</th><th>Rate (VT)</th><th>Total (VT)</th></tr></thead><tbody>${(invoice.items || []).map(it => `<tr><td>${it.description}</td><td>${it.qty}</td><td>${Number(it.rate).toLocaleString()}</td><td>${Number(it.total).toLocaleString()}</td></tr>`).join('')}</tbody></table>
-    <div class="totals"><div class="tr"><span>Subtotal</span><span>VT ${Number(invoice.subtotal).toLocaleString()}</span></div><div class="tr"><span>VAT (15%)</span><span>VT ${Number(invoice.subtotal * 0.15).toLocaleString()}</span></div><div class="tr last"><span>Total</span><span>VT ${Number(invoice.total).toLocaleString()}</span></div><div class="tr" style="color:${balance>0?'#D85A30':'#3B6D11'};font-weight:bold"><span>Balance due</span><span>VT ${Number(balance).toLocaleString()}</span></div></div>
-    ${invoice.notes ? `<div style="margin-top:20px;padding:12px;background:#f9f9f9;border-radius:6px;font-size:13px;color:#555">${invoice.notes}</div>` : ''}
-    ${invPayments.length > 0 ? `<div style="margin-top:20px"><strong>Payments received:</strong>${invPayments.map(p => `<div style="padding:6px 0;border-bottom:1px solid #eee;display:flex;justify-content:space-between;font-size:13px"><span>${fmtDate(p.date)} — ${p.method}</span><span style="color:#3B6D11;font-weight:bold">VT ${Number(p.amount).toLocaleString()}</span></div>`).join('')}</div>` : ''}
+    if (!w) { alert('Please allow popups for this site to print invoices.'); return }
+    const statusColors = { paid: '#27500A', unpaid: '#712B13', overdue: '#791F1F', partial: '#633806', draft: '#444441' }
+    const statusBg = { paid: '#E3F2DE', unpaid: '#FAECE7', overdue: '#FCEBEB', partial: '#FAEEDA', draft: '#F1EFE8' }
+    w.document.write(`<!DOCTYPE html><html><head><title>${invoice.number}</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; color: #222; font-size: 13px; background: #f0ebe0; }
+    .page { max-width: 800px; margin: 20px auto; background: #fff; border-radius: 4px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.15); }
+    .header { background: linear-gradient(135deg, #1A0D06 0%, #3D2214 50%, #5C3D0A 100%); padding: 28px 40px; display: flex; justify-content: space-between; align-items: flex-start; }
+    .logo-name { font-size: 26px; font-weight: 900; color: #FFD700; letter-spacing: 3px; font-family: Georgia, serif; text-shadow: 0 2px 8px rgba(0,0,0,0.4); }
+    .logo-star-row { display: flex; align-items: center; gap: 8px; margin: 5px 0; }
+    .logo-line { flex: 1; height: 1px; background: rgba(255,215,0,0.5); }
+    .logo-sub { display: flex; justify-content: space-between; font-size: 8px; font-weight: 800; color: rgba(255,215,0,0.85); letter-spacing: 4px; }
+    .logo-contact { font-size: 10px; color: rgba(255,255,255,0.7); margin-top: 10px; line-height: 1.8; }
+    .inv-meta { text-align: right; color: #fff; }
+    .inv-num { font-size: 26px; font-weight: 700; color: #FFD700; }
+    .inv-date { font-size: 11px; color: rgba(255,255,255,0.8); margin-top: 5px; line-height: 1.8; }
+    .status-badge { display: inline-block; padding: 3px 12px; border-radius: 99px; font-size: 10px; font-weight: 700; letter-spacing: 1px; margin-top: 8px; text-transform: uppercase; }
+    .body { padding: 32px 40px; }
+    .bill-row { display: flex; justify-content: space-between; margin-bottom: 28px; gap: 20px; }
+    .bill-label { font-size: 9px; font-weight: 800; color: #8B6914; text-transform: uppercase; letter-spacing: 2px; border-bottom: 2px solid #8B6914; padding-bottom: 3px; margin-bottom: 8px; display: inline-block; }
+    .bill-name { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+    .bill-detail { font-size: 12px; color: #555; line-height: 1.7; }
+    table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+    thead tr { background: linear-gradient(135deg, #3D2214, #8B6914); }
+    th { padding: 10px 14px; text-align: left; font-size: 10px; font-weight: 700; color: #FFD700; letter-spacing: 1px; text-transform: uppercase; }
+    td { padding: 11px 14px; border-bottom: 1px solid #f0ebe0; font-size: 13px; }
+    tr:nth-child(even) td { background: #faf6ee; }
+    .text-right { text-align: right; }
+    .totals { margin-left: auto; width: 280px; margin-top: 12px; }
+    .trow { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid #eee; font-size: 13px; color: #555; }
+    .trow.grand { border-bottom: none; font-size: 17px; font-weight: 800; color: #3D2214; padding-top: 12px; }
+    .trow.balance { font-weight: 700; }
+    .notes { background: #faf6ee; border-left: 4px solid #8B6914; padding: 12px 16px; border-radius: 0 6px 6px 0; margin-top: 20px; font-size: 12px; color: #555; }
+    .payments { margin-top: 20px; }
+    .payments-title { font-size: 12px; font-weight: 700; color: #3D2214; margin-bottom: 6px; }
+    .payrow { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #f0ebe0; font-size: 12px; }
+    .thankyou { text-align: center; font-size: 14px; font-weight: 600; color: #8B6914; margin: 24px 0 16px; font-style: italic; }
+    .footer { background: linear-gradient(135deg, #1A0D06, #5C3D0A); padding: 18px 40px; display: flex; justify-content: space-between; align-items: center; }
+    .footer-l { color: rgba(255,255,255,0.85); font-size: 11px; line-height: 1.9; }
+    .footer-r { text-align: right; color: #FFD700; font-size: 11px; line-height: 1.9; }
+    .noprint { background: #333; color: #fff; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; }
+    .printbtn { background: #8B6914; color: #fff; border: none; padding: 7px 18px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; }
+    @media print { .noprint { display: none; } body { background: #fff; } .page { box-shadow: none; margin: 0; } }
+  </style></head><body>
+  <div class="noprint">
+    <span>Invoice ${invoice.number}</span>
+    <button class="printbtn" onclick="window.print()">🖨️ Print / Save PDF</button>
+  </div>
+  <div class="page">
+    <div class="header">
+      <div>
+        <div class="logo-name">MALAKESA</div>
+        <div class="logo-star-row"><div class="logo-line"></div><span style="color:#FFD700;font-size:16px">★</span><div class="logo-line"></div></div>
+        <div class="logo-sub"><span>TRANSFERS</span><span>TOURS</span></div>
+        <div class="logo-contact">
+          📍 Port Vila, Shefa Province, Vanuatu<br>
+          📞 +678 22712 &nbsp;|&nbsp; 📱 +678 7798712 &nbsp;|&nbsp; ✉️ accounts@malakesa.vu
+        </div>
+      </div>
+      <div class="inv-meta">
+        <div class="inv-num">${invoice.number}</div>
+        <div class="inv-date">
+          Issue date: <strong>${fmtDate(invoice.date)}</strong><br>
+          Due date: <strong>${fmtDate(invoice.due_date)}</strong>
+        </div>
+        <div class="status-badge" style="background:${statusBg[status] || '#F1EFE8'};color:${statusColors[status] || '#444441'}">${status}</div>
+      </div>
+    </div>
+    <div class="body">
+      <div class="bill-row">
+        <div>
+          <div class="bill-label">Bill to</div>
+          <div class="bill-name">${invoice.client_name || '—'}</div>
+          <div class="bill-detail">${invoice.client_email || ''}</div>
+        </div>
+        <div style="text-align:right">
+          <div class="bill-label">Invoice details</div>
+          <div class="bill-detail">Invoice #: <strong>${invoice.number}</strong></div>
+          <div class="bill-detail">Issue: <strong>${fmtDate(invoice.date)}</strong></div>
+          <div class="bill-detail">Due: <strong>${fmtDate(invoice.due_date)}</strong></div>
+        </div>
+      </div>
+      <table>
+        <thead><tr><th>Description</th><th class="text-right">Qty</th><th class="text-right">Rate (VT)</th><th class="text-right">Amount (VT)</th></tr></thead>
+        <tbody>${(invoice.items || []).map(it => '<tr><td>' + (it.description || '') + '</td><td class="text-right">' + (it.qty || 0) + '</td><td class="text-right">VT ' + Number(it.rate || 0).toLocaleString() + '</td><td class="text-right">VT ' + Number(it.total || 0).toLocaleString() + '</td></tr>').join('')}</tbody>
+      </table>
+      <div class="totals">
+        <div class="trow"><span>Subtotal</span><span>VT ${Number(invoice.subtotal || 0).toLocaleString()}</span></div>
+        <div class="trow"><span>${invoice.tax > 0 ? 'VAT (15%)' : 'VAT'}</span><span>${invoice.tax > 0 ? 'VT ' + Number(invoice.tax).toLocaleString() : 'Not applicable'}</span></div>
+        <div class="trow grand"><span>TOTAL DUE</span><span>VT ${Number(invoice.total || 0).toLocaleString()}</span></div>
+        <div class="trow balance" style="color:${balance > 0 ? '#D85A30' : '#3B6D11'}"><span>Balance due</span><span>VT ${Number(balance).toLocaleString()}</span></div>
+      </div>
+      ${invPayments.length > 0 ? `<div class="payments"><div class="payments-title">Payments received</div>${invPayments.map(p => `<div class="payrow"><span>${fmtDate(p.date)} — ${p.method}</span><span style="color:#3B6D11;font-weight:bold">VT ${Number(p.amount).toLocaleString()}</span></div>`).join('')}</div>` : ''}
+      ${invoice.notes ? '<div class="notes"><strong>Notes:</strong> ' + invoice.notes + '</div>' : ''}
+      <div class="thankyou">Thank you for choosing Malakesa Transfer &amp; Tour!</div>
+    </div>
+    <div class="footer">
+      <div class="footer-l">
+        <div><strong style="color:#FFD700">Malakesa Transfer &amp; Tour</strong></div>
+        <div>Port Vila, Shefa Province, Vanuatu</div>
+        <div>📞 +678 22712 &nbsp;|&nbsp; 📱 +678 7798712 &nbsp;|&nbsp; ✉️ accounts@malakesa.vu</div>
+      </div>
+      <div class="footer-r">
+        <div>Payment due: ${fmtDate(invoice.due_date)}</div>
+        <div>Cash | Bank Transfer | Mobile Money</div>
+        <div style="opacity:0.7">Computer generated invoice</div>
+      </div>
+    </div>
+  </div>
     <script>window.onload=()=>window.print()<\/script></body></html>`)
     w.document.close()
   }
