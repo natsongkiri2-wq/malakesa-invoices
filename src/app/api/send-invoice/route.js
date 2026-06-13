@@ -1,8 +1,6 @@
 import { supabase } from '@/lib/supabase'
-import { Resend } from 'resend'
+import { sendMail } from '@/lib/mailer'
 import { NextResponse } from 'next/server'
-
-const resend = new Resend(process.env.RESEND_API_KEY)
 
 function fmtDate(d) {
   if (!d) return ''
@@ -115,8 +113,7 @@ export async function POST(req) {
       </div>
     </div></body></html>`
 
-    await resend.emails.send({
-      from: `${process.env.COMPANY_NAME || 'Malakesa Transfer and Tour'} <${process.env.COMPANY_EMAIL || 'accounts@malakesa.vu'}>`,
+    await sendMail({
       to: uniqueEmails,
       subject: `Invoice ${inv.number} from Malakesa Transfer and Tour`,
       html,
