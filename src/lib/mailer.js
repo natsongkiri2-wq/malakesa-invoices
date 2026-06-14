@@ -2,10 +2,10 @@ import nodemailer from 'nodemailer'
 
 export function getTransporter() {
   return nodemailer.createTransport({
-    host: process.env.EMAIL_HOST || 'smtp.vanuatu.com.vu',
-    port: Number(process.env.EMAIL_PORT || 25),
-    secure: process.env.EMAIL_SECURE === 'true', // false for port 25/587 without SSL
-    ignoreTLS: process.env.EMAIL_IGNORE_TLS !== 'false', // server uses "None" encryption
+    host: process.env.EMAIL_HOST || 'smtp.gmail.com',
+    port: Number(process.env.EMAIL_PORT || 587),
+    secure: false,     // false = STARTTLS on port 587
+    requireTLS: true,  // force STARTTLS (required by Gmail)
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS,
