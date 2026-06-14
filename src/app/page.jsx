@@ -1158,6 +1158,98 @@ function ViewInvoiceModal({ invoice, payments, onClose, onPay }) {
     w.document.close()
   }
 
+  const printReceipt = (payment) => {
+    const w = window.open('', '_blank')
+    if (!w) { alert('Please allow popups to print receipts.'); return }
+    const receiptNum = `REC-${invoice.number}-${(payment.id||'').slice(-4).toUpperCase() || '0001'}`
+    w.document.write(`<!DOCTYPE html><html><head><title>${receiptNum}</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; background: #f0ebe0; }
+    .page { max-width: 520px; margin: 20px auto; background: #fff; border-radius: 4px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.15); }
+    .header { background: linear-gradient(135deg, #1A0D06 0%, #3D2214 50%, #5C3D0A 100%); padding: 24px 32px; }
+    .logo { font-size: 22px; font-weight: 900; color: #FFD700; letter-spacing: 3px; font-family: Georgia, serif; text-align: center; }
+    .star-row { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 5px 0; font-size: 8px; font-weight: 800; color: rgba(255,215,0,0.85); letter-spacing: 4px; }
+    .line { flex: 1; height: 1px; background: rgba(255,215,0,0.4); max-width: 50px; }
+    .rec-label { text-align: center; font-size: 10px; color: rgba(255,255,255,0.6); letter-spacing: 3px; margin-top: 10px; }
+    .rec-num { text-align: center; font-size: 20px; font-weight: 700; color: #FFD700; margin-top: 2px; }
+    .body { padding: 24px 32px; }
+    .paid-stamp { text-align: center; margin: 16px 0; }
+    .paid-box { display: inline-block; border: 3px solid #3B6D11; color: #3B6D11; font-size: 22px; font-weight: 900; letter-spacing: 6px; padding: 6px 24px; border-radius: 4px; transform: rotate(-3deg); }
+    .section { margin: 16px 0; padding: 14px 16px; background: #faf6ee; border-radius: 6px; }
+    .row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #f0ebe0; font-size: 13px; }
+    .row:last-child { border-bottom: none; }
+    .label { color: #888; }
+    .val { font-weight: 600; color: #222; }
+    .amount-box { background: linear-gradient(135deg, #3D2214, #8B6914); border-radius: 6px; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; margin: 16px 0; }
+    .thankyou { text-align: center; font-size: 13px; font-style: italic; color: #8B6914; margin: 16px 0 8px; }
+    .footer { background: linear-gradient(135deg, #1A0D06, #5C3D0A); padding: 14px 32px; text-align: center; color: rgba(255,255,255,0.7); font-size: 10px; line-height: 1.9; }
+    .noprint { background: #333; color: #fff; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; }
+    .printbtn { background: #8B6914; color: #fff; border: none; padding: 7px 18px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; }
+    @media print { .noprint { display: none; } body { background: #fff; } .page { box-shadow: none; margin: 0; max-width: 100%; } }
+  </style></head><body>
+  <div class="noprint"><span>${receiptNum}</span><button class="printbtn" onclick="window.print()">Print / Save PDF</button></div>
+  <div class="page">
+    <div class="header">
+      <div class="logo">MALAKESA</div>
+      <div class="star-row"><div class="line"></div><span style="color:#FFD700;font-size:14px">*</span><div class="line"></div></div>
+      <div class="star-row"><span>TRANSFERS</span><div class="line" style="max-width:30px"></div><span>TOURS</span></div>
+      <div class="rec-label">PAYMENT RECEIPT</div>
+      <div class="rec-num">${receiptNum}</div>
+    </div>
+    <div class="body">
+      <div class="paid-stamp"><div class="paid-box">PAID</div></div>
+      <div class="section">
+        <div class="row"><span class="label">Receipt No.</span><span class="val">${receiptNum}</span></div>
+        <div class="row"><span class="label">Invoice No.</span><span class="val">${invoice.number}</span></div>
+        <div class="row"><span class="label">Date paid</span><span class="val">${fmtDate(payment.date)}</span></div>
+        <div class="row"><span class="label">Payment method</span><span class="val">${payment.method}</span></div>
+        ${payment.notes ? '<div class="row"><span class="label">Notes</span><span class="val">' + payment.notes + '</span></div>' : ''}
+      </div>
+      <div class="section">
+        <div class="row"><span class="label">Client</span><span class="val">${invoice.client_name}</span></div>
+        <div class="row"><span class="label">Invoice total</span><span class="val">VT ${Number(invoice.total).toLocaleString()}</span></div>
+      </div>
+      <div class="amount-box">
+        <span style="color:#fff;font-weight:700;font-size:15px">AMOUNT RECEIVED</span>
+        <span style="color:#FFD700;font-weight:700;font-size:22px">VT ${Number(payment.amount).toLocaleString()}</span>
+      </div>
+      <div class="thankyou">Thank you for your payment - Malakesa Transfer and Tour!</div>
+    </div>
+    <div class="footer">
+      Malakesa Transfer and Tour | Port Vila, Shefa Province, Vanuatu<br>
+      +678 22712 | +678 7798712 | accounts@malakesa.vu
+    </div>
+  </div>
+  <script>window.onload=()=>window.print()<\/script></body></html>`)
+    w.document.close()
+  }
+
+  const [receiptStatus, setReceiptStatus] = useState({})
+
+  const emailReceipt = async (payment) => {
+    const pid = payment.id || 'x'
+    setReceiptStatus(s => ({ ...s, [pid]: 'sending' }))
+    try {
+      const res = await fetch('/api/send-receipt', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ invoiceId: invoice.id, paymentId: pid })
+      })
+      const data = await res.json()
+      if (res.ok) {
+        setReceiptStatus(s => ({ ...s, [pid]: 'Sent to ' + (data.sentTo || []).join(', ') }))
+        setTimeout(() => setReceiptStatus(s => ({ ...s, [pid]: '' })), 5000)
+      } else {
+        setReceiptStatus(s => ({ ...s, [pid]: 'error: ' + (data.error || 'Failed') }))
+        setTimeout(() => setReceiptStatus(s => ({ ...s, [pid]: '' })), 6000)
+      }
+    } catch (e) {
+      setReceiptStatus(s => ({ ...s, [pid]: 'error: ' + e.message }))
+      setTimeout(() => setReceiptStatus(s => ({ ...s, [pid]: '' })), 6000)
+    }
+  }
+
   const [emailStatus, setEmailStatus] = useState('')
 
   const emailInvoice = async () => {
@@ -1222,7 +1314,7 @@ function ViewInvoiceModal({ invoice, payments, onClose, onPay }) {
       {invPayments.length > 0 && (
         <div style={{ marginTop: 16 }}>
           <div style={{ fontWeight: 500, marginBottom: 8 }}>Payments received</div>
-          {invPayments.map(p => <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0', borderBottom: '0.5px solid rgba(0,0,0,0.09)', fontSize: 13 }}><span>{fmtDate(p.date)} — <span style={{ background: '#E8D5A3', padding: '1px 8px', borderRadius: 99, fontSize: 11 }}>{p.method}</span>{p.note ? ` · ${p.note}` : ''}</span><span style={{ color: '#3B6D11', fontWeight: 500 }}>{fmt(p.amount)}</span></div>)}
+          {invPayments.map(p => <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '7px 0', borderBottom: '0.5px solid rgba(0,0,0,0.09)', fontSize: 13, gap: 8 }}><span>{fmtDate(p.date)} — <span style={{ background: '#E8D5A3', padding: '1px 8px', borderRadius: 99, fontSize: 11 }}>{p.method}</span>{p.note ? ` · ${p.note}` : ''}</span><div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><span style={{ color: '#3B6D11', fontWeight: 500 }}>{fmt(p.amount)}</span><button className="btn btn-sm" style={{ fontSize: 11, padding: '2px 8px' }} onClick={() => printReceipt(p)} title="Print receipt"><i className="ti ti-printer"></i> Receipt</button><button className="btn btn-sm" style={{ fontSize: 11, padding: '2px 8px' }} onClick={() => emailReceipt(p)} disabled={receiptStatus[p.id] === 'sending'} title="Email receipt"><i className="ti ti-mail"></i> {receiptStatus[p.id] === 'sending' ? '...' : 'Receipt'}</button>{receiptStatus[p.id] && receiptStatus[p.id] !== 'sending' && <span style={{ fontSize: 11, color: receiptStatus[p.id].startsWith('error') ? '#D85A30' : '#3B6D11' }}>{receiptStatus[p.id].startsWith('error') ? 'Failed' : '✓ Sent'}</span>}</div></div>)}
         </div>
       )}
     </Modal>
