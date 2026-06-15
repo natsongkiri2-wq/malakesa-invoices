@@ -67,7 +67,7 @@ export default function App() {
       {/* Sidebar */}
       <div style={{ width: 220, minWidth: 220, background: 'linear-gradient(180deg, #2C1810 0%, #3D2214 40%, #4A2D18 70%, #5C3D0A 100%)', display: 'flex', flexDirection: 'column', boxShadow: '4px 0 20px rgba(0,0,0,0.25)' }}>
         <div style={{ padding: '20px 16px 16px', borderBottom: '1px solid rgba(255,215,0,0.15)', textAlign: 'center', background: 'linear-gradient(135deg, #1A0D06 0%, #3D2214 100%)' }}>
-          <div style={{ fontSize: 22, fontWeight: 900, color: '#FFD700', letterSpacing: '3px', fontFamily: 'Georgia, serif', textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}>MALAKESA</div>
+          <img src="/malakesa-logo.svg" alt="Malakesa Transfer and Tour" style={{ width: '100%', maxWidth: 180, filter: 'brightness(0) invert(1) sepia(1) saturate(2) hue-rotate(5deg)', marginBottom: 4 }} />
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, margin: '6px 0' }}>
             <div style={{ height: 1, flex: 1, background: 'linear-gradient(90deg, transparent, rgba(255,215,0,0.6))' }}></div>
             <div style={{ fontSize: 18, color: '#FFD700', textShadow: '0 0 10px rgba(255,215,0,0.5)' }}>★</div>
@@ -860,8 +860,7 @@ function previewInvoice(inv) {
   <div class="page">
     <div class="header">
       <div>
-        <div class="logo-name">MALAKESA</div>
-        <div class="logo-star-row"><span>TRANSFERS</span><div class="logo-line"></div><span style="color:#FFD700;font-size:16px">★</span><div class="logo-line"></div><span>TOURS</span></div>
+        <img src="/malakesa-logo.svg" alt="Malakesa Transfer and Tour" style="width:200px;filter:brightness(0) invert(1) sepia(1) saturate(2) hue-rotate(5deg)" />
         <div class="logo-contact">
           📍 Port Vila, Shefa Province, Vanuatu<br>
           📞 +678 22712 &nbsp;|&nbsp; 📱 +678 7798712 &nbsp;|&nbsp; ✉️ accounts@malakesa.vu
@@ -1097,8 +1096,7 @@ function ViewInvoiceModal({ invoice, payments, onClose, onPay }) {
   <div class="page">
     <div class="header">
       <div>
-        <div class="logo-name">MALAKESA</div>
-        <div class="logo-star-row"><span>TRANSFERS</span><div class="logo-line"></div><span style="color:#FFD700;font-size:16px">★</span><div class="logo-line"></div><span>TOURS</span></div>
+        <img src="/malakesa-logo.svg" alt="Malakesa Transfer and Tour" style="width:200px;filter:brightness(0) invert(1) sepia(1) saturate(2) hue-rotate(5deg)" />
         <div class="logo-contact">
           📍 Port Vila, Shefa Province, Vanuatu<br>
           📞 +678 22712 &nbsp;|&nbsp; 📱 +678 7798712 &nbsp;|&nbsp; ✉️ accounts@malakesa.vu
@@ -1191,7 +1189,7 @@ function ViewInvoiceModal({ invoice, payments, onClose, onPay }) {
   <div class="noprint"><span>${receiptNum}</span><button class="printbtn" onclick="window.print()">Print / Save PDF</button></div>
   <div class="page">
     <div class="header">
-      <div class="logo">MALAKESA</div>
+      <img src="/malakesa-logo.svg" alt="Malakesa Transfer and Tour" style="width:160px;filter:brightness(0) invert(1) sepia(1) saturate(2) hue-rotate(5deg)" />
       <div class="star-row"><div class="line"></div><span style="color:#FFD700;font-size:14px">*</span><div class="line"></div></div>
       <div class="star-row"><span>TRANSFERS</span><div class="line" style="max-width:30px"></div><span>TOURS</span></div>
       <div class="rec-label">PAYMENT RECEIPT</div>
