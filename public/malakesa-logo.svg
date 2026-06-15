@@ -1,0 +1,13 @@
+<svg width="100%" viewBox="0 0 680 180" role="img" xmlns="http://www.w3.org/2000/svg">
+  <title>Malakesa Transfer and Tour logo</title>
+  <defs>
+    <style>@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@900&display=swap');</style>
+  </defs>
+  <text x="340" y="92" text-anchor="middle" font-family="'Playfair Display', Georgia, serif" font-size="88" font-weight="900" fill="#6B4A0F" letter-spacing="5" style="paint-order:stroke; stroke:#5a3d0a; stroke-width:2px; stroke-linejoin:round">MALAKESA</text>
+  <rect x="40" y="114" width="600" height="2.5" fill="#6B4A0F"/>
+  <ellipse cx="340" cy="138" rx="78" ry="35" fill="#7A5518" stroke="#4a3008" stroke-width="2.5"/>
+  <ellipse cx="340" cy="138" rx="71" ry="28" fill="none" stroke="#c8a04a" stroke-width="1.5"/>
+  <polygon points="340,116 347,132 366,132 352,143 357,160 340,150 323,160 328,143 314,132 333,132" fill="#1a1008" stroke="#1a1008" stroke-width="1"/>
+  <text x="148" y="162" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="700" letter-spacing="3" fill="#6B4A0F">TRANSFERS</text>
+  <text x="532" y="162" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="700" letter-spacing="3" fill="#6B4A0F">TOURS</text>
+</svg>
