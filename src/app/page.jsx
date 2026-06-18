@@ -35,6 +35,7 @@ export default function App() {
   const [invoices, setInvoices] = useState([])
   const [payments, setPayments] = useState([])
   const [clients, setClients] = useState([])
+  const [purchases, setPurchases] = useState([])
   const [loading, setLoading] = useState(true)
   const [modal, setModal] = useState(null)
   const [selected, setSelected] = useState(null)
@@ -42,13 +43,14 @@ export default function App() {
   const reload = async () => {
     try {
       setLoading(true)
-      const [invRes, pmtRes, clRes] = await Promise.all([
-        fetch('/api/invoices'), fetch('/api/payments'), fetch('/api/clients')
+      const [invRes, pmtRes, clRes, purRes] = await Promise.all([
+        fetch('/api/invoices'), fetch('/api/payments'), fetch('/api/clients'), fetch('/api/purchases')
       ])
-      const [invs, pmts, cls] = await Promise.all([invRes.json(), pmtRes.json(), clRes.json()])
+      const [invs, pmts, cls, purs] = await Promise.all([invRes.json(), pmtRes.json(), clRes.json(), purRes.json()])
       setInvoices(Array.isArray(invs) ? invs : [])
       setPayments(Array.isArray(pmts) ? pmts : [])
       setClients(Array.isArray(cls) ? cls : [])
+      setPurchases(Array.isArray(purs) ? purs : [])
     } catch(e) { console.error(e) }
     setLoading(false)
   }
@@ -60,6 +62,7 @@ export default function App() {
     { id: 'invoices', label: 'Invoices', icon: 'ti-file-invoice' },
     { id: 'payments', label: 'Payments Received', icon: 'ti-cash-register' },
     { id: 'unpaid', label: 'Unpaid Invoices', icon: 'ti-alert-triangle' },
+    { id: 'purchases', label: 'Purchases', icon: 'ti-shopping-cart' },
     { id: 'reports', label: 'Reports', icon: 'ti-chart-bar' },
     { id: 'clients', label: 'Clients', icon: 'ti-users' },
   ]
@@ -100,7 +103,8 @@ export default function App() {
             {page === 'invoices' && <Invoices invoices={invoices} payments={payments} reload={reload} setModal={setModal} setSelected={setSelected} />}
             {page === 'payments' && <Payments payments={payments} invoices={invoices} reload={reload} setModal={setModal} setSelected={setSelected} />}
             {page === 'unpaid' && <Unpaid invoices={invoices} payments={payments} reload={reload} setModal={setModal} setSelected={setSelected} />}
-            {page === 'reports' && <Reports invoices={invoices} payments={payments} />}
+            {page === 'purchases' && <Purchases purchases={purchases} reload={reload} setModal={setModal} />}
+            {page === 'reports' && <Reports invoices={invoices} payments={payments} purchases={purchases} />}
             {page === 'clients' && <Clients clients={clients} invoices={invoices} reload={reload} setModal={setModal} />}
           </>
         )}
@@ -110,6 +114,7 @@ export default function App() {
       {modal === 'newInvoice' && <NewInvoiceModal clients={clients} onClose={() => setModal(null)} onSave={() => { setModal(null); reload() }} />}
       {modal === 'payment' && selected && <PaymentModal invoice={selected} payments={payments} onClose={() => { setModal(null); setSelected(null) }} onSave={() => { setModal(null); setSelected(null); reload() }} />}
       {modal === 'newClient' && <NewClientModal onClose={() => setModal(null)} onSave={() => { setModal(null); reload() }} />}
+      {modal === 'newPurchase' && <NewPurchaseModal onClose={() => setModal(null)} onSave={() => { setModal(null); reload() }} />}
       {modal === 'viewInvoice' && selected && <ViewInvoiceModal invoice={selected} payments={payments} onClose={() => { setModal(null); setSelected(null) }} onPay={() => { setModal('payment') }} />}
     </div>
   )
@@ -480,7 +485,7 @@ function Unpaid({ invoices, payments, reload, setModal, setSelected }) {
 }
 
 // ── Reports ───────────────────────────────────────────────
-function Reports({ invoices, payments }) {
+function Reports({ invoices, payments, purchases }) {
   const [tab, setTab] = useState('revenue') // 'revenue' | 'vat'
   const [period, setPeriod] = useState('all')
   const [filterClient, setFilterClient] = useState('')
@@ -568,6 +573,13 @@ function Reports({ invoices, payments }) {
   const vatZeroRated = vatInvoices.filter(i => !i.tax || Number(i.tax) === 0)
   const vatStandard = vatInvoices.filter(i => Number(i.tax) > 0)
   const vatMonthLabel = vatMonthOptions.find(m => m.value === vatMonth)?.label || vatMonth
+
+  // Purchases for VAT month
+  const vatPurchases = (purchases || []).filter(p => p.date && p.date.startsWith(vatMonth)).sort((a, b) => a.date > b.date ? 1 : -1)
+  const vatInputTax = vatPurchases.reduce((s, p) => s + Number(p.vat || 0), 0)
+  const vatPurchasesTotal = vatPurchases.reduce((s, p) => s + Number(p.amount || 0), 0)
+  const vatPurchasesExVat = vatPurchases.reduce((s, p) => s + Number(p.amount_ex_vat || 0), 0)
+  const vatNetPayable = Math.max(0, vatTotalTax - vatInputTax)
 
   const printVatReturn = () => {
     const w = window.open('', '_blank')
@@ -672,17 +684,30 @@ function Reports({ invoices, payments }) {
         </table>`}
 
         <h2>VAT Summary</h2>
-        <table style="max-width:420px">
+        <table style="max-width:480px">
           <tbody>
             <tr><td>Total Sales (inc. VAT)</td><td class="right amt">VT ${Number(vatTotalInv).toLocaleString()}</td></tr>
             <tr><td>Taxable Sales (ex-VAT)</td><td class="right amt">VT ${Number(vatTotalSubtotal).toLocaleString()}</td></tr>
             <tr><td>Zero-Rated Sales</td><td class="right amt">VT ${Number(vatZeroRated.reduce((s,i)=>s+Number(i.total),0)).toLocaleString()}</td></tr>
-            <tr style="background:#E8D5A3;font-weight:700"><td>VAT Output Tax Due (Box 1)</td><td class="right" style="color:#2E7D2E">VT ${Number(vatTotalTax).toLocaleString()}</td></tr>
-            <tr><td>VAT Input Tax (purchases)</td><td class="right zero">Enter manually</td></tr>
-            <tr style="background:#FAEEDA;font-weight:700"><td>Net VAT Payable</td><td class="right" style="color:#D85A30">VT ${Number(vatTotalTax).toLocaleString()} (less input tax)</td></tr>
+            <tr style="background:#E8D5A3;font-weight:700"><td>VAT Output Tax (Box 1)</td><td class="right" style="color:#2E7D2E">VT ${Number(vatTotalTax).toLocaleString()}</td></tr>
+            <tr style="background:#f9f9f9"><td>Total Purchases (inc. VAT)</td><td class="right amt">VT ${Number(vatPurchasesTotal).toLocaleString()}</td></tr>
+            <tr style="background:#f9f9f9"><td>Purchases (ex-VAT)</td><td class="right amt">VT ${Number(vatPurchasesExVat).toLocaleString()}</td></tr>
+            <tr style="background:#E8D5A3;font-weight:700"><td>VAT Input Tax (Box 2)</td><td class="right" style="color:#1A4D1A">VT ${Number(vatInputTax).toLocaleString()}</td></tr>
+            <tr style="background:#FAEEDA;font-weight:700;font-size:14px"><td>NET VAT PAYABLE (Box 1 − Box 2)</td><td class="right" style="color:#D85A30">VT ${Number(vatNetPayable).toLocaleString()}</td></tr>
           </tbody>
         </table>
-        <p style="margin-top:16px;font-size:11px;color:#888">* This report covers output VAT only. Deduct any input VAT on business purchases before filing your VAT return with the Vanuatu Financial Services Commission.</p>
+
+        ${vatPurchases.length > 0 ? `
+        <h2>Purchases — Input VAT (${vatMonthLabel})</h2>
+        <table>
+          <thead><tr><th>Date</th><th>Supplier</th><th>Description</th><th>Category</th><th class="right">Ex-VAT</th><th class="right">Input VAT</th><th class="right">Total</th></tr></thead>
+          <tbody>
+            ${vatPurchases.map(p => '<tr><td>' + fmtDate(p.date) + '</td><td><strong>' + p.supplier + '</strong></td><td>' + (p.description||'—') + '</td><td>' + (p.category||'Other') + '</td><td class="right">VT ' + Number(p.amount_ex_vat||0).toLocaleString() + '</td><td class="right" style="color:#1A4D1A;font-weight:500">' + (Number(p.vat)>0 ? 'VT '+Number(p.vat).toLocaleString() : 'Nil') + '</td><td class="right">VT ' + Number(p.amount||0).toLocaleString() + '</td></tr>').join('')}
+            <tr class="summary-row"><td colspan="4">SUBTOTAL</td><td class="right">VT ${Number(vatPurchasesExVat).toLocaleString()}</td><td class="right" style="color:#1A4D1A">VT ${Number(vatInputTax).toLocaleString()}</td><td class="right">VT ${Number(vatPurchasesTotal).toLocaleString()}</td></tr>
+          </tbody>
+        </table>` : '<p style="color:#888;font-size:12px;margin-bottom:20px">No purchases recorded for this period — add purchases in the Purchases section.</p>'}
+
+        <p style="margin-top:16px;font-size:11px;color:#888">* Verify all figures before filing your VAT return with the Vanuatu Financial Services Commission. TIN: 445579.</p>
       </div>
       <div class="footer">
         <div class="footer-l">
@@ -691,8 +716,9 @@ function Reports({ invoices, payments }) {
           <div>VAT Period: ${vatMonthLabel}</div>
         </div>
         <div class="footer-r">
-          <div>VAT Rate: 15%</div>
           <div>Output Tax: VT ${Number(vatTotalTax).toLocaleString()}</div>
+          <div>Input Tax: VT ${Number(vatInputTax).toLocaleString()}</div>
+          <div style="font-weight:700">Net Payable: VT ${Number(vatNetPayable).toLocaleString()}</div>
           <div style="font-size:10px;opacity:0.7">Computer generated — verify before filing</div>
         </div>
       </div>
@@ -866,9 +892,9 @@ function Reports({ invoices, payments }) {
         {tab === 'vat' && <>
           {/* Summary stat cards */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12, marginBottom: 16 }}>
-            <StatCard label="Output VAT (tax due)" value={fmt(vatTotalTax)} color="#2E7D2E" />
-            <StatCard label="Taxable sales (ex-VAT)" value={fmt(vatTotalSubtotal)} color="#8B6914" />
-            <StatCard label="Zero-rated sales" value={fmt(vatZeroRated.reduce((s,i) => s + Number(i.total), 0))} />
+            <StatCard label="Output VAT (sales)" value={fmt(vatTotalTax)} color="#2E7D2E" />
+            <StatCard label="Input VAT (purchases)" value={fmt(vatInputTax)} color="#1A4D1A" />
+            <StatCard label="Net VAT payable" value={fmt(vatNetPayable)} color="#D85A30" sub="output − input" />
             <StatCard label="Total invoiced" value={fmt(vatTotalInv)} sub={`${vatInvoices.length} invoice${vatInvoices.length !== 1 ? 's' : ''}`} />
           </div>
 
@@ -959,27 +985,51 @@ function Reports({ invoices, payments }) {
               <div style={{ fontWeight: 500, marginBottom: 14, fontSize: 14 }}>VAT Return Summary — {vatMonthLabel}</div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                 <div>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: '#8B6914', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 6 }}>Output (Sales)</div>
                   {[
                     ['Total Sales (inc. VAT)', fmt(vatTotalInv), '#1a1a1a'],
                     ['Taxable Sales (ex-VAT)', fmt(vatTotalSubtotal), '#8B6914'],
                     ['Zero-Rated Sales', fmt(vatZeroRated.reduce((s,i) => s + Number(i.total), 0)), '#666'],
+                    ['VAT Output Tax (Box 1)', fmt(vatTotalTax), '#2E7D2E'],
                   ].map(([label, value, color]) => (
-                    <div key={label} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '0.5px solid rgba(0,0,0,0.09)', fontSize: 13 }}>
+                    <div key={label} style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0', borderBottom: '0.5px solid rgba(0,0,0,0.09)', fontSize: 13 }}>
                       <span style={{ color: '#666' }}>{label}</span>
-                      <span style={{ fontWeight: 500, color }}>{value}</span>
+                      <span style={{ fontWeight: label.includes('Box') ? 700 : 500, color }}>{value}</span>
                     </div>
                   ))}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', fontSize: 14, fontWeight: 700, color: '#2E7D2E', borderTop: '2px solid #2E7D2E', marginTop: 4 }}>
-                    <span>VAT Output Tax Due</span>
-                    <span>{fmt(vatTotalTax)}</span>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: '#1A4D1A', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '12px 0 6px' }}>Input (Purchases)</div>
+                  {[
+                    ['Total Purchases (inc. VAT)', fmt(vatPurchasesTotal), '#1a1a1a'],
+                    ['Purchases (ex-VAT)', fmt(vatPurchasesExVat), '#666'],
+                    ['VAT Input Tax (Box 2)', fmt(vatInputTax), '#1A4D1A'],
+                  ].map(([label, value, color]) => (
+                    <div key={label} style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0', borderBottom: '0.5px solid rgba(0,0,0,0.09)', fontSize: 13 }}>
+                      <span style={{ color: '#666' }}>{label}</span>
+                      <span style={{ fontWeight: label.includes('Box') ? 700 : 500, color }}>{value}</span>
+                    </div>
+                  ))}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', fontSize: 15, fontWeight: 700, color: '#D85A30', borderTop: '2px solid #D85A30', marginTop: 4 }}>
+                    <span>NET VAT PAYABLE</span><span>{fmt(vatNetPayable)}</span>
                   </div>
+                  <div style={{ fontSize: 11, color: '#999', marginTop: 2 }}>Box 1 (VT {Number(vatTotalTax).toLocaleString()}) − Box 2 (VT {Number(vatInputTax).toLocaleString()})</div>
                 </div>
-                <div style={{ background: '#f9f6f0', borderRadius: 8, padding: '14px 16px', fontSize: 12, color: '#555', lineHeight: 1.8 }}>
-                  <div style={{ fontWeight: 600, color: '#3D2214', marginBottom: 6 }}>📋 Filing Reminder</div>
-                  <div>• Output VAT (Box 1): <strong style={{ color: '#2E7D2E' }}>{fmt(vatTotalTax)}</strong></div>
-                  <div>• Deduct your input VAT on purchases</div>
-                  <div>• Net amount payable to VFSC</div>
-                  <div style={{ marginTop: 8, color: '#888', fontSize: 11 }}>TIN: 445579 &nbsp;|&nbsp; Rate: 15%</div>
+                <div style={{ background: '#f9f6f0', borderRadius: 8, padding: '14px 16px', fontSize: 12, color: '#555', lineHeight: 1.9 }}>
+                  <div style={{ fontWeight: 600, color: '#3D2214', marginBottom: 8 }}>📋 Filing Summary</div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '0.5px solid rgba(0,0,0,0.09)', paddingBottom: 6, marginBottom: 6 }}>
+                    <span>Box 1 — Output Tax</span><strong style={{ color: '#2E7D2E' }}>{fmt(vatTotalTax)}</strong>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '0.5px solid rgba(0,0,0,0.09)', paddingBottom: 6, marginBottom: 6 }}>
+                    <span>Box 2 — Input Tax</span><strong style={{ color: '#1A4D1A' }}>{fmt(vatInputTax)}</strong>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: 6, marginBottom: 10 }}>
+                    <span style={{ fontWeight: 700 }}>Net Payable to VFSC</span><strong style={{ color: '#D85A30', fontSize: 14 }}>{fmt(vatNetPayable)}</strong>
+                  </div>
+                  {vatPurchases.length === 0 && (
+                    <div style={{ background: '#FAEEDA', border: '0.5px solid #FAC775', borderRadius: 6, padding: '8px 10px', fontSize: 11, color: '#633806' }}>
+                      ⚠️ No purchases recorded this month. Add purchases to claim input VAT.
+                    </div>
+                  )}
+                  <div style={{ marginTop: 8, color: '#999', fontSize: 11 }}>TIN: 445579 &nbsp;|&nbsp; Rate: 15%</div>
                 </div>
               </div>
             </Card>
@@ -988,6 +1038,207 @@ function Reports({ invoices, payments }) {
 
       </div>
     </>
+  )
+}
+
+// ── Purchases ─────────────────────────────────────────────
+const PURCHASE_CATEGORIES = ['Fuel', 'Vehicle Maintenance', 'Insurance', 'Office Supplies', 'Utilities', 'Staff Costs', 'Marketing', 'Equipment', 'Accommodation', 'Food & Beverages', 'Professional Services', 'Bank Charges', 'Other']
+
+function Purchases({ purchases, reload, setModal }) {
+  const [filterMonth, setFilterMonth] = useState('')
+  const [filterCategory, setFilterCategory] = useState('')
+  const [search, setSearch] = useState('')
+
+  const now = new Date()
+  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+  const monthOptions = Array.from({length: 12}, (_, i) => {
+    const d = new Date(now.getFullYear(), now.getMonth() - 11 + i, 1)
+    return { value: d.toISOString().slice(0,7), label: MONTHS[d.getMonth()] + ' ' + d.getFullYear() }
+  }).reverse()
+
+  let filtered = [...purchases].sort((a,b) => b.date > a.date ? 1 : -1)
+  if (search) filtered = filtered.filter(p => p.supplier?.toLowerCase().includes(search.toLowerCase()) || p.description?.toLowerCase().includes(search.toLowerCase()))
+  if (filterMonth) filtered = filtered.filter(p => p.date?.startsWith(filterMonth))
+  if (filterCategory) filtered = filtered.filter(p => p.category === filterCategory)
+
+  const totalAmount = filtered.reduce((s,p) => s + Number(p.amount || 0), 0)
+  const totalVat = filtered.reduce((s,p) => s + Number(p.vat || 0), 0)
+  const totalExVat = filtered.reduce((s,p) => s + Number(p.amount_ex_vat || 0), 0)
+
+  const hasFilters = search || filterMonth || filterCategory
+  const clearFilters = () => { setSearch(''); setFilterMonth(''); setFilterCategory('') }
+
+  const handleDelete = async (id) => {
+    if (!confirm('Delete this purchase?')) return
+    await fetch('/api/purchases/' + id, { method: 'DELETE' }); reload()
+  }
+
+  const selectStyle = { padding: '6px 10px', borderRadius: 8, border: '0.5px solid #8B6914', fontSize: 13, fontFamily: 'inherit', background: '#8B6914', color: '#fff', fontWeight: 500, cursor: 'pointer' }
+
+  return (
+    <>
+      <Topbar title="Purchases">
+        <button className="btn btn-primary" onClick={() => setModal('newPurchase')}><i className="ti ti-plus"></i> Add Purchase</button>
+      </Topbar>
+      <div style={{ padding: 20 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12, marginBottom: 16 }}>
+          <StatCard label="Total spent" value={fmt(totalAmount)} color="#A32D2D" sub={`${filtered.length} purchases`} />
+          <StatCard label="Subtotal (ex-VAT)" value={fmt(totalExVat)} />
+          <StatCard label="Input VAT (claimable)" value={fmt(totalVat)} color="#2E7D2E" />
+        </div>
+
+        {/* Filter bar */}
+        <div style={{ background: '#fff', border: '0.5px solid rgba(139,105,20,0.2)', borderRadius: 12, padding: '12px 16px', marginBottom: 16, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+          <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search supplier or description..." style={{ ...selectStyle, background: '#fff', color: '#1a1a1a', minWidth: 220 }} />
+          <select value={filterMonth} onChange={e => setFilterMonth(e.target.value)} style={selectStyle}>
+            <option value="">All months</option>
+            {monthOptions.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+          </select>
+          <select value={filterCategory} onChange={e => setFilterCategory(e.target.value)} style={selectStyle}>
+            <option value="">All categories</option>
+            {PURCHASE_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
+          {hasFilters && <button className="btn btn-sm" onClick={clearFilters} style={{ color: '#A32D2D', borderColor: '#A32D2D' }}><i className="ti ti-x"></i> Clear</button>}
+          <div style={{ marginLeft: 'auto', fontSize: 12, color: '#666' }}>
+            {filtered.length} purchase{filtered.length !== 1 ? 's' : ''} &nbsp;|&nbsp; {fmt(totalAmount)} total &nbsp;|&nbsp; <span style={{ color: '#2E7D2E' }}>{fmt(totalVat)} VAT</span>
+          </div>
+        </div>
+
+        <Card style={{ padding: 0, overflow: 'hidden' }}>
+          {filtered.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '48px 20px', color: '#666' }}>
+              <i className="ti ti-shopping-cart-off" style={{ fontSize: 36, display: 'block', marginBottom: 10 }}></i>
+              <p>{hasFilters ? 'No purchases match your filters.' : 'No purchases recorded yet.'}</p>
+              {!hasFilters && <button className="btn btn-primary" style={{ marginTop: 14 }} onClick={() => setModal('newPurchase')}>Add first purchase</button>}
+              {hasFilters && <button className="btn btn-sm" onClick={clearFilters} style={{ marginTop: 10 }}>Clear filters</button>}
+            </div>
+          ) : (
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+              <thead><tr style={{ background: '#E8D5A3' }}>
+                <Th>Date</Th><Th>Supplier</Th><Th>Description</Th><Th>Category</Th>
+                <Th style={{ textAlign: 'right' }}>Ex-VAT</Th>
+                <Th style={{ textAlign: 'right' }}>VAT</Th>
+                <Th style={{ textAlign: 'right' }}>Total</Th>
+                <Th>Ref</Th><Th></Th>
+              </tr></thead>
+              <tbody>
+                {filtered.map(p => (
+                  <tr key={p.id} style={{ borderBottom: '0.5px solid rgba(0,0,0,0.09)' }}>
+                    <Td>{fmtDate(p.date)}</Td>
+                    <Td><strong>{p.supplier}</strong></Td>
+                    <Td style={{ color: '#555' }}>{p.description || '—'}</Td>
+                    <Td><span style={{ background: '#E8D5A3', padding: '2px 8px', borderRadius: 99, fontSize: 11, whiteSpace: 'nowrap' }}>{p.category || 'Other'}</span></Td>
+                    <Td style={{ textAlign: 'right' }}>{fmt(p.amount_ex_vat || 0)}</Td>
+                    <Td style={{ textAlign: 'right', color: Number(p.vat) > 0 ? '#2E7D2E' : '#999', fontWeight: Number(p.vat) > 0 ? 500 : 400 }}>
+                      {Number(p.vat) > 0 ? fmt(p.vat) : <span style={{ fontStyle: 'italic', fontSize: 11 }}>Nil</span>}
+                    </Td>
+                    <Td style={{ textAlign: 'right', fontWeight: 500 }}>{fmt(p.amount)}</Td>
+                    <Td style={{ color: '#999', fontSize: 12 }}>{p.ref || '—'}</Td>
+                    <Td>
+                      <button className="btn btn-sm" style={{ borderColor: '#A32D2D', color: '#A32D2D' }} onClick={() => handleDelete(p.id)} title="Delete"><i className="ti ti-trash"></i></button>
+                    </Td>
+                  </tr>
+                ))}
+                <tr style={{ background: '#E8D5A3', fontWeight: 700 }}>
+                  <td colSpan={4} style={{ padding: '9px 14px', fontSize: 13 }}>TOTAL ({filtered.length} purchases)</td>
+                  <td style={{ padding: '9px 14px', textAlign: 'right', fontSize: 13 }}>{fmt(totalExVat)}</td>
+                  <td style={{ padding: '9px 14px', textAlign: 'right', fontSize: 13, color: '#2E7D2E' }}>{fmt(totalVat)}</td>
+                  <td style={{ padding: '9px 14px', textAlign: 'right', fontSize: 13 }}>{fmt(totalAmount)}</td>
+                  <td colSpan={2}></td>
+                </tr>
+              </tbody>
+            </table>
+          )}
+        </Card>
+      </div>
+    </>
+  )
+}
+
+function NewPurchaseModal({ onClose, onSave }) {
+  const [form, setForm] = useState({
+    date: todayStr(), supplier: '', description: '', category: 'Other',
+    amount: '', vat: '', ref: ''
+  })
+  const [vatMode, setVatMode] = useState('manual') // 'manual' | 'calc15' | 'none'
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+
+  const amount = parseFloat(form.amount) || 0
+  const vat = vatMode === 'calc15' ? Math.round(amount * 15 / 115 * 100) / 100
+             : vatMode === 'none' ? 0
+             : parseFloat(form.vat) || 0
+  const amountExVat = vatMode === 'calc15' ? Math.round((amount - vat) * 100) / 100
+                    : vatMode === 'none' ? amount
+                    : Math.round((amount - vat) * 100) / 100
+
+  const handleSave = async () => {
+    setError('')
+    if (!form.supplier.trim()) { setError('Supplier is required'); return }
+    if (!form.amount || amount <= 0) { setError('Amount is required'); return }
+    if (!form.date) { setError('Date is required'); return }
+    setSaving(true)
+    try {
+      const res = await fetch('/api/purchases', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...form, amount, vat, amount_ex_vat: amountExVat })
+      })
+      if (!res.ok) { const d = await res.json(); setError(d.error || 'Failed to save'); setSaving(false); return }
+      onSave()
+    } catch(e) { setError('Network error — please try again'); setSaving(false) }
+  }
+
+  return (
+    <Modal title="Add Purchase" onClose={onClose} wide>
+      {error && <Alert type="danger">{error}</Alert>}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
+        <Field label="Date *"><input type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} style={inputStyle} /></Field>
+        <Field label="Category">
+          <select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))} style={inputStyle}>
+            {PURCHASE_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
+        </Field>
+        <Field label="Supplier *"><input type="text" value={form.supplier} onChange={e => setForm(f => ({ ...f, supplier: e.target.value }))} style={inputStyle} placeholder="e.g. Shell Vanuatu" /></Field>
+        <Field label="Receipt / Reference"><input type="text" value={form.ref} onChange={e => setForm(f => ({ ...f, ref: e.target.value }))} style={inputStyle} placeholder="Receipt #, invoice ref..." /></Field>
+        <Field label="Description" style={{ gridColumn: '1/-1' }}><input type="text" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} style={inputStyle} placeholder="What was purchased..." /></Field>
+        <Field label="Total Amount (VT inc. VAT) *"><input type="number" value={form.amount} min="0" onChange={e => setForm(f => ({ ...f, amount: e.target.value }))} style={inputStyle} placeholder="0" /></Field>
+        <Field label="VAT Treatment">
+          <select value={vatMode} onChange={e => setVatMode(e.target.value)} style={inputStyle}>
+            <option value="calc15">Calculate VAT at 15% (inc. price)</option>
+            <option value="manual">Enter VAT amount manually</option>
+            <option value="none">No VAT / exempt</option>
+          </select>
+        </Field>
+        {vatMode === 'manual' && (
+          <Field label="VAT Amount (VT)" style={{ gridColumn: '1/-1' }}>
+            <input type="number" value={form.vat} min="0" onChange={e => setForm(f => ({ ...f, vat: e.target.value }))} style={inputStyle} placeholder="0" />
+          </Field>
+        )}
+      </div>
+
+      {/* Live totals preview */}
+      {amount > 0 && (
+        <div style={{ background: '#f5f0e8', borderRadius: 8, padding: '12px 16px', marginBottom: 16 }}>
+          <div style={{ fontWeight: 500, fontSize: 13, marginBottom: 8, color: '#3D2214' }}>Summary</div>
+          {[
+            ['Amount (ex-VAT)', fmt(amountExVat)],
+            [vatMode === 'none' ? 'VAT' : 'Input VAT (claimable)', vatMode === 'none' ? 'Nil' : fmt(vat)],
+            ['Total paid', fmt(amount)],
+          ].map(([l, v], i) => (
+            <div key={l} style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', borderBottom: i < 2 ? '0.5px solid rgba(0,0,0,0.09)' : 'none', fontSize: 13 }}>
+              <span style={{ color: '#666' }}>{l}</span>
+              <span style={{ fontWeight: i === 2 ? 600 : 400, color: l.includes('VAT') && vatMode !== 'none' ? '#2E7D2E' : '#1a1a1a' }}>{v}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 4 }}>
+        <button className="btn" onClick={onClose}>Cancel</button>
+        <button className="btn btn-primary" onClick={handleSave} disabled={saving}><i className="ti ti-check"></i> {saving ? 'Saving...' : 'Save Purchase'}</button>
+      </div>
+    </Modal>
   )
 }
 
