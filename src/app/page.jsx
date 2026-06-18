@@ -36,6 +36,7 @@ export default function App() {
   const [payments, setPayments] = useState([])
   const [clients, setClients] = useState([])
   const [purchases, setPurchases] = useState([])
+  const [suppliers, setSuppliers] = useState([])
   const [loading, setLoading] = useState(true)
   const [modal, setModal] = useState(null)
   const [selected, setSelected] = useState(null)
@@ -43,14 +44,15 @@ export default function App() {
   const reload = async () => {
     try {
       setLoading(true)
-      const [invRes, pmtRes, clRes, purRes] = await Promise.all([
-        fetch('/api/invoices'), fetch('/api/payments'), fetch('/api/clients'), fetch('/api/purchases')
+      const [invRes, pmtRes, clRes, purRes, supRes] = await Promise.all([
+        fetch('/api/invoices'), fetch('/api/payments'), fetch('/api/clients'), fetch('/api/purchases'), fetch('/api/suppliers')
       ])
-      const [invs, pmts, cls, purs] = await Promise.all([invRes.json(), pmtRes.json(), clRes.json(), purRes.json()])
+      const [invs, pmts, cls, purs, sups] = await Promise.all([invRes.json(), pmtRes.json(), clRes.json(), purRes.json(), supRes.json()])
       setInvoices(Array.isArray(invs) ? invs : [])
       setPayments(Array.isArray(pmts) ? pmts : [])
       setClients(Array.isArray(cls) ? cls : [])
       setPurchases(Array.isArray(purs) ? purs : [])
+      setSuppliers(Array.isArray(sups) ? sups : [])
     } catch(e) { console.error(e) }
     setLoading(false)
   }
@@ -63,6 +65,7 @@ export default function App() {
     { id: 'payments', label: 'Payments Received', icon: 'ti-cash-register' },
     { id: 'unpaid', label: 'Unpaid Invoices', icon: 'ti-alert-triangle' },
     { id: 'purchases', label: 'Purchases', icon: 'ti-shopping-cart' },
+    { id: 'suppliers', label: 'Suppliers', icon: 'ti-truck' },
     { id: 'reports', label: 'Reports', icon: 'ti-chart-bar' },
     { id: 'clients', label: 'Clients', icon: 'ti-users' },
   ]
@@ -103,7 +106,8 @@ export default function App() {
             {page === 'invoices' && <Invoices invoices={invoices} payments={payments} reload={reload} setModal={setModal} setSelected={setSelected} />}
             {page === 'payments' && <Payments payments={payments} invoices={invoices} reload={reload} setModal={setModal} setSelected={setSelected} />}
             {page === 'unpaid' && <Unpaid invoices={invoices} payments={payments} reload={reload} setModal={setModal} setSelected={setSelected} />}
-            {page === 'purchases' && <Purchases purchases={purchases} reload={reload} setModal={setModal} />}
+            {page === 'purchases' && <Purchases purchases={purchases} suppliers={suppliers} reload={reload} setModal={setModal} />}
+            {page === 'suppliers' && <Suppliers suppliers={suppliers} purchases={purchases} reload={reload} setModal={setModal} />}
             {page === 'reports' && <Reports invoices={invoices} payments={payments} purchases={purchases} />}
             {page === 'clients' && <Clients clients={clients} invoices={invoices} reload={reload} setModal={setModal} />}
           </>
@@ -114,7 +118,8 @@ export default function App() {
       {modal === 'newInvoice' && <NewInvoiceModal clients={clients} onClose={() => setModal(null)} onSave={() => { setModal(null); reload() }} />}
       {modal === 'payment' && selected && <PaymentModal invoice={selected} payments={payments} onClose={() => { setModal(null); setSelected(null) }} onSave={() => { setModal(null); setSelected(null); reload() }} />}
       {modal === 'newClient' && <NewClientModal onClose={() => setModal(null)} onSave={() => { setModal(null); reload() }} />}
-      {modal === 'newPurchase' && <NewPurchaseModal onClose={() => setModal(null)} onSave={() => { setModal(null); reload() }} />}
+      {modal === 'newSupplier' && <NewSupplierModal onClose={() => setModal(null)} onSave={() => { setModal(null); reload() }} />}
+      {modal === 'newPurchase' && <NewPurchaseModal suppliers={suppliers} onClose={() => setModal(null)} onSave={() => { setModal(null); reload() }} />}
       {modal === 'viewInvoice' && selected && <ViewInvoiceModal invoice={selected} payments={payments} onClose={() => { setModal(null); setSelected(null) }} onPay={() => { setModal('payment') }} />}
     </div>
   )
@@ -1044,7 +1049,7 @@ function Reports({ invoices, payments, purchases }) {
 // ── Purchases ─────────────────────────────────────────────
 const PURCHASE_CATEGORIES = ['Fuel', 'Vehicle Maintenance', 'Insurance', 'Office Supplies', 'Utilities', 'Staff Costs', 'Marketing', 'Equipment', 'Accommodation', 'Food & Beverages', 'Professional Services', 'Bank Charges', 'Other']
 
-function Purchases({ purchases, reload, setModal }) {
+function Purchases({ purchases, suppliers, reload, setModal }) {
   const [filterMonth, setFilterMonth] = useState('')
   const [filterCategory, setFilterCategory] = useState('')
   const [search, setSearch] = useState('')
@@ -1155,12 +1160,12 @@ function Purchases({ purchases, reload, setModal }) {
   )
 }
 
-function NewPurchaseModal({ onClose, onSave }) {
+function NewPurchaseModal({ suppliers, onClose, onSave }) {
   const [form, setForm] = useState({
-    date: todayStr(), supplier: '', description: '', category: 'Other',
+    date: todayStr(), supplier_id: '', supplier: '', description: '', category: 'Other',
     amount: '', vat: '', ref: ''
   })
-  const [vatMode, setVatMode] = useState('manual') // 'manual' | 'calc15' | 'none'
+  const [vatMode, setVatMode] = useState('calc15') // 'manual' | 'calc15' | 'none'
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
@@ -1172,9 +1177,14 @@ function NewPurchaseModal({ onClose, onSave }) {
                     : vatMode === 'none' ? amount
                     : Math.round((amount - vat) * 100) / 100
 
+  const handleSupplierSelect = (e) => {
+    const sup = suppliers.find(s => s.id === e.target.value)
+    setForm(f => ({ ...f, supplier_id: e.target.value, supplier: sup?.name || '', category: sup?.category || f.category }))
+  }
+
   const handleSave = async () => {
     setError('')
-    if (!form.supplier.trim()) { setError('Supplier is required'); return }
+    if (!form.supplier.trim()) { setError('Please select or enter a supplier'); return }
     if (!form.amount || amount <= 0) { setError('Amount is required'); return }
     if (!form.date) { setError('Date is required'); return }
     setSaving(true)
@@ -1199,13 +1209,28 @@ function NewPurchaseModal({ onClose, onSave }) {
             {PURCHASE_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
         </Field>
-        <Field label="Supplier *"><input type="text" value={form.supplier} onChange={e => setForm(f => ({ ...f, supplier: e.target.value }))} style={inputStyle} placeholder="e.g. Shell Vanuatu" /></Field>
+        <Field label="Supplier *">
+          {suppliers.length > 0 ? (
+            <select value={form.supplier_id} onChange={handleSupplierSelect} style={inputStyle}>
+              <option value="">— Select supplier —</option>
+              {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}{s.category ? ` (${s.category})` : ''}</option>)}
+              <option value="__manual__">+ Type manually...</option>
+            </select>
+          ) : (
+            <input type="text" value={form.supplier} onChange={e => setForm(f => ({ ...f, supplier: e.target.value }))} style={inputStyle} placeholder="e.g. Shell Vanuatu" />
+          )}
+        </Field>
+        {form.supplier_id === '__manual__' && (
+          <Field label="Supplier name *">
+            <input type="text" value={form.supplier} onChange={e => setForm(f => ({ ...f, supplier: e.target.value }))} style={inputStyle} placeholder="Enter supplier name..." autoFocus />
+          </Field>
+        )}
         <Field label="Receipt / Reference"><input type="text" value={form.ref} onChange={e => setForm(f => ({ ...f, ref: e.target.value }))} style={inputStyle} placeholder="Receipt #, invoice ref..." /></Field>
         <Field label="Description" style={{ gridColumn: '1/-1' }}><input type="text" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} style={inputStyle} placeholder="What was purchased..." /></Field>
         <Field label="Total Amount (VT inc. VAT) *"><input type="number" value={form.amount} min="0" onChange={e => setForm(f => ({ ...f, amount: e.target.value }))} style={inputStyle} placeholder="0" /></Field>
         <Field label="VAT Treatment">
           <select value={vatMode} onChange={e => setVatMode(e.target.value)} style={inputStyle}>
-            <option value="calc15">Calculate VAT at 15% (inc. price)</option>
+            <option value="calc15">Calculate VAT at 15% (from inc. price)</option>
             <option value="manual">Enter VAT amount manually</option>
             <option value="none">No VAT / exempt</option>
           </select>
@@ -1234,9 +1259,182 @@ function NewPurchaseModal({ onClose, onSave }) {
         </div>
       )}
 
-      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 4 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 }}>
+        <div style={{ fontSize: 12, color: '#8B6914' }}>
+          <i className="ti ti-info-circle"></i> Manage suppliers in the <strong>Suppliers</strong> menu
+        </div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button className="btn" onClick={onClose}>Cancel</button>
+          <button className="btn btn-primary" onClick={handleSave} disabled={saving}><i className="ti ti-check"></i> {saving ? 'Saving...' : 'Save Purchase'}</button>
+        </div>
+      </div>
+    </Modal>
+  )
+}
+
+// ── Suppliers ─────────────────────────────────────────────
+const SUPPLIER_CATEGORIES = ['Fuel Supplier', 'Vehicle Maintenance', 'Insurance', 'Office & Stationery', 'Utilities', 'Bank & Finance', 'Food & Beverages', 'Equipment & Tools', 'Professional Services', 'Marketing & Advertising', 'Accommodation', 'Other']
+
+function Suppliers({ suppliers, purchases, reload, setModal }) {
+  const [editingId, setEditingId] = useState(null)
+  const [editForm, setEditForm] = useState({})
+  const [saving, setSaving] = useState(false)
+
+  const handleDelete = async (id) => {
+    if (!confirm('Delete this supplier? Their purchases will remain.')) return
+    await fetch('/api/suppliers/' + id, { method: 'DELETE' }); reload()
+  }
+
+  const startEdit = (s) => {
+    setEditingId(s.id)
+    setEditForm({ name: s.name, phone: s.phone || '', email: s.email || '', address: s.address || '', category: s.category || 'Other' })
+  }
+
+  const cancelEdit = () => { setEditingId(null); setEditForm({}) }
+
+  const saveEdit = async (id) => {
+    if (!editForm.name.trim()) return
+    setSaving(true)
+    await fetch('/api/suppliers/' + id, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(editForm)
+    })
+    setSaving(false); setEditingId(null); reload()
+  }
+
+  const inputStyle2 = { padding: '5px 8px', borderRadius: 6, border: '0.5px solid rgba(0,0,0,0.2)', fontSize: 13, fontFamily: 'inherit', width: '100%', background: '#fffef8' }
+
+  // Purchase count and spend per supplier
+  const supStats = {}
+  suppliers.forEach(s => { supStats[s.id] = { count: 0, total: 0 } })
+  purchases.forEach(p => { if (p.supplier_id && supStats[p.supplier_id]) { supStats[p.supplier_id].count++; supStats[p.supplier_id].total += Number(p.amount || 0) } })
+
+  return (
+    <>
+      <Topbar title="Suppliers">
+        <button className="btn btn-primary" onClick={() => setModal('newSupplier')}><i className="ti ti-plus"></i> Add Supplier</button>
+      </Topbar>
+      <div style={{ padding: 20 }}>
+        <Card style={{ padding: 0, overflow: 'hidden' }}>
+          {suppliers.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '48px 20px', color: '#666' }}>
+              <i className="ti ti-truck" style={{ fontSize: 36, display: 'block', marginBottom: 10 }}></i>
+              <p style={{ marginBottom: 14 }}>No suppliers yet</p>
+              <button className="btn btn-primary" onClick={() => setModal('newSupplier')}>Add first supplier</button>
+            </div>
+          ) : (
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+              <thead>
+                <tr style={{ background: '#E8D5A3' }}>
+                  <Th>Name</Th><Th>Category</Th><Th>Phone</Th><Th>Email</Th><Th>Address</Th>
+                  <Th style={{ textAlign: 'center' }}>Purchases</Th>
+                  <Th style={{ textAlign: 'right' }}>Total Spent</Th>
+                  <Th style={{ textAlign: 'center' }}>Actions</Th>
+                </tr>
+              </thead>
+              <tbody>
+                {suppliers.map(s => (
+                  editingId === s.id ? (
+                    <tr key={s.id} style={{ borderBottom: '0.5px solid rgba(0,0,0,0.09)', background: '#fffef8' }}>
+                      <td style={{ padding: '8px 10px' }}>
+                        <input type="text" value={editForm.name} onChange={e => setEditForm(f => ({ ...f, name: e.target.value }))} style={{ ...inputStyle2, fontWeight: 600 }} placeholder="Supplier name *" />
+                      </td>
+                      <td style={{ padding: '8px 6px' }}>
+                        <select value={editForm.category} onChange={e => setEditForm(f => ({ ...f, category: e.target.value }))} style={inputStyle2}>
+                          {SUPPLIER_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                        </select>
+                      </td>
+                      <td style={{ padding: '8px 6px' }}>
+                        <input type="tel" value={editForm.phone} onChange={e => setEditForm(f => ({ ...f, phone: e.target.value }))} style={inputStyle2} placeholder="+678 ..." />
+                      </td>
+                      <td style={{ padding: '8px 6px' }}>
+                        <input type="email" value={editForm.email} onChange={e => setEditForm(f => ({ ...f, email: e.target.value }))} style={inputStyle2} placeholder="supplier@email.com" />
+                      </td>
+                      <td style={{ padding: '8px 6px' }}>
+                        <input type="text" value={editForm.address} onChange={e => setEditForm(f => ({ ...f, address: e.target.value }))} style={inputStyle2} placeholder="Address" />
+                      </td>
+                      <td style={{ padding: '8px 10px', textAlign: 'center' }}>{supStats[s.id]?.count || 0}</td>
+                      <td style={{ padding: '8px 10px', textAlign: 'right' }}>{fmt(supStats[s.id]?.total || 0)}</td>
+                      <td style={{ padding: '8px 10px' }}>
+                        <div style={{ display: 'flex', gap: 5, justifyContent: 'center' }}>
+                          <button className="btn btn-sm btn-primary" onClick={() => saveEdit(s.id)} disabled={saving}><i className="ti ti-check"></i> {saving ? '...' : 'Save'}</button>
+                          <button className="btn btn-sm" onClick={cancelEdit}><i className="ti ti-x"></i></button>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (
+                    <tr key={s.id} style={{ borderBottom: '0.5px solid rgba(0,0,0,0.09)' }}>
+                      <td style={{ padding: '11px 14px' }}><strong>{s.name}</strong></td>
+                      <td style={{ padding: '11px 14px' }}><span style={{ background: '#E8D5A3', padding: '2px 8px', borderRadius: 99, fontSize: 11 }}>{s.category || 'Other'}</span></td>
+                      <td style={{ padding: '11px 14px', color: '#666' }}>{s.phone || '—'}</td>
+                      <td style={{ padding: '11px 14px', color: '#666' }}>{s.email || '—'}</td>
+                      <td style={{ padding: '11px 14px', color: '#666' }}>{s.address || '—'}</td>
+                      <td style={{ padding: '11px 14px', textAlign: 'center' }}>{supStats[s.id]?.count || 0}</td>
+                      <td style={{ padding: '11px 14px', textAlign: 'right', fontWeight: 500 }}>{fmt(supStats[s.id]?.total || 0)}</td>
+                      <td style={{ padding: '11px 14px' }}>
+                        <div style={{ display: 'flex', gap: 5, justifyContent: 'center' }}>
+                          <button className="btn btn-sm" onClick={() => startEdit(s)}><i className="ti ti-pencil"></i> Edit</button>
+                          <button className="btn btn-sm" style={{ borderColor: '#A32D2D', color: '#A32D2D' }} onClick={() => handleDelete(s.id)}><i className="ti ti-trash"></i></button>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                ))}
+              </tbody>
+            </table>
+          )}
+        </Card>
+      </div>
+    </>
+  )
+}
+
+function NewSupplierModal({ onClose, onSave }) {
+  const [form, setForm] = useState({ name: '', phone: '', email: '', address: '', category: 'Other' })
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+
+  const handleSave = async () => {
+    if (!form.name.trim()) { setError('Supplier name is required'); return }
+    setSaving(true)
+    try {
+      const res = await fetch('/api/suppliers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form)
+      })
+      const data = await res.json()
+      if (!res.ok) { setError(data.error || 'Failed to save'); setSaving(false); return }
+      onSave()
+    } catch(e) { setError('Network error — please try again'); setSaving(false) }
+  }
+
+  return (
+    <Modal title="Add Supplier" onClose={onClose}>
+      {error && <Alert type="danger">{error}</Alert>}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <Field label="Supplier name *">
+          <input type="text" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} style={inputStyle} placeholder="e.g. Shell Vanuatu" />
+        </Field>
+        <Field label="Category">
+          <select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))} style={inputStyle}>
+            {SUPPLIER_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
+        </Field>
+        <Field label="Phone">
+          <input type="tel" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} style={inputStyle} placeholder="+678 ..." />
+        </Field>
+        <Field label="Email">
+          <input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} style={inputStyle} placeholder="supplier@email.com" />
+        </Field>
+        <Field label="Address">
+          <input type="text" value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} style={inputStyle} placeholder="Port Vila, Vanuatu" />
+        </Field>
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 20 }}>
         <button className="btn" onClick={onClose}>Cancel</button>
-        <button className="btn btn-primary" onClick={handleSave} disabled={saving}><i className="ti ti-check"></i> {saving ? 'Saving...' : 'Save Purchase'}</button>
+        <button className="btn btn-primary" onClick={handleSave} disabled={saving}><i className="ti ti-check"></i> {saving ? 'Saving...' : 'Save Supplier'}</button>
       </div>
     </Modal>
   )
