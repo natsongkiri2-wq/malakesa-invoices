@@ -102,7 +102,7 @@ export default function App() {
           <div style={{ padding: 40, textAlign: 'center', color: '#666' }}>Loading...</div>
         ) : (
           <>
-            {page === 'dashboard' && <Dashboard invoices={invoices} payments={payments} loading={loading} setPage={setPage} setModal={setModal} />}
+            {page === 'dashboard' && <Dashboard invoices={invoices} payments={payments} purchases={purchases} loading={loading} setPage={setPage} setModal={setModal} />}
             {page === 'invoices' && <Invoices invoices={invoices} payments={payments} reload={reload} setModal={setModal} setSelected={setSelected} />}
             {page === 'payments' && <Payments payments={payments} invoices={invoices} reload={reload} setModal={setModal} setSelected={setSelected} />}
             {page === 'unpaid' && <Unpaid invoices={invoices} payments={payments} reload={reload} setModal={setModal} setSelected={setSelected} />}
@@ -126,12 +126,65 @@ export default function App() {
 }
 
 // ── Dashboard ─────────────────────────────────────────────
-function Dashboard({ invoices, payments, loading, setPage, setModal }) {
+// ── Pie Chart (reusable SVG) ──────────────────────────────
+function PieChart({ data, size = 160, colors }) {
+  const total = data.reduce((s, d) => s + d.value, 0)
+  const palette = colors || ['#8B6914', '#3B6D11', '#A32D2D', '#5C3D0A', '#D85A30', '#2E7D2E', '#633806', '#1A4D1A']
+  if (total <= 0) {
+    return (
+      <div style={{ width: size, height: size, borderRadius: '50%', border: '2px dashed #ccc', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#999', fontSize: 11, textAlign: 'center', padding: 10 }}>
+        No data
+      </div>
+    )
+  }
+  const r = size / 2
+  let cumulative = 0
+  const slices = data.filter(d => d.value > 0).map((d, i) => {
+    const fraction = d.value / total
+    const startAngle = cumulative * 2 * Math.PI
+    cumulative += fraction
+    const endAngle = cumulative * 2 * Math.PI
+    const x1 = r + r * Math.sin(startAngle)
+    const y1 = r - r * Math.cos(startAngle)
+    const x2 = r + r * Math.sin(endAngle)
+    const y2 = r - r * Math.cos(endAngle)
+    const largeArc = fraction > 0.5 ? 1 : 0
+    const path = `M ${r} ${r} L ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2} Z`
+    return { path, color: palette[i % palette.length], label: d.label, value: d.value, pct: Math.round(fraction * 100) }
+  })
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        {slices.length === 1
+          ? <circle cx={r} cy={r} r={r} fill={slices[0].color} />
+          : slices.map((s, i) => <path key={i} d={s.path} fill={s.color} stroke="#fff" strokeWidth="1.5" />)
+        }
+      </svg>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        {slices.map((s, i) => (
+          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 12 }}>
+            <span style={{ width: 11, height: 11, borderRadius: 3, background: s.color, display: 'inline-block', flexShrink: 0 }}></span>
+            <span style={{ color: '#444' }}>{s.label}</span>
+            <span style={{ color: '#888', fontSize: 11 }}>({s.pct}%)</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ── Dashboard ─────────────────────────────────────────────
+function Dashboard({ invoices, payments, purchases, loading, setPage, setModal }) {
   const totalInvoiced = invoices.reduce((s, i) => s + Number(i.total), 0)
   const totalCollected = payments.reduce((s, p) => s + Number(p.amount), 0)
   const outstanding = invoices.reduce((s, i) => s + getBalance(i, payments), 0)
   const overdueCount = invoices.filter(i => getStatus(i, payments) === 'overdue').length
   const recent = [...invoices].reverse().slice(0, 6)
+
+  const purchasesList = purchases || []
+  const totalPurchases = purchasesList.reduce((s, p) => s + Number(p.amount || 0), 0)
+  const thisMonthPurchases = purchasesList.filter(p => p.date?.startsWith(new Date().toISOString().slice(0,7))).reduce((s, p) => s + Number(p.amount || 0), 0)
+  const recentPurchases = [...purchasesList].sort((a,b) => b.date > a.date ? 1 : -1).slice(0, 6)
 
   const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
   const now = new Date()
@@ -139,34 +192,48 @@ function Dashboard({ invoices, payments, loading, setPage, setModal }) {
     const d = new Date(now.getFullYear(), now.getMonth() - 5 + i, 1)
     const m = d.getMonth(); const y = d.getFullYear()
     const amt = invoices.filter(inv => { const id = new Date(inv.date + 'T00:00:00'); return id.getMonth() === m && id.getFullYear() === y }).reduce((s, inv) => s + Number(inv.total), 0)
-    return { label: MONTHS[m], amt }
+    return { label: MONTHS[m] + ' ' + String(y).slice(2), amt }
   })
-  const maxAmt = Math.max(...monthData.map(m => m.amt), 1)
+  const revenuePieData = monthData.map(m => ({ label: m.label, value: m.amt }))
+
+  const purchaseMonthData = Array.from({ length: 6 }, (_, i) => {
+    const d = new Date(now.getFullYear(), now.getMonth() - 5 + i, 1)
+    const m = d.getMonth(); const y = d.getFullYear()
+    const amt = purchasesList.filter(p => { if (!p.date) return false; const pd = new Date(p.date + 'T00:00:00'); return pd.getMonth() === m && pd.getFullYear() === y }).reduce((s, p) => s + Number(p.amount || 0), 0)
+    return { label: MONTHS[m] + ' ' + String(y).slice(2), amt }
+  })
+  const purchasePieData = purchaseMonthData.map(m => ({ label: m.label, value: m.amt }))
 
   return (
     <>
-      <Topbar title="Dashboard"><button className="btn btn-primary" onClick={() => setModal('newInvoice')}><i className="ti ti-plus"></i> New Invoice</button></Topbar>
+      <Topbar title="Dashboard">
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button className="btn btn-primary" onClick={() => setModal('newInvoice')}><i className="ti ti-plus"></i> New Invoice</button>
+          <button className="btn" style={{ background: '#8B6914', borderColor: '#6B5010', color: '#fff', fontWeight: 500 }} onClick={() => setModal('newPurchase')}><i className="ti ti-plus"></i> New Purchase</button>
+        </div>
+      </Topbar>
       <div style={{ padding: 20 }}>
         {loading ? <div style={{ textAlign: 'center', padding: 40, color: '#666' }}>Loading...</div> : (
           <>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12, marginBottom: 16 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: 12, marginBottom: 16 }}>
               <StatCard label="Total Invoiced" value={fmt(totalInvoiced)} sub={`${invoices.length} invoices`} />
               <StatCard label="Collected" value={fmt(totalCollected)} color="#3B6D11" />
               <StatCard label="Outstanding" value={fmt(outstanding)} color="#D85A30" />
               <StatCard label="Overdue" value={overdueCount} color="#A32D2D" sub="need follow-up" />
+              <StatCard label="Purchases" value={fmt(totalPurchases)} color="#8B6914" sub={`${fmt(thisMonthPurchases)} this month`} />
             </div>
-            <Card>
-              <div style={{ fontWeight: 500, marginBottom: 12 }}>Revenue — last 6 months</div>
-              <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, height: 120 }}>
-                {monthData.map(m => (
-                  <div key={m.label} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-                    <div style={{ fontSize: 10, color: '#666' }}>{m.amt > 0 ? 'VT ' + Math.round(m.amt / 1000) + 'k' : ''}</div>
-                    <div style={{ width: '100%', background: '#8B6914', borderRadius: '4px 4px 0 0', height: Math.max(4, Math.round((m.amt / maxAmt) * 90)) + 'px' }}></div>
-                    <div style={{ fontSize: 10, color: '#666' }}>{m.label}</div>
-                  </div>
-                ))}
-              </div>
-            </Card>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+              <Card>
+                <div style={{ fontWeight: 500, marginBottom: 14 }}>Revenue — last 6 months</div>
+                <PieChart data={revenuePieData} size={150} colors={['#8B6914','#A8841A','#C9A24A','#5C3D0A','#3B6D11','#2E7D2E']} />
+              </Card>
+              <Card>
+                <div style={{ fontWeight: 500, marginBottom: 14 }}>Purchases — last 6 months</div>
+                <PieChart data={purchasePieData} size={150} colors={['#A32D2D','#D85A30','#C9744A','#633806','#8B6914','#5C3D0A']} />
+              </Card>
+            </div>
+
             <Card style={{ padding: 0, overflow: 'hidden' }}>
               <div style={{ padding: '14px 20px', borderBottom: '0.5px solid rgba(0,0,0,0.09)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <strong style={{ fontSize: 14 }}>Recent invoices</strong>
@@ -180,6 +247,27 @@ function Dashboard({ invoices, payments, loading, setPage, setModal }) {
                       <Td><strong>{inv.number}</strong></Td><Td>{inv.client_name}</Td><Td>{fmtDate(inv.date)}</Td><Td>{fmt(inv.total)}</Td>
                       <Td><Badge status={getStatus(inv, payments)} /></Td>
                       <Td><button className="btn btn-sm" onClick={() => setPage('invoices')}>View</button></Td>
+                    </tr>
+                  ))}</tbody>
+                </table>
+              )}
+            </Card>
+
+            <Card style={{ padding: 0, overflow: 'hidden' }}>
+              <div style={{ padding: '14px 20px', borderBottom: '0.5px solid rgba(0,0,0,0.09)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <strong style={{ fontSize: 14 }}>Recent purchases</strong>
+                <button className="btn btn-sm" onClick={() => setPage('purchases')}>View all</button>
+              </div>
+              {recentPurchases.length === 0 ? <Empty icon="ti-shopping-cart-off" msg="No purchases yet" /> : (
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                  <thead><tr style={{ background: '#E8D5A3' }}><Th>Date</Th><Th>Supplier</Th><Th>Category</Th><Th>Amount</Th><Th></Th></tr></thead>
+                  <tbody>{recentPurchases.map(p => (
+                    <tr key={p.id} style={{ borderBottom: '0.5px solid rgba(0,0,0,0.09)' }}>
+                      <Td>{fmtDate(p.date)}</Td>
+                      <Td><strong>{p.supplier}</strong></Td>
+                      <Td><span style={{ background: '#E8D5A3', padding: '2px 8px', borderRadius: 99, fontSize: 11 }}>{p.category || 'Other'}</span></Td>
+                      <Td style={{ fontWeight: 500 }}>{fmt(p.amount)}</Td>
+                      <Td><button className="btn btn-sm" onClick={() => setPage('purchases')}>View</button></Td>
                     </tr>
                   ))}</tbody>
                 </table>
@@ -926,7 +1014,14 @@ function Reports({ invoices, payments, purchases }) {
   return (
     <>
       <Topbar title="Reports">
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: 6, background: '#f5f0e8', borderRadius: 10, padding: 4 }}>
+          <button style={tabStyle(tab === 'revenue')} onClick={() => setTab('revenue')}><i className="ti ti-chart-bar" style={{ marginRight: 5 }}></i>Revenue</button>
+          <button style={tabStyle(tab === 'vat')} onClick={() => setTab('vat')}><i className="ti ti-receipt-tax" style={{ marginRight: 5 }}></i>VAT Return</button>
+          <button style={tabStyle(tab === 'suppliers')} onClick={() => setTab('suppliers')}><i className="ti ti-truck" style={{ marginRight: 5 }}></i>By Supplier</button>
+        </div>
+      </Topbar>
+      <div style={{ padding: '14px 20px 0' }}>
+        <div style={{ background: '#fff', border: '0.5px solid rgba(139,105,20,0.2)', borderRadius: 12, padding: '10px 16px', marginBottom: 16, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
           {tab === 'revenue' && <>
             <select value={filterClient} onChange={e => setFilterClient(e.target.value)} style={{ padding: '6px 10px', borderRadius: 8, border: '0.5px solid #8B6914', fontSize: 13, fontFamily: 'inherit', background: '#8B6914', color: '#fff', fontWeight: 500, cursor: 'pointer' }}>
               <option value="">All clients</option>
@@ -938,13 +1033,13 @@ function Reports({ invoices, payments, purchases }) {
               <option value="quarter">This quarter</option>
               <option value="year">This year</option>
             </select>
-            <button className="btn btn-sm" style={{ background: "#8B6914", borderColor: "#6B5010", color: "#fff", fontWeight: 500 }} onClick={printReport}><i className="ti ti-printer"></i> Print Report</button>
+            <button className="btn btn-sm" style={{ background: "#8B6914", borderColor: "#6B5010", color: "#fff", fontWeight: 500, marginLeft: 'auto' }} onClick={printReport}><i className="ti ti-printer"></i> Print Report</button>
           </>}
           {tab === 'vat' && <>
             <select value={vatMonth} onChange={e => setVatMonth(e.target.value)} style={{ padding: '6px 10px', borderRadius: 8, border: '0.5px solid #8B6914', fontSize: 13, fontFamily: 'inherit', background: '#8B6914', color: '#fff', fontWeight: 500, cursor: 'pointer' }}>
               {vatMonthOptions.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
             </select>
-            <button className="btn btn-sm" style={{ background: "#2E7D2E", borderColor: "#1A4D1A", color: "#fff", fontWeight: 500 }} onClick={printVatReturn}><i className="ti ti-printer"></i> Print VAT Return</button>
+            <button className="btn btn-sm" style={{ background: "#2E7D2E", borderColor: "#1A4D1A", color: "#fff", fontWeight: 500, marginLeft: 'auto' }} onClick={printVatReturn}><i className="ti ti-printer"></i> Print VAT Return</button>
           </>}
           {tab === 'suppliers' && <>
             <select value={supplierPeriod} onChange={e => setSupplierPeriod(e.target.value)} style={{ padding: '6px 10px', borderRadius: 8, border: '0.5px solid #8B6914', fontSize: 13, fontFamily: 'inherit', background: '#8B6914', color: '#fff', fontWeight: 500, cursor: 'pointer' }}>
@@ -964,16 +1059,12 @@ function Reports({ invoices, payments, purchases }) {
               <option value="count">Sort: Most purchases</option>
               <option value="name">Sort: Name (A-Z)</option>
             </select>
-            <button className="btn btn-sm" style={{ background: "#8B6914", borderColor: "#6B5010", color: "#fff", fontWeight: 500 }} onClick={printSupplierReport}><i className="ti ti-printer"></i> Print Report</button>
+            <button className="btn btn-sm" style={{ background: "#8B6914", borderColor: "#6B5010", color: "#fff", fontWeight: 500, marginLeft: 'auto' }} onClick={printSupplierReport}><i className="ti ti-printer"></i> Print Report</button>
           </>}
-          <div style={{ display: 'flex', gap: 6, background: '#f5f0e8', borderRadius: 10, padding: 4 }}>
-            <button style={tabStyle(tab === 'revenue')} onClick={() => setTab('revenue')}><i className="ti ti-chart-bar" style={{ marginRight: 5 }}></i>Revenue</button>
-            <button style={tabStyle(tab === 'vat')} onClick={() => setTab('vat')}><i className="ti ti-receipt-tax" style={{ marginRight: 5 }}></i>VAT Return</button>
-            <button style={tabStyle(tab === 'suppliers')} onClick={() => setTab('suppliers')}><i className="ti ti-truck" style={{ marginRight: 5 }}></i>By Supplier</button>
-          </div>
         </div>
-      </Topbar>
-      <div style={{ padding: 20 }}>
+      </div>
+
+      <div style={{ padding: '0 20px 20px' }}>
 
         {/* ── Revenue Tab ── */}
         {tab === 'revenue' && <>
@@ -984,23 +1075,20 @@ function Reports({ invoices, payments, purchases }) {
             <StatCard label="VAT collected" value={fmt(totalVat)} color="#8B6914" />
           </div>
           <Card>
-            <div style={{ fontWeight: 500, marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span>Monthly trend</span>
-              <div style={{ display: 'flex', gap: 16 }}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#666' }}><span style={{ width: 12, height: 12, background: '#8B6914', borderRadius: 2, display: 'inline-block' }}></span>Invoiced</span>
-                <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#666' }}><span style={{ width: 12, height: 12, background: '#3B6D11', borderRadius: 2, display: 'inline-block' }}></span>Collected</span>
-              </div>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 12, height: 130, marginBottom: 4 }}>
-              {monthData.map(m => (
-                <div key={m.label} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
-                  <div style={{ width: '100%', display: 'flex', gap: 3, alignItems: 'flex-end', height: 110 }}>
-                    <div style={{ flex: 1, background: '#8B6914', borderRadius: '3px 3px 0 0', height: Math.max(2, Math.round((m.invoiced / maxAmt) * 110)) + 'px' }}></div>
-                    <div style={{ flex: 1, background: '#3B6D11', borderRadius: '3px 3px 0 0', height: Math.max(2, Math.round((m.collected / maxAmt) * 110)) + 'px' }}></div>
-                  </div>
-                  <div style={{ fontSize: 10, color: '#666' }}>{m.label}</div>
+            <div style={{ fontWeight: 500, marginBottom: 14 }}>Monthly trend</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#666', marginBottom: 10 }}>
+                  <span style={{ width: 12, height: 12, background: '#8B6914', borderRadius: 2, display: 'inline-block' }}></span>Invoiced by month
                 </div>
-              ))}
+                <PieChart data={monthData.map(m => ({ label: m.label, value: m.invoiced }))} size={140} colors={['#8B6914','#A8841A','#C9A24A','#5C3D0A','#3B6D11','#2E7D2E']} />
+              </div>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#666', marginBottom: 10 }}>
+                  <span style={{ width: 12, height: 12, background: '#3B6D11', borderRadius: 2, display: 'inline-block' }}></span>Collected by month
+                </div>
+                <PieChart data={monthData.map(m => ({ label: m.label, value: m.collected }))} size={140} colors={['#3B6D11','#5A9425','#2E7D2E','#1A4D1A','#8B6914','#C9A24A']} />
+              </div>
             </div>
           </Card>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
@@ -1252,16 +1340,12 @@ function Reports({ invoices, payments, purchases }) {
             </Card>
 
             <Card>
-              <div style={{ fontWeight: 500, marginBottom: 12 }}>Spend by Category</div>
-              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-                {Object.entries(byCategory).sort((a,b) => b[1]-a[1]).map(([cat, amt]) => (
-                  <div key={cat} style={{ background: '#E8D5A3', borderRadius: 8, padding: '14px 18px', minWidth: 150 }}>
-                    <div style={{ fontSize: 12, color: '#666', marginBottom: 4 }}>{cat}</div>
-                    <div style={{ fontSize: 18, fontWeight: 500, color: '#A32D2D' }}>{fmt(amt)}</div>
-                    <div style={{ fontSize: 11, color: '#999', marginTop: 2 }}>{supplierTotalSpend > 0 ? Math.round((amt / supplierTotalSpend) * 100) : 0}% of spend</div>
-                  </div>
-                ))}
-              </div>
+              <div style={{ fontWeight: 500, marginBottom: 14 }}>Spend by Category</div>
+              <PieChart
+                data={Object.entries(byCategory).sort((a,b) => b[1]-a[1]).map(([cat, amt]) => ({ label: cat, value: amt }))}
+                size={170}
+                colors={['#A32D2D','#8B6914','#D85A30','#5C3D0A','#633806','#C9744A','#3B6D11','#1A4D1A']}
+              />
             </Card>
           </>}
         </>}
