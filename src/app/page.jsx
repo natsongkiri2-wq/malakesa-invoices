@@ -64,10 +64,10 @@ export default function App() {
     { id: 'invoices', label: 'Invoices', icon: 'ti-file-invoice' },
     { id: 'payments', label: 'Payments Received', icon: 'ti-cash-register' },
     { id: 'unpaid', label: 'Unpaid Invoices', icon: 'ti-alert-triangle' },
+    { id: 'clients', label: 'Clients', icon: 'ti-users' },
     { id: 'purchases', label: 'Purchases', icon: 'ti-shopping-cart' },
     { id: 'suppliers', label: 'Suppliers', icon: 'ti-truck' },
     { id: 'reports', label: 'Reports', icon: 'ti-chart-bar' },
-    { id: 'clients', label: 'Clients', icon: 'ti-users' },
   ]
 
   return (
@@ -81,7 +81,7 @@ export default function App() {
             style={{ width: '100%', maxWidth: 188, borderRadius: 6, display: 'block', margin: '0 auto 4px' }}
           />
           <div style={{ marginTop: 8, background: 'rgba(255,215,0,0.1)', border: '0.5px solid rgba(255,215,0,0.3)', borderRadius: 4, padding: '3px 8px', display: 'inline-block' }}>
-            <div style={{ fontSize: 8, color: 'rgba(255,215,0,0.8)', letterSpacing: '2.5px', fontWeight: 700 }}>INVOICE MANAGER</div>
+            <div style={{ fontSize: 8, color: 'rgba(255,215,0,0.8)', letterSpacing: '2.5px', fontWeight: 700 }}>INVOICE &amp; PURCHASES MANAGER</div>
           </div>
         </div>
         <nav style={{ flex: 1, padding: '8px 0' }}>
