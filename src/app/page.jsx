@@ -491,7 +491,7 @@ function Unpaid({ invoices, payments, reload, setModal, setSelected }) {
 
 // ── Reports ───────────────────────────────────────────────
 function Reports({ invoices, payments, purchases }) {
-  const [tab, setTab] = useState('revenue') // 'revenue' | 'vat'
+  const [tab, setTab] = useState('revenue') // 'revenue' | 'vat' | 'suppliers'
   const [period, setPeriod] = useState('all')
   const [filterClient, setFilterClient] = useState('')
 
@@ -499,6 +499,10 @@ function Reports({ invoices, payments, purchases }) {
   const nowD = new Date()
   const defaultVatMonth = nowD.toISOString().slice(0, 7)
   const [vatMonth, setVatMonth] = useState(defaultVatMonth)
+
+  // Supplier report tab state
+  const [supplierPeriod, setSupplierPeriod] = useState('all')
+  const [supplierSort, setSupplierSort] = useState('spend') // 'spend' | 'count' | 'name'
 
   const allClients = [...new Set(invoices.map(i => i.client_name))].sort()
 
@@ -732,6 +736,136 @@ function Reports({ invoices, payments, purchases }) {
     w.document.close()
   }
 
+  // ── Suppliers tab logic ──
+  const filterPurchaseDate = (list) => {
+    if (supplierPeriod === 'all') return list
+    const now = new Date(); const start = new Date()
+    if (supplierPeriod === 'month') start.setDate(1)
+    if (supplierPeriod === 'quarter') start.setMonth(now.getMonth() - 2, 1)
+    if (supplierPeriod === 'year') start.setMonth(0, 1)
+    return list.filter(p => p.date && new Date(p.date + 'T00:00:00') >= start)
+  }
+  const fPurchases = filterPurchaseDate(purchases || [])
+
+  const bySupplier = {}
+  fPurchases.forEach(p => {
+    const name = p.supplier || 'Unknown'
+    if (!bySupplier[name]) bySupplier[name] = { name, category: p.category, count: 0, total: 0, exVat: 0, vat: 0 }
+    bySupplier[name].count++
+    bySupplier[name].total += Number(p.amount || 0)
+    bySupplier[name].exVat += Number(p.amount_ex_vat || 0)
+    bySupplier[name].vat += Number(p.vat || 0)
+    if (!bySupplier[name].category && p.category) bySupplier[name].category = p.category
+  })
+  let supplierRows = Object.values(bySupplier)
+  if (supplierSort === 'spend') supplierRows.sort((a, b) => b.total - a.total)
+  if (supplierSort === 'count') supplierRows.sort((a, b) => b.count - a.count)
+  if (supplierSort === 'name') supplierRows.sort((a, b) => a.name.localeCompare(b.name))
+
+  const supplierTotalSpend = fPurchases.reduce((s, p) => s + Number(p.amount || 0), 0)
+  const supplierTotalExVat = fPurchases.reduce((s, p) => s + Number(p.amount_ex_vat || 0), 0)
+  const supplierTotalVat = fPurchases.reduce((s, p) => s + Number(p.vat || 0), 0)
+
+  // Category breakdown
+  const byCategory = {}
+  fPurchases.forEach(p => {
+    const cat = p.category || 'Other'
+    byCategory[cat] = (byCategory[cat] || 0) + Number(p.amount || 0)
+  })
+
+  const supplierPeriodLabel = { all: 'All time', month: 'This month', quarter: 'This quarter', year: 'This year' }[supplierPeriod]
+
+  const printSupplierReport = () => {
+    const w = window.open('', '_blank')
+    const title = 'Purchases by Supplier — ' + supplierPeriodLabel
+    w.document.write(`<!DOCTYPE html><html><head><title>${title}</title>
+    <style>
+      *{box-sizing:border-box;margin:0;padding:0}
+      body{font-family:Arial,sans-serif;margin:0;color:#222;font-size:13px;background:#f0ebe0}
+      .page{max-width:800px;margin:20px auto;background:#fff;border-radius:4px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.15)}
+      .header{background:linear-gradient(135deg,#1A0D06 0%,#3D2214 50%,#5C3D0A 100%);padding:24px 40px;display:flex;justify-content:space-between;align-items:flex-start}
+      .logo-contact{font-size:10px;color:rgba(255,255,255,0.7);margin-top:8px;line-height:1.8}
+      .report-title{text-align:right;color:#fff}
+      .report-name{font-size:20px;font-weight:700;color:#FFD700}
+      .report-sub{font-size:11px;color:rgba(255,255,255,0.75);margin-top:4px;line-height:1.7}
+      .body{padding:28px 40px}
+      .stats{display:flex;gap:20px;margin-bottom:24px;flex-wrap:wrap}
+      .stat{background:#f5f5f5;border-radius:8px;padding:12px 18px;min-width:140px}
+      .stat-label{font-size:11px;color:#666;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.4px}
+      .stat-value{font-size:18px;font-weight:bold}
+      h2{font-size:13px;font-weight:700;margin:20px 0 8px;color:#3D2214;border-bottom:2px solid #8B6914;padding-bottom:4px;text-transform:uppercase;letter-spacing:0.5px}
+      table{width:100%;border-collapse:collapse;margin-bottom:20px;font-size:12px}
+      th{background:#E8D5A3;padding:8px 10px;text-align:left;font-size:10px;font-weight:700;color:#3D2214;text-transform:uppercase;letter-spacing:0.5px}
+      td{padding:8px 10px;border-bottom:1px solid #f0ebe0}
+      tr:nth-child(even) td{background:#faf6ee}
+      .right{text-align:right}
+      .green{color:#2E7D2E;font-weight:500}
+      .summary-row{background:#E8D5A3!important;font-weight:700}
+      .footer{background:linear-gradient(135deg,#1A0D06,#5C3D0A);padding:14px 40px;display:flex;justify-content:space-between;align-items:center}
+      .footer-l{color:rgba(255,255,255,0.8);font-size:10px;line-height:1.9}
+      .footer-r{text-align:right;color:#FFD700;font-size:10px;line-height:1.9}
+      .noprint{background:#333;color:#fff;padding:10px 20px;display:flex;justify-content:space-between;align-items:center;font-size:13px}
+      .printbtn{background:#8B6914;color:#fff;border:none;padding:7px 18px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600}
+      @media print{.noprint{display:none}body{background:#fff}.page{box-shadow:none;margin:0}}
+    </style></head><body>
+    <div class="noprint"><span>Purchases by Supplier — ${supplierPeriodLabel}</span><button class="printbtn" onclick="window.print()">🖨️ Print / Save PDF</button></div>
+    <div class="page">
+      <div class="header">
+        <div>
+          <img src="${MALAKESA_LOGO}" alt="Malakesa Transfer and Tour" style="width:200px;border-radius:6px;display:block" />
+          <div class="logo-contact">
+            📍 Port Vila, Shefa Province, Vanuatu<br>
+            📞 +678 22712 &nbsp;|&nbsp; 📱 +678 7798712 &nbsp;|&nbsp; ✉️ accounts@malakesa.vu
+          </div>
+        </div>
+        <div class="report-title">
+          <div class="report-name">PURCHASES BY SUPPLIER</div>
+          <div class="report-sub">
+            Period: <strong>${supplierPeriodLabel}</strong><br>
+            Generated: ${new Date().toLocaleDateString('en-GB', {day:'2-digit',month:'long',year:'numeric'})}
+          </div>
+        </div>
+      </div>
+      <div class="body">
+        <div class="stats">
+          <div class="stat"><div class="stat-label">Total Spend</div><div class="stat-value">VT ${Number(supplierTotalSpend).toLocaleString()}</div></div>
+          <div class="stat"><div class="stat-label">Subtotal (ex-VAT)</div><div class="stat-value">VT ${Number(supplierTotalExVat).toLocaleString()}</div></div>
+          <div class="stat"><div class="stat-label">Input VAT</div><div class="stat-value" style="color:#2E7D2E">VT ${Number(supplierTotalVat).toLocaleString()}</div></div>
+          <div class="stat"><div class="stat-label">Suppliers</div><div class="stat-value">${supplierRows.length}</div></div>
+        </div>
+
+        <h2>Spend by Supplier</h2>
+        <table>
+          <thead><tr><th>Supplier</th><th>Category</th><th class="right">Purchases</th><th class="right">Ex-VAT</th><th class="right">VAT</th><th class="right">Total</th></tr></thead>
+          <tbody>
+            ${supplierRows.map(s => '<tr><td><strong>' + s.name + '</strong></td><td>' + (s.category||'Other') + '</td><td class="right">' + s.count + '</td><td class="right">VT ' + Number(s.exVat).toLocaleString() + '</td><td class="right green">VT ' + Number(s.vat).toLocaleString() + '</td><td class="right">VT ' + Number(s.total).toLocaleString() + '</td></tr>').join('')}
+            <tr class="summary-row"><td colspan="2">TOTAL</td><td class="right">${fPurchases.length}</td><td class="right">VT ${Number(supplierTotalExVat).toLocaleString()}</td><td class="right">VT ${Number(supplierTotalVat).toLocaleString()}</td><td class="right">VT ${Number(supplierTotalSpend).toLocaleString()}</td></tr>
+          </tbody>
+        </table>
+
+        <h2>Spend by Category</h2>
+        <table>
+          <thead><tr><th>Category</th><th class="right">Amount</th><th class="right">% of total</th></tr></thead>
+          <tbody>
+            ${Object.entries(byCategory).sort((a,b) => b[1]-a[1]).map(([cat, amt]) => '<tr><td>' + cat + '</td><td class="right">VT ' + Number(amt).toLocaleString() + '</td><td class="right">' + (supplierTotalSpend > 0 ? Math.round((amt/supplierTotalSpend)*100) : 0) + '%</td></tr>').join('')}
+          </tbody>
+        </table>
+      </div>
+      <div class="footer">
+        <div class="footer-l">
+          <div><strong style="color:#FFD700">Malakesa Transfer &amp; Tour</strong></div>
+          <div>Port Vila, Vanuatu</div>
+        </div>
+        <div class="footer-r">
+          <div>Total Spend: VT ${Number(supplierTotalSpend).toLocaleString()}</div>
+          <div style="font-size:10px;opacity:0.7">This report is confidential</div>
+        </div>
+      </div>
+    </div>
+    <script>window.onload=()=>window.print()<\/script></body></html>`)
+    w.document.close()
+  }
+
   const printReport = () => {
     const w = window.open('', '_blank')
     const title = 'Revenue Report' + (filterClient ? ' — ' + filterClient : '') + ' — ' + periodLabel
@@ -808,9 +942,24 @@ function Reports({ invoices, payments, purchases }) {
             </select>
             <button className="btn btn-sm" style={{ background: "#2E7D2E", borderColor: "#1A4D1A", color: "#fff", fontWeight: 500 }} onClick={printVatReturn}><i className="ti ti-printer"></i> Print VAT Return</button>
           </>}
+          {tab === 'suppliers' && <>
+            <select value={supplierPeriod} onChange={e => setSupplierPeriod(e.target.value)} style={{ padding: '6px 10px', borderRadius: 8, border: '0.5px solid #8B6914', fontSize: 13, fontFamily: 'inherit', background: '#8B6914', color: '#fff', fontWeight: 500, cursor: 'pointer' }}>
+              <option value="all">All time</option>
+              <option value="month">This month</option>
+              <option value="quarter">This quarter</option>
+              <option value="year">This year</option>
+            </select>
+            <select value={supplierSort} onChange={e => setSupplierSort(e.target.value)} style={{ padding: '6px 10px', borderRadius: 8, border: '0.5px solid #8B6914', fontSize: 13, fontFamily: 'inherit', background: '#8B6914', color: '#fff', fontWeight: 500, cursor: 'pointer' }}>
+              <option value="spend">Sort: Highest spend</option>
+              <option value="count">Sort: Most purchases</option>
+              <option value="name">Sort: Name (A-Z)</option>
+            </select>
+            <button className="btn btn-sm" style={{ background: "#8B6914", borderColor: "#6B5010", color: "#fff", fontWeight: 500 }} onClick={printSupplierReport}><i className="ti ti-printer"></i> Print Report</button>
+          </>}
           <div style={{ display: 'flex', gap: 6, background: '#f5f0e8', borderRadius: 10, padding: 4 }}>
             <button style={tabStyle(tab === 'revenue')} onClick={() => setTab('revenue')}><i className="ti ti-chart-bar" style={{ marginRight: 5 }}></i>Revenue</button>
             <button style={tabStyle(tab === 'vat')} onClick={() => setTab('vat')}><i className="ti ti-receipt-tax" style={{ marginRight: 5 }}></i>VAT Return</button>
+            <button style={tabStyle(tab === 'suppliers')} onClick={() => setTab('suppliers')}><i className="ti ti-truck" style={{ marginRight: 5 }}></i>By Supplier</button>
           </div>
         </div>
       </Topbar>
@@ -1036,6 +1185,72 @@ function Reports({ invoices, payments, purchases }) {
                   )}
                   <div style={{ marginTop: 8, color: '#999', fontSize: 11 }}>TIN: 445579 &nbsp;|&nbsp; Rate: 15%</div>
                 </div>
+              </div>
+            </Card>
+          </>}
+        </>}
+
+        {/* ── By Supplier Tab ── */}
+        {tab === 'suppliers' && <>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12, marginBottom: 16 }}>
+            <StatCard label="Total spend" value={fmt(supplierTotalSpend)} color="#A32D2D" sub={`${fPurchases.length} purchases`} />
+            <StatCard label="Subtotal (ex-VAT)" value={fmt(supplierTotalExVat)} />
+            <StatCard label="Input VAT" value={fmt(supplierTotalVat)} color="#2E7D2E" />
+            <StatCard label="Suppliers used" value={supplierRows.length} />
+          </div>
+
+          {supplierRows.length === 0 ? (
+            <Card><div style={{ textAlign: 'center', padding: '32px 20px', color: '#666' }}><i className="ti ti-truck-off" style={{ fontSize: 36, display: 'block', marginBottom: 10 }}></i><p>No purchases recorded for {supplierPeriodLabel.toLowerCase()}</p></div></Card>
+          ) : <>
+            <Card style={{ padding: 0, overflow: 'hidden', marginBottom: 16 }}>
+              <div style={{ padding: '12px 20px', borderBottom: '0.5px solid rgba(0,0,0,0.09)', fontWeight: 500, fontSize: 13 }}>
+                Spend by Supplier — {supplierPeriodLabel}
+              </div>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                <thead><tr style={{ background: '#E8D5A3' }}>
+                  <Th>Supplier</Th><Th>Category</Th>
+                  <Th style={{ textAlign: 'center' }}>Purchases</Th>
+                  <Th style={{ textAlign: 'right' }}>Ex-VAT</Th>
+                  <Th style={{ textAlign: 'right' }}>VAT</Th>
+                  <Th style={{ textAlign: 'right' }}>Total</Th>
+                  <Th style={{ textAlign: 'right' }}>% of spend</Th>
+                </tr></thead>
+                <tbody>
+                  {supplierRows.map(s => (
+                    <tr key={s.name} style={{ borderBottom: '0.5px solid rgba(0,0,0,0.09)' }}>
+                      <Td><strong>{s.name}</strong></Td>
+                      <Td><span style={{ background: '#E8D5A3', padding: '2px 8px', borderRadius: 99, fontSize: 11 }}>{s.category || 'Other'}</span></Td>
+                      <Td style={{ textAlign: 'center' }}>{s.count}</Td>
+                      <Td style={{ textAlign: 'right' }}>{fmt(s.exVat)}</Td>
+                      <Td style={{ textAlign: 'right', color: s.vat > 0 ? '#2E7D2E' : '#999', fontWeight: s.vat > 0 ? 500 : 400 }}>
+                        {s.vat > 0 ? fmt(s.vat) : <span style={{ fontStyle: 'italic', fontSize: 11 }}>Nil</span>}
+                      </Td>
+                      <Td style={{ textAlign: 'right', fontWeight: 500 }}>{fmt(s.total)}</Td>
+                      <Td style={{ textAlign: 'right', color: '#666' }}>{supplierTotalSpend > 0 ? Math.round((s.total / supplierTotalSpend) * 100) : 0}%</Td>
+                    </tr>
+                  ))}
+                  <tr style={{ background: '#E8D5A3', fontWeight: 700 }}>
+                    <td colSpan={2} style={{ padding: '9px 14px', fontSize: 13 }}>TOTAL</td>
+                    <td style={{ padding: '9px 14px', textAlign: 'center', fontSize: 13 }}>{fPurchases.length}</td>
+                    <td style={{ padding: '9px 14px', textAlign: 'right', fontSize: 13 }}>{fmt(supplierTotalExVat)}</td>
+                    <td style={{ padding: '9px 14px', textAlign: 'right', fontSize: 13, color: '#2E7D2E' }}>{fmt(supplierTotalVat)}</td>
+                    <td style={{ padding: '9px 14px', textAlign: 'right', fontSize: 13 }}>{fmt(supplierTotalSpend)}</td>
+                    <td style={{ padding: '9px 14px', textAlign: 'right', fontSize: 13 }}>100%</td>
+                  </tr>
+                </tbody>
+              </table>
+            </Card>
+
+            <Card>
+              <div style={{ fontWeight: 500, marginBottom: 12 }}>Spend by Category</div>
+              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                {Object.entries(byCategory).sort((a,b) => b[1]-a[1]).map(([cat, amt]) => (
+                  <div key={cat} style={{ background: '#E8D5A3', borderRadius: 8, padding: '14px 18px', minWidth: 150 }}>
+                    <div style={{ fontSize: 12, color: '#666', marginBottom: 4 }}>{cat}</div>
+                    <div style={{ fontSize: 18, fontWeight: 500, color: '#A32D2D' }}>{fmt(amt)}</div>
+                    <div style={{ fontSize: 11, color: '#999', marginTop: 2 }}>{supplierTotalSpend > 0 ? Math.round((amt / supplierTotalSpend) * 100) : 0}% of spend</div>
+                  </div>
+                ))}
               </div>
             </Card>
           </>}
