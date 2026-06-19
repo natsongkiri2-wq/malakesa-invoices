@@ -501,7 +501,8 @@ function Reports({ invoices, payments, purchases }) {
   const [vatMonth, setVatMonth] = useState(defaultVatMonth)
 
   // Supplier report tab state
-  const [supplierPeriod, setSupplierPeriod] = useState('all')
+  const [supplierPeriod, setSupplierPeriod] = useState('all') // 'all' | 'month' | 'quarter' | 'year' | 'specific'
+  const [supplierMonth, setSupplierMonth] = useState(nowD.toISOString().slice(0, 7))
   const [supplierSort, setSupplierSort] = useState('spend') // 'spend' | 'count' | 'name'
 
   const allClients = [...new Set(invoices.map(i => i.client_name))].sort()
@@ -739,6 +740,7 @@ function Reports({ invoices, payments, purchases }) {
   // ── Suppliers tab logic ──
   const filterPurchaseDate = (list) => {
     if (supplierPeriod === 'all') return list
+    if (supplierPeriod === 'specific') return list.filter(p => p.date && p.date.startsWith(supplierMonth))
     const now = new Date(); const start = new Date()
     if (supplierPeriod === 'month') start.setDate(1)
     if (supplierPeriod === 'quarter') start.setMonth(now.getMonth() - 2, 1)
@@ -773,7 +775,9 @@ function Reports({ invoices, payments, purchases }) {
     byCategory[cat] = (byCategory[cat] || 0) + Number(p.amount || 0)
   })
 
-  const supplierPeriodLabel = { all: 'All time', month: 'This month', quarter: 'This quarter', year: 'This year' }[supplierPeriod]
+  const supplierPeriodLabel = supplierPeriod === 'specific'
+    ? (vatMonthOptions.find(m => m.value === supplierMonth)?.label || supplierMonth)
+    : { all: 'All time', month: 'This month', quarter: 'This quarter', year: 'This year' }[supplierPeriod]
 
   const printSupplierReport = () => {
     const w = window.open('', '_blank')
@@ -948,7 +952,13 @@ function Reports({ invoices, payments, purchases }) {
               <option value="month">This month</option>
               <option value="quarter">This quarter</option>
               <option value="year">This year</option>
+              <option value="specific">Specific month...</option>
             </select>
+            {supplierPeriod === 'specific' && (
+              <select value={supplierMonth} onChange={e => setSupplierMonth(e.target.value)} style={{ padding: '6px 10px', borderRadius: 8, border: '0.5px solid #8B6914', fontSize: 13, fontFamily: 'inherit', background: '#8B6914', color: '#fff', fontWeight: 500, cursor: 'pointer' }}>
+                {vatMonthOptions.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+              </select>
+            )}
             <select value={supplierSort} onChange={e => setSupplierSort(e.target.value)} style={{ padding: '6px 10px', borderRadius: 8, border: '0.5px solid #8B6914', fontSize: 13, fontFamily: 'inherit', background: '#8B6914', color: '#fff', fontWeight: 500, cursor: 'pointer' }}>
               <option value="spend">Sort: Highest spend</option>
               <option value="count">Sort: Most purchases</option>
