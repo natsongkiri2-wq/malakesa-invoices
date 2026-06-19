@@ -1165,9 +1165,15 @@ function NewPurchaseModal({ suppliers, onClose, onSave }) {
     date: todayStr(), supplier_id: '', supplier: '', description: '', category: 'Other',
     amount: '', vat: '', ref: ''
   })
-  const [vatMode, setVatMode] = useState('calc15') // 'manual' | 'calc15' | 'none'
+  const [vatMode, setVatMode] = useState('calc15')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+
+  // Inline add-supplier state
+  const [showAddSupplier, setShowAddSupplier] = useState(false)
+  const [newSupplier, setNewSupplier] = useState({ name: '', category: 'Other', phone: '', email: '' })
+  const [savingSupplier, setSavingSupplier] = useState(false)
+  const [supplierList, setSupplierList] = useState(suppliers)
 
   const amount = parseFloat(form.amount) || 0
   const vat = vatMode === 'calc15' ? Math.round(amount * 15 / 115 * 100) / 100
@@ -1178,8 +1184,29 @@ function NewPurchaseModal({ suppliers, onClose, onSave }) {
                     : Math.round((amount - vat) * 100) / 100
 
   const handleSupplierSelect = (e) => {
-    const sup = suppliers.find(s => s.id === e.target.value)
+    const sup = supplierList.find(s => s.id === e.target.value)
     setForm(f => ({ ...f, supplier_id: e.target.value, supplier: sup?.name || '', category: sup?.category || f.category }))
+  }
+
+  const handleQuickAddSupplier = async () => {
+    if (!newSupplier.name.trim()) return
+    setSavingSupplier(true)
+    try {
+      const res = await fetch('/api/suppliers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newSupplier)
+      })
+      if (res.ok) {
+        const saved = await res.json()
+        const updated = [...supplierList, saved]
+        setSupplierList(updated)
+        setForm(f => ({ ...f, supplier_id: saved.id, supplier: saved.name, category: saved.category || f.category }))
+        setShowAddSupplier(false)
+        setNewSupplier({ name: '', category: 'Other', phone: '', email: '' })
+      }
+    } catch(e) {}
+    setSavingSupplier(false)
   }
 
   const handleSave = async () => {
@@ -1209,22 +1236,67 @@ function NewPurchaseModal({ suppliers, onClose, onSave }) {
             {PURCHASE_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
         </Field>
-        <Field label="Supplier *">
-          {suppliers.length > 0 ? (
-            <select value={form.supplier_id} onChange={handleSupplierSelect} style={inputStyle}>
-              <option value="">— Select supplier —</option>
-              {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}{s.category ? ` (${s.category})` : ''}</option>)}
-              <option value="__manual__">+ Type manually...</option>
-            </select>
-          ) : (
-            <input type="text" value={form.supplier} onChange={e => setForm(f => ({ ...f, supplier: e.target.value }))} style={inputStyle} placeholder="e.g. Shell Vanuatu" />
+
+        {/* Supplier field + quick-add button */}
+        <div style={{ gridColumn: '1/-1' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8 }}>
+            <Field label="Supplier *" style={{ flex: 1 }}>
+              {supplierList.length > 0 ? (
+                <select value={form.supplier_id} onChange={handleSupplierSelect} style={inputStyle}>
+                  <option value="">— Select supplier —</option>
+                  {supplierList.map(s => <option key={s.id} value={s.id}>{s.name}{s.category ? ` (${s.category})` : ''}</option>)}
+                  <option value="__manual__">✏️ Type manually...</option>
+                </select>
+              ) : (
+                <input type="text" value={form.supplier} onChange={e => setForm(f => ({ ...f, supplier: e.target.value }))} style={inputStyle} placeholder="e.g. Shell Vanuatu" />
+              )}
+            </Field>
+            <button
+              className="btn btn-sm"
+              onClick={() => setShowAddSupplier(v => !v)}
+              style={{ background: showAddSupplier ? '#A32D2D' : '#8B6914', borderColor: showAddSupplier ? '#7a1f1f' : '#6B5010', color: '#fff', whiteSpace: 'nowrap', marginBottom: 1 }}
+            >
+              <i className={`ti ${showAddSupplier ? 'ti-x' : 'ti-plus'}`}></i> {showAddSupplier ? 'Cancel' : 'New Supplier'}
+            </button>
+          </div>
+
+          {/* Inline quick-add supplier form */}
+          {showAddSupplier && (
+            <div style={{ marginTop: 10, background: '#f5f0e8', border: '1px solid rgba(139,105,20,0.25)', borderRadius: 8, padding: '14px 16px' }}>
+              <div style={{ fontWeight: 600, fontSize: 13, color: '#3D2214', marginBottom: 10 }}>
+                <i className="ti ti-truck"></i> Add New Supplier
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                <Field label="Supplier name *">
+                  <input type="text" value={newSupplier.name} onChange={e => setNewSupplier(s => ({ ...s, name: e.target.value }))} style={inputStyle} placeholder="e.g. Shell Vanuatu" autoFocus />
+                </Field>
+                <Field label="Category">
+                  <select value={newSupplier.category} onChange={e => setNewSupplier(s => ({ ...s, category: e.target.value }))} style={inputStyle}>
+                    {SUPPLIER_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </Field>
+                <Field label="Phone (optional)">
+                  <input type="tel" value={newSupplier.phone} onChange={e => setNewSupplier(s => ({ ...s, phone: e.target.value }))} style={inputStyle} placeholder="+678 ..." />
+                </Field>
+                <Field label="Email (optional)">
+                  <input type="email" value={newSupplier.email} onChange={e => setNewSupplier(s => ({ ...s, email: e.target.value }))} style={inputStyle} placeholder="supplier@email.com" />
+                </Field>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 10 }}>
+                <button className="btn btn-primary" onClick={handleQuickAddSupplier} disabled={savingSupplier || !newSupplier.name.trim()}>
+                  <i className="ti ti-check"></i> {savingSupplier ? 'Saving...' : 'Save & Select Supplier'}
+                </button>
+              </div>
+            </div>
           )}
-        </Field>
-        {form.supplier_id === '__manual__' && (
-          <Field label="Supplier name *">
-            <input type="text" value={form.supplier} onChange={e => setForm(f => ({ ...f, supplier: e.target.value }))} style={inputStyle} placeholder="Enter supplier name..." autoFocus />
-          </Field>
-        )}
+
+          {form.supplier_id === '__manual__' && (
+            <div style={{ marginTop: 8 }}>
+              <input type="text" value={form.supplier} onChange={e => setForm(f => ({ ...f, supplier: e.target.value }))} style={inputStyle} placeholder="Enter supplier name..." autoFocus />
+            </div>
+          )}
+        </div>
+
         <Field label="Receipt / Reference"><input type="text" value={form.ref} onChange={e => setForm(f => ({ ...f, ref: e.target.value }))} style={inputStyle} placeholder="Receipt #, invoice ref..." /></Field>
         <Field label="Description" style={{ gridColumn: '1/-1' }}><input type="text" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} style={inputStyle} placeholder="What was purchased..." /></Field>
         <Field label="Total Amount (VT inc. VAT) *"><input type="number" value={form.amount} min="0" onChange={e => setForm(f => ({ ...f, amount: e.target.value }))} style={inputStyle} placeholder="0" /></Field>
