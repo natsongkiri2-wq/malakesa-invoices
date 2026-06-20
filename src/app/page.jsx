@@ -37,6 +37,7 @@ export default function App() {
   const [clients, setClients] = useState([])
   const [purchases, setPurchases] = useState([])
   const [suppliers, setSuppliers] = useState([])
+  const [employees, setEmployees] = useState([])
   const [loading, setLoading] = useState(true)
   const [modal, setModal] = useState(null)
   const [selected, setSelected] = useState(null)
@@ -44,15 +45,16 @@ export default function App() {
   const reload = async () => {
     try {
       setLoading(true)
-      const [invRes, pmtRes, clRes, purRes, supRes] = await Promise.all([
-        fetch('/api/invoices'), fetch('/api/payments'), fetch('/api/clients'), fetch('/api/purchases'), fetch('/api/suppliers')
+      const [invRes, pmtRes, clRes, purRes, supRes, empRes] = await Promise.all([
+        fetch('/api/invoices'), fetch('/api/payments'), fetch('/api/clients'), fetch('/api/purchases'), fetch('/api/suppliers'), fetch('/api/employees')
       ])
-      const [invs, pmts, cls, purs, sups] = await Promise.all([invRes.json(), pmtRes.json(), clRes.json(), purRes.json(), supRes.json()])
+      const [invs, pmts, cls, purs, sups, emps] = await Promise.all([invRes.json(), pmtRes.json(), clRes.json(), purRes.json(), supRes.json(), empRes.json()])
       setInvoices(Array.isArray(invs) ? invs : [])
       setPayments(Array.isArray(pmts) ? pmts : [])
       setClients(Array.isArray(cls) ? cls : [])
       setPurchases(Array.isArray(purs) ? purs : [])
       setSuppliers(Array.isArray(sups) ? sups : [])
+      setEmployees(Array.isArray(emps) ? emps : [])
     } catch(e) { console.error(e) }
     setLoading(false)
   }
@@ -67,6 +69,7 @@ export default function App() {
     { id: 'clients', label: 'Clients', icon: 'ti-users' },
     { id: 'purchases', label: 'Purchases', icon: 'ti-shopping-cart' },
     { id: 'suppliers', label: 'Suppliers', icon: 'ti-truck' },
+    { id: 'vnpf', label: 'VNPF', icon: 'ti-building-bank' },
     { id: 'reports', label: 'Reports', icon: 'ti-chart-bar' },
   ]
 
@@ -108,6 +111,7 @@ export default function App() {
             {page === 'unpaid' && <Unpaid invoices={invoices} payments={payments} reload={reload} setModal={setModal} setSelected={setSelected} />}
             {page === 'purchases' && <Purchases purchases={purchases} suppliers={suppliers} reload={reload} setModal={setModal} />}
             {page === 'suppliers' && <Suppliers suppliers={suppliers} purchases={purchases} reload={reload} setModal={setModal} />}
+            {page === 'vnpf' && <VNPF employees={employees} reload={reload} setModal={setModal} setSelected={setSelected} />}
             {page === 'reports' && <Reports invoices={invoices} payments={payments} purchases={purchases} />}
             {page === 'clients' && <Clients clients={clients} invoices={invoices} reload={reload} setModal={setModal} />}
           </>
@@ -120,6 +124,8 @@ export default function App() {
       {modal === 'newClient' && <NewClientModal onClose={() => setModal(null)} onSave={() => { setModal(null); reload() }} />}
       {modal === 'newSupplier' && <NewSupplierModal onClose={() => setModal(null)} onSave={() => { setModal(null); reload() }} />}
       {modal === 'newPurchase' && <NewPurchaseModal suppliers={suppliers} onClose={() => setModal(null)} onSave={() => { setModal(null); reload() }} />}
+      {modal === 'newEmployee' && <NewEmployeeModal onClose={() => setModal(null)} onSave={() => { setModal(null); reload() }} />}
+      {modal === 'editEmployee' && selected && <NewEmployeeModal employee={selected} onClose={() => { setModal(null); setSelected(null) }} onSave={() => { setModal(null); setSelected(null); reload() }} />}
       {modal === 'viewInvoice' && selected && <ViewInvoiceModal invoice={selected} payments={payments} onClose={() => { setModal(null); setSelected(null) }} onPay={() => { setModal('payment') }} />}
     </div>
   )
@@ -1816,6 +1822,329 @@ function NewSupplierModal({ onClose, onSave }) {
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 20 }}>
         <button className="btn" onClick={onClose}>Cancel</button>
         <button className="btn btn-primary" onClick={handleSave} disabled={saving}><i className="ti ti-check"></i> {saving ? 'Saving...' : 'Save Supplier'}</button>
+      </div>
+    </Modal>
+  )
+}
+
+// ── VNPF ──────────────────────────────────────────────────
+const VNPF_EMPLOYEE_RATE = 0.06
+const VNPF_EMPLOYER_RATE = 0.06
+
+function VNPF({ employees, reload, setModal, setSelected }) {
+  const nowD = new Date()
+  const MONTHS_LONG = ['January','February','March','April','May','June','July','August','September','October','November','December']
+  const monthOptions = Array.from({ length: 24 }, (_, i) => {
+    const d = new Date(nowD.getFullYear(), nowD.getMonth() - i, 1)
+    return { value: d.toISOString().slice(0, 7), label: MONTHS_LONG[d.getMonth()] + ' ' + d.getFullYear() }
+  })
+  const [vnpfMonth, setVnpfMonth] = useState(nowD.toISOString().slice(0, 7))
+  const [emailStatus, setEmailStatus] = useState('')
+
+  const activeEmployees = employees.filter(e => e.active !== false)
+
+  const calc = (salary) => {
+    const s = Number(salary || 0)
+    const employee = Math.round(s * VNPF_EMPLOYEE_RATE)
+    const employer = Math.round(s * VNPF_EMPLOYER_RATE)
+    return { employee, employer, total: employee + employer }
+  }
+
+  const rows = activeEmployees.map(e => ({ ...e, ...calc(e.salary) }))
+  const totalSalary = rows.reduce((s, r) => s + Number(r.salary || 0), 0)
+  const totalEmployee = rows.reduce((s, r) => s + r.employee, 0)
+  const totalEmployer = rows.reduce((s, r) => s + r.employer, 0)
+  const totalContribution = totalEmployee + totalEmployer
+
+  const monthLabel = monthOptions.find(m => m.value === vnpfMonth)?.label || vnpfMonth
+
+  const handleDelete = async (id) => {
+    if (!confirm('Delete this employee?')) return
+    await fetch('/api/employees/' + id, { method: 'DELETE' }); reload()
+  }
+
+  const buildScheduleHtml = () => `<!DOCTYPE html><html><head><title>VNPF Contribution Schedule — ${monthLabel}</title>
+    <style>
+      *{box-sizing:border-box;margin:0;padding:0}
+      body{font-family:Arial,sans-serif;margin:0;color:#222;font-size:13px;background:#f0ebe0}
+      .page{max-width:850px;margin:20px auto;background:#fff;border-radius:4px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.15)}
+      .header{background:linear-gradient(135deg,#1A0D06 0%,#3D2214 50%,#5C3D0A 100%);padding:24px 40px;display:flex;justify-content:space-between;align-items:flex-start}
+      .logo-contact{font-size:10px;color:rgba(255,255,255,0.7);margin-top:8px;line-height:1.8}
+      .report-title{text-align:right;color:#fff}
+      .report-name{font-size:20px;font-weight:700;color:#FFD700}
+      .report-sub{font-size:11px;color:rgba(255,255,255,0.75);margin-top:4px;line-height:1.7}
+      .body{padding:28px 40px}
+      .info-box{background:#FAEEDA;border:1px solid #FAC775;border-radius:6px;padding:10px 16px;margin-bottom:20px;font-size:12px;color:#633806}
+      .stats{display:flex;gap:16px;margin-bottom:24px;flex-wrap:wrap}
+      .stat{background:#f5f5f5;border-radius:8px;padding:12px 18px;min-width:140px}
+      .stat-label{font-size:11px;color:#666;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.4px}
+      .stat-value{font-size:18px;font-weight:bold}
+      table{width:100%;border-collapse:collapse;margin-bottom:20px;font-size:12px}
+      th{background:#E8D5A3;padding:8px 10px;text-align:left;font-size:10px;font-weight:700;color:#3D2214;text-transform:uppercase;letter-spacing:0.5px}
+      td{padding:9px 10px;border-bottom:1px solid #f0ebe0}
+      tr:nth-child(even) td{background:#faf6ee}
+      .right{text-align:right}
+      .green{color:#2E7D2E;font-weight:500}
+      .summary-row{background:#E8D5A3!important;font-weight:700}
+      .footer{background:linear-gradient(135deg,#1A0D06,#5C3D0A);padding:14px 40px;display:flex;justify-content:space-between;align-items:center}
+      .footer-l{color:rgba(255,255,255,0.8);font-size:10px;line-height:1.9}
+      .footer-r{text-align:right;color:#FFD700;font-size:10px;line-height:1.9}
+      .noprint{background:#333;color:#fff;padding:10px 20px;display:flex;justify-content:space-between;align-items:center;font-size:13px}
+      .printbtn{background:#8B6914;color:#fff;border:none;padding:7px 18px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600}
+      @media print{.noprint{display:none}body{background:#fff}.page{box-shadow:none;margin:0}}
+    </style></head><body>
+    <div class="noprint"><span>VNPF Contribution Schedule — ${monthLabel}</span><button class="printbtn" onclick="window.print()">🖨️ Print / Save PDF</button></div>
+    <div class="page">
+      <div class="header">
+        <div>
+          <img src="${MALAKESA_LOGO}" alt="Malakesa Transfer and Tour" style="width:200px;border-radius:6px;display:block" />
+          <div class="logo-contact">
+            📍 Port Vila, Shefa Province, Vanuatu<br>
+            📞 +678 22712 &nbsp;|&nbsp; 📱 +678 7798712 &nbsp;|&nbsp; ✉️ accounts@malakesa.vu
+          </div>
+        </div>
+        <div class="report-title">
+          <div class="report-name">VNPF CONTRIBUTION SCHEDULE</div>
+          <div class="report-sub">
+            Period: <strong>${monthLabel}</strong><br>
+            TIN: <strong>445579</strong><br>
+            Generated: ${new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' })}
+          </div>
+        </div>
+      </div>
+      <div class="body">
+        <div class="info-box">
+          ⚠️ <strong>Employer:</strong> Malakesa Transfer and Tour &nbsp;|&nbsp; TIN 445579 &nbsp;|&nbsp; Employee rate: 6% &nbsp;|&nbsp; Employer rate: 6% &nbsp;|&nbsp; Period: ${monthLabel}
+        </div>
+        <div class="stats">
+          <div class="stat"><div class="stat-label">Total Gross Salaries</div><div class="stat-value">VT ${Number(totalSalary).toLocaleString()}</div></div>
+          <div class="stat"><div class="stat-label">Employee Contributions (6%)</div><div class="stat-value">VT ${Number(totalEmployee).toLocaleString()}</div></div>
+          <div class="stat"><div class="stat-label">Employer Contributions (6%)</div><div class="stat-value">VT ${Number(totalEmployer).toLocaleString()}</div></div>
+          <div class="stat"><div class="stat-label">Total Payable to VNPF</div><div class="stat-value" style="color:#2E7D2E">VT ${Number(totalContribution).toLocaleString()}</div></div>
+        </div>
+        <table>
+          <thead><tr>
+            <th>Employee Name</th><th>VNPF Number</th>
+            <th class="right">Gross Salary</th>
+            <th class="right">Employee 6%</th>
+            <th class="right">Employer 6%</th>
+            <th class="right">Total Contribution</th>
+          </tr></thead>
+          <tbody>
+            ${rows.map(r => '<tr><td><strong>' + r.name + '</strong></td><td>' + (r.vnpf_number || '—') + '</td><td class="right">VT ' + Number(r.salary || 0).toLocaleString() + '</td><td class="right">VT ' + Number(r.employee).toLocaleString() + '</td><td class="right">VT ' + Number(r.employer).toLocaleString() + '</td><td class="right green">VT ' + Number(r.total).toLocaleString() + '</td></tr>').join('')}
+            <tr class="summary-row"><td colspan="2">TOTAL (${rows.length} employees)</td><td class="right">VT ${Number(totalSalary).toLocaleString()}</td><td class="right">VT ${Number(totalEmployee).toLocaleString()}</td><td class="right">VT ${Number(totalEmployer).toLocaleString()}</td><td class="right">VT ${Number(totalContribution).toLocaleString()}</td></tr>
+          </tbody>
+        </table>
+        <p style="margin-top:16px;font-size:11px;color:#888">* Please verify all figures before submitting to the Vanuatu National Provident Fund. This schedule is computer generated.</p>
+      </div>
+      <div class="footer">
+        <div class="footer-l">
+          <div><strong style="color:#FFD700">Malakesa Transfer &amp; Tour</strong></div>
+          <div>TIN: 445579 &nbsp;|&nbsp; Port Vila, Vanuatu</div>
+          <div>Period: ${monthLabel}</div>
+        </div>
+        <div class="footer-r">
+          <div>Employees: ${rows.length}</div>
+          <div>Total Payable: VT ${Number(totalContribution).toLocaleString()}</div>
+          <div style="font-size:10px;opacity:0.7">Computer generated — verify before filing</div>
+        </div>
+      </div>
+    </div>
+    <script>window.onload=()=>window.print()<\/script></body></html>`
+
+  const printSchedule = () => {
+    const w = window.open('', '_blank')
+    if (!w) { alert('Please allow popups to print the schedule.'); return }
+    w.document.write(buildScheduleHtml())
+    w.document.close()
+  }
+
+  const emailSchedule = async () => {
+    setEmailStatus('sending')
+    try {
+      const res = await fetch('/api/send-vnpf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          month: vnpfMonth,
+          monthLabel,
+          rows: rows.map(r => ({ name: r.name, vnpf_number: r.vnpf_number, salary: r.salary, employee: r.employee, employer: r.employer, total: r.total })),
+          totals: { totalSalary, totalEmployee, totalEmployer, totalContribution }
+        })
+      })
+      const data = await res.json()
+      if (res.ok) {
+        setEmailStatus('Sent to ' + (data.sentTo || []).join(', '))
+        setTimeout(() => setEmailStatus(''), 5000)
+        return
+      }
+      setEmailStatus('error: ' + (data.error || 'Failed to send'))
+      setTimeout(() => setEmailStatus(''), 6000)
+    } catch (e) {
+      setEmailStatus('error: ' + e.message)
+      setTimeout(() => setEmailStatus(''), 6000)
+    }
+  }
+
+  return (
+    <>
+      <Topbar title="VNPF Contributions">
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+          <select value={vnpfMonth} onChange={e => setVnpfMonth(e.target.value)} style={{ padding: '6px 10px', borderRadius: 8, border: '0.5px solid #8B6914', fontSize: 13, fontFamily: 'inherit', background: '#8B6914', color: '#fff', fontWeight: 500, cursor: 'pointer' }}>
+            {monthOptions.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+          </select>
+          <button className="btn btn-sm" style={{ background: '#2E7D2E', borderColor: '#1A4D1A', color: '#fff', fontWeight: 500 }} onClick={printSchedule}><i className="ti ti-printer"></i> Print Schedule</button>
+          <button className="btn btn-sm" style={{ background: '#8B6914', borderColor: '#6B5010', color: '#fff', fontWeight: 500 }} onClick={emailSchedule} disabled={emailStatus === 'sending' || rows.length === 0}>
+            <i className="ti ti-mail"></i> {emailStatus === 'sending' ? 'Sending...' : 'Email to VNPF'}
+          </button>
+          <button className="btn btn-primary" onClick={() => setModal('newEmployee')}><i className="ti ti-plus"></i> Add Employee</button>
+        </div>
+      </Topbar>
+      <div style={{ padding: 20 }}>
+        {emailStatus && emailStatus !== 'sending' && (
+          <div style={{ background: emailStatus.startsWith('error') ? '#FCEBEB' : '#EAF3DE', color: emailStatus.startsWith('error') ? '#791F1F' : '#27500A', border: '0.5px solid ' + (emailStatus.startsWith('error') ? '#F7C1C1' : '#C0DD97'), padding: '10px 14px', borderRadius: 8, fontSize: 13, marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <i className={`ti ${emailStatus.startsWith('error') ? 'ti-alert-circle' : 'ti-check'}`}></i>
+            {emailStatus.startsWith('error') ? emailStatus.replace('error: ', 'Failed: ') : emailStatus}
+          </div>
+        )}
+
+        <div style={{ background: '#EAF3DE', border: '0.5px solid #C0DD97', borderRadius: 8, padding: '10px 16px', marginBottom: 16, fontSize: 13, color: '#27500A', display: 'flex', alignItems: 'center', gap: 10 }}>
+          <i className="ti ti-building-bank" style={{ fontSize: 18 }}></i>
+          <span><strong>VNPF Period: {monthLabel}</strong> &nbsp;|&nbsp; Employee rate: 6% &nbsp;|&nbsp; Employer rate: 6% &nbsp;|&nbsp; Total payable: <strong>{fmt(totalContribution)}</strong></span>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12, marginBottom: 16 }}>
+          <StatCard label="Total gross salaries" value={fmt(totalSalary)} sub={`${rows.length} employees`} />
+          <StatCard label="Employee contributions (6%)" value={fmt(totalEmployee)} color="#8B6914" />
+          <StatCard label="Employer contributions (6%)" value={fmt(totalEmployer)} color="#8B6914" />
+          <StatCard label="Total payable to VNPF" value={fmt(totalContribution)} color="#2E7D2E" />
+        </div>
+
+        <Card style={{ padding: 0, overflow: 'hidden' }}>
+          <div style={{ padding: '12px 20px', borderBottom: '0.5px solid rgba(0,0,0,0.09)', fontWeight: 500, fontSize: 13 }}>
+            Contribution Schedule — {monthLabel}
+          </div>
+          {rows.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '48px 20px', color: '#666' }}>
+              <i className="ti ti-users-plus" style={{ fontSize: 36, display: 'block', marginBottom: 10 }}></i>
+              <p style={{ marginBottom: 14 }}>No employees added yet</p>
+              <button className="btn btn-primary" onClick={() => setModal('newEmployee')}>Add first employee</button>
+            </div>
+          ) : (
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+              <thead><tr style={{ background: '#E8D5A3' }}>
+                <Th>Name</Th><Th>VNPF Number</Th><Th>Email</Th>
+                <Th style={{ textAlign: 'right' }}>Gross Salary</Th>
+                <Th style={{ textAlign: 'right' }}>Employee 6%</Th>
+                <Th style={{ textAlign: 'right' }}>Employer 6%</Th>
+                <Th style={{ textAlign: 'right' }}>Total</Th>
+                <Th style={{ textAlign: 'center' }}>Actions</Th>
+              </tr></thead>
+              <tbody>
+                {rows.map(r => (
+                  <tr key={r.id} style={{ borderBottom: '0.5px solid rgba(0,0,0,0.09)' }}>
+                    <Td><strong>{r.name}</strong></Td>
+                    <Td style={{ color: '#666' }}>{r.vnpf_number || '—'}</Td>
+                    <Td style={{ color: '#666' }}>{r.email || '—'}</Td>
+                    <Td style={{ textAlign: 'right' }}>{fmt(r.salary)}</Td>
+                    <Td style={{ textAlign: 'right' }}>{fmt(r.employee)}</Td>
+                    <Td style={{ textAlign: 'right' }}>{fmt(r.employer)}</Td>
+                    <Td style={{ textAlign: 'right', fontWeight: 500, color: '#2E7D2E' }}>{fmt(r.total)}</Td>
+                    <Td>
+                      <div style={{ display: 'flex', gap: 5, justifyContent: 'center' }}>
+                        <button className="btn btn-sm" onClick={() => { setSelected(r); setModal('editEmployee') }}><i className="ti ti-pencil"></i></button>
+                        <button className="btn btn-sm" style={{ borderColor: '#A32D2D', color: '#A32D2D' }} onClick={() => handleDelete(r.id)}><i className="ti ti-trash"></i></button>
+                      </div>
+                    </Td>
+                  </tr>
+                ))}
+                <tr style={{ background: '#E8D5A3', fontWeight: 700 }}>
+                  <td colSpan={3} style={{ padding: '9px 14px', fontSize: 13 }}>TOTAL</td>
+                  <td style={{ padding: '9px 14px', textAlign: 'right', fontSize: 13 }}>{fmt(totalSalary)}</td>
+                  <td style={{ padding: '9px 14px', textAlign: 'right', fontSize: 13 }}>{fmt(totalEmployee)}</td>
+                  <td style={{ padding: '9px 14px', textAlign: 'right', fontSize: 13 }}>{fmt(totalEmployer)}</td>
+                  <td style={{ padding: '9px 14px', textAlign: 'right', fontSize: 13, color: '#2E7D2E' }}>{fmt(totalContribution)}</td>
+                  <td></td>
+                </tr>
+              </tbody>
+            </table>
+          )}
+        </Card>
+      </div>
+    </>
+  )
+}
+
+function NewEmployeeModal({ employee, onClose, onSave }) {
+  const isEdit = !!employee
+  const [form, setForm] = useState({
+    name: employee?.name || '',
+    salary: employee?.salary || '',
+    vnpf_number: employee?.vnpf_number || '',
+    email: employee?.email || ''
+  })
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+
+  const salary = parseFloat(form.salary) || 0
+  const employeeContrib = Math.round(salary * VNPF_EMPLOYEE_RATE)
+  const employerContrib = Math.round(salary * VNPF_EMPLOYER_RATE)
+
+  const handleSave = async () => {
+    setError('')
+    if (!form.name.trim()) { setError('Employee name is required'); return }
+    if (!form.salary || salary <= 0) { setError('Salary is required'); return }
+    setSaving(true)
+    try {
+      const url = isEdit ? '/api/employees/' + employee.id : '/api/employees'
+      const method = isEdit ? 'PATCH' : 'POST'
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...form, salary })
+      })
+      if (!res.ok) { const d = await res.json(); setError(d.error || 'Failed to save'); setSaving(false); return }
+      onSave()
+    } catch (e) { setError('Network error — please try again'); setSaving(false) }
+  }
+
+  return (
+    <Modal title={isEdit ? 'Edit Employee' : 'Add Employee'} onClose={onClose}>
+      {error && <Alert type="danger">{error}</Alert>}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <Field label="Employee name *">
+          <input type="text" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} style={inputStyle} placeholder="e.g. John Tarileo" />
+        </Field>
+        <Field label="VNPF member number">
+          <input type="text" value={form.vnpf_number} onChange={e => setForm(f => ({ ...f, vnpf_number: e.target.value }))} style={inputStyle} placeholder="e.g. VN-12345" />
+        </Field>
+        <Field label="Email">
+          <input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} style={inputStyle} placeholder="employee@email.com" />
+        </Field>
+        <Field label="Monthly gross salary (VT) *">
+          <input type="number" value={form.salary} min="0" onChange={e => setForm(f => ({ ...f, salary: e.target.value }))} style={inputStyle} placeholder="0" />
+        </Field>
+      </div>
+
+      {salary > 0 && (
+        <div style={{ background: '#f5f0e8', borderRadius: 8, padding: '12px 16px', marginTop: 16 }}>
+          <div style={{ fontWeight: 500, fontSize: 13, marginBottom: 8, color: '#3D2214' }}>VNPF Contribution Preview</div>
+          {[
+            ['Employee contribution (6%)', fmt(employeeContrib)],
+            ['Employer contribution (6%)', fmt(employerContrib)],
+            ['Total monthly contribution', fmt(employeeContrib + employerContrib)],
+          ].map(([l, v], i) => (
+            <div key={l} style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', borderBottom: i < 2 ? '0.5px solid rgba(0,0,0,0.09)' : 'none', fontSize: 13 }}>
+              <span style={{ color: '#666' }}>{l}</span>
+              <span style={{ fontWeight: i === 2 ? 600 : 400, color: i === 2 ? '#2E7D2E' : '#1a1a1a' }}>{v}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 20 }}>
+        <button className="btn" onClick={onClose}>Cancel</button>
+        <button className="btn btn-primary" onClick={handleSave} disabled={saving}><i className="ti ti-check"></i> {saving ? 'Saving...' : isEdit ? 'Save Changes' : 'Save Employee'}</button>
       </div>
     </Modal>
   )
