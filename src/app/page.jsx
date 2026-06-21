@@ -38,6 +38,7 @@ export default function App() {
   const [purchases, setPurchases] = useState([])
   const [suppliers, setSuppliers] = useState([])
   const [employees, setEmployees] = useState([])
+  const [customCategories, setCustomCategories] = useState([])
   const [loading, setLoading] = useState(true)
   const [modal, setModal] = useState(null)
   const [selected, setSelected] = useState(null)
@@ -45,16 +46,17 @@ export default function App() {
   const reload = async () => {
     try {
       setLoading(true)
-      const [invRes, pmtRes, clRes, purRes, supRes, empRes] = await Promise.all([
-        fetch('/api/invoices'), fetch('/api/payments'), fetch('/api/clients'), fetch('/api/purchases'), fetch('/api/suppliers'), fetch('/api/employees')
+      const [invRes, pmtRes, clRes, purRes, supRes, empRes, catRes] = await Promise.all([
+        fetch('/api/invoices'), fetch('/api/payments'), fetch('/api/clients'), fetch('/api/purchases'), fetch('/api/suppliers'), fetch('/api/employees'), fetch('/api/purchase-categories')
       ])
-      const [invs, pmts, cls, purs, sups, emps] = await Promise.all([invRes.json(), pmtRes.json(), clRes.json(), purRes.json(), supRes.json(), empRes.json()])
+      const [invs, pmts, cls, purs, sups, emps, cats] = await Promise.all([invRes.json(), pmtRes.json(), clRes.json(), purRes.json(), supRes.json(), empRes.json(), catRes.json()])
       setInvoices(Array.isArray(invs) ? invs : [])
       setPayments(Array.isArray(pmts) ? pmts : [])
       setClients(Array.isArray(cls) ? cls : [])
       setPurchases(Array.isArray(purs) ? purs : [])
       setSuppliers(Array.isArray(sups) ? sups : [])
       setEmployees(Array.isArray(emps) ? emps : [])
+      setCustomCategories(Array.isArray(cats) ? cats : [])
     } catch(e) { console.error(e) }
     setLoading(false)
   }
@@ -109,7 +111,7 @@ export default function App() {
             {page === 'invoices' && <Invoices invoices={invoices} payments={payments} reload={reload} setModal={setModal} setSelected={setSelected} />}
             {page === 'payments' && <Payments payments={payments} invoices={invoices} reload={reload} setModal={setModal} setSelected={setSelected} />}
             {page === 'unpaid' && <Unpaid invoices={invoices} payments={payments} reload={reload} setModal={setModal} setSelected={setSelected} />}
-            {page === 'purchases' && <Purchases purchases={purchases} suppliers={suppliers} reload={reload} setModal={setModal} />}
+            {page === 'purchases' && <Purchases purchases={purchases} suppliers={suppliers} customCategories={customCategories} reload={reload} setModal={setModal} />}
             {page === 'suppliers' && <Suppliers suppliers={suppliers} purchases={purchases} reload={reload} setModal={setModal} />}
             {page === 'vnpf' && <VNPF employees={employees} reload={reload} setModal={setModal} setSelected={setSelected} />}
             {page === 'reports' && <Reports invoices={invoices} payments={payments} purchases={purchases} />}
@@ -123,7 +125,8 @@ export default function App() {
       {modal === 'payment' && selected && <PaymentModal invoice={selected} payments={payments} onClose={() => { setModal(null); setSelected(null) }} onSave={() => { setModal(null); setSelected(null); reload() }} />}
       {modal === 'newClient' && <NewClientModal onClose={() => setModal(null)} onSave={() => { setModal(null); reload() }} />}
       {modal === 'newSupplier' && <NewSupplierModal onClose={() => setModal(null)} onSave={() => { setModal(null); reload() }} />}
-      {modal === 'newPurchase' && <NewPurchaseModal suppliers={suppliers} onClose={() => setModal(null)} onSave={() => { setModal(null); reload() }} />}
+      {modal === 'newPurchase' && <NewPurchaseModal suppliers={suppliers} customCategories={customCategories} onClose={() => setModal(null)} onSave={() => { setModal(null); reload() }} />}
+      {modal === 'manageCategories' && <ManageCategoriesModal customCategories={customCategories} onClose={() => setModal(null)} onSave={reload} />}
       {modal === 'newEmployee' && <NewEmployeeModal onClose={() => setModal(null)} onSave={() => { setModal(null); reload() }} />}
       {modal === 'editEmployee' && selected && <NewEmployeeModal employee={selected} onClose={() => { setModal(null); setSelected(null) }} onSave={() => { setModal(null); setSelected(null); reload() }} />}
       {modal === 'viewInvoice' && selected && <ViewInvoiceModal invoice={selected} payments={payments} onClose={() => { setModal(null); setSelected(null) }} onPay={() => { setModal('payment') }} />}
@@ -1456,10 +1459,12 @@ function Reports({ invoices, payments, purchases }) {
 // ── Purchases ─────────────────────────────────────────────
 const PURCHASE_CATEGORIES = ['Fuel', 'Vehicle Maintenance', 'Insurance', 'Office Supplies', 'Utilities', 'Staff Costs', 'Marketing', 'Equipment', 'Accommodation', 'Food & Beverages', 'Professional Services', 'Bank Charges', 'Other']
 
-function Purchases({ purchases, suppliers, reload, setModal }) {
+function Purchases({ purchases, suppliers, customCategories, reload, setModal }) {
   const [filterMonth, setFilterMonth] = useState('')
   const [filterCategory, setFilterCategory] = useState('')
   const [search, setSearch] = useState('')
+
+  const allCategories = [...PURCHASE_CATEGORIES.slice(0, -1), ...(customCategories || []).map(c => c.name), 'Other']
 
   const now = new Date()
   const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
@@ -1490,7 +1495,10 @@ function Purchases({ purchases, suppliers, reload, setModal }) {
   return (
     <>
       <Topbar title="Purchases">
-        <button className="btn btn-primary" onClick={() => setModal('newPurchase')}><i className="ti ti-plus"></i> Add Purchase</button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button className="btn" style={{ background: '#fff', borderColor: 'rgba(139,105,20,0.4)', color: '#8B6914', fontWeight: 500 }} onClick={() => setModal('manageCategories')}><i className="ti ti-category-plus"></i> Manage Categories</button>
+          <button className="btn btn-primary" onClick={() => setModal('newPurchase')}><i className="ti ti-plus"></i> Add Purchase</button>
+        </div>
       </Topbar>
       <div style={{ padding: 20 }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12, marginBottom: 16 }}>
@@ -1505,7 +1513,7 @@ function Purchases({ purchases, suppliers, reload, setModal }) {
           <MonthYearPicker value={filterMonth} onChange={setFilterMonth} accentColor="#8B6914" allowClear clearLabel="All months" />
           <select value={filterCategory} onChange={e => setFilterCategory(e.target.value)} style={selectStyle}>
             <option value="">All categories</option>
-            {PURCHASE_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+            {allCategories.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
           {hasFilters && <button className="btn btn-sm" onClick={clearFilters} style={{ color: '#A32D2D', borderColor: '#A32D2D' }}><i className="ti ti-x"></i> Clear</button>}
           <div style={{ marginLeft: 'auto', fontSize: 12, color: '#666' }}>
@@ -1564,7 +1572,8 @@ function Purchases({ purchases, suppliers, reload, setModal }) {
   )
 }
 
-function NewPurchaseModal({ suppliers, onClose, onSave }) {
+function NewPurchaseModal({ suppliers, customCategories, onClose, onSave }) {
+  const allCategories = [...PURCHASE_CATEGORIES.slice(0, -1), ...(customCategories || []).map(c => c.name), 'Other']
   const [form, setForm] = useState({
     date: todayStr(), supplier_id: '', supplier: '', description: '', category: 'Other',
     amount: '', vat: '', ref: ''
@@ -1637,7 +1646,7 @@ function NewPurchaseModal({ suppliers, onClose, onSave }) {
         <Field label="Date *"><input type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} style={inputStyle} /></Field>
         <Field label="Category">
           <select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))} style={inputStyle}>
-            {PURCHASE_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+            {allCategories.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
         </Field>
 
@@ -1743,6 +1752,93 @@ function NewPurchaseModal({ suppliers, onClose, onSave }) {
           <button className="btn" onClick={onClose}>Cancel</button>
           <button className="btn btn-primary" onClick={handleSave} disabled={saving}><i className="ti ti-check"></i> {saving ? 'Saving...' : 'Save Purchase'}</button>
         </div>
+      </div>
+    </Modal>
+  )
+}
+
+function ManageCategoriesModal({ customCategories, onClose, onSave }) {
+  const [list, setList] = useState(customCategories || [])
+  const [newCat, setNewCat] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+
+  const builtIns = PURCHASE_CATEGORIES.slice(0, -1) // exclude 'Other'
+
+  const handleAdd = async () => {
+    setError('')
+    const trimmed = newCat.trim()
+    if (!trimmed) return
+    if (builtIns.includes(trimmed) || list.some(c => c.name.toLowerCase() === trimmed.toLowerCase())) {
+      setError('That category already exists')
+      return
+    }
+    setSaving(true)
+    try {
+      const res = await fetch('/api/purchase-categories', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: trimmed })
+      })
+      if (!res.ok) { const d = await res.json(); setError(d.error || 'Failed to add'); setSaving(false); return }
+      const saved = await res.json()
+      setList(l => [...l, saved])
+      setNewCat('')
+    } catch (e) { setError('Network error — please try again') }
+    setSaving(false)
+  }
+
+  const handleDelete = async (id) => {
+    if (!confirm('Remove this category? Existing purchases will keep their category label.')) return
+    await fetch('/api/purchase-categories/' + id, { method: 'DELETE' })
+    setList(l => l.filter(c => c.id !== id))
+  }
+
+  return (
+    <Modal title="Manage Purchase Categories" onClose={() => { onSave(); onClose() }}>
+      {error && <Alert type="danger">{error}</Alert>}
+      <div style={{ marginBottom: 16 }}>
+        <div style={{ fontSize: 12, color: '#666', fontWeight: 500, marginBottom: 8 }}>Built-in categories</div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+          {builtIns.map(c => (
+            <span key={c} style={{ background: '#E8D5A3', padding: '4px 10px', borderRadius: 99, fontSize: 12, color: '#3D2214' }}>{c}</span>
+          ))}
+          <span style={{ background: '#f1f1f1', padding: '4px 10px', borderRadius: 99, fontSize: 12, color: '#888' }}>Other</span>
+        </div>
+      </div>
+
+      <div style={{ marginBottom: 16 }}>
+        <div style={{ fontSize: 12, color: '#666', fontWeight: 500, marginBottom: 8 }}>Your custom categories</div>
+        {list.length === 0 ? (
+          <div style={{ fontSize: 13, color: '#999', fontStyle: 'italic' }}>No custom categories yet — add one below.</div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {list.map(c => (
+              <div key={c.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f5f0e8', padding: '6px 10px', borderRadius: 8 }}>
+                <span style={{ fontSize: 13, color: '#3D2214', fontWeight: 500 }}>{c.name}</span>
+                <button className="btn btn-sm" style={{ borderColor: '#A32D2D', color: '#A32D2D', padding: '2px 8px' }} onClick={() => handleDelete(c.id)}><i className="ti ti-trash"></i></button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <Field label="Add new category">
+        <div style={{ display: 'flex', gap: 8 }}>
+          <input
+            type="text"
+            value={newCat}
+            onChange={e => setNewCat(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleAdd() } }}
+            style={{ ...inputStyle, flex: 1 }}
+            placeholder="e.g. Tour Guide Fees"
+          />
+          <button className="btn btn-primary" onClick={handleAdd} disabled={saving || !newCat.trim()}><i className="ti ti-plus"></i> {saving ? 'Adding...' : 'Add'}</button>
+        </div>
+      </Field>
+
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 20 }}>
+        <button className="btn btn-primary" onClick={() => { onSave(); onClose() }}>Done</button>
       </div>
     </Modal>
   )
