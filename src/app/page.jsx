@@ -133,12 +133,13 @@ export default function App() {
 
 // ── Dashboard ─────────────────────────────────────────────
 // ── Month/Year Picker (calendar popup) ────────────────────
-function MonthYearPicker({ value, onChange, accentColor = '#8B6914' }) {
+function MonthYearPicker({ value, onChange, accentColor = '#8B6914', allowClear = false, clearLabel = 'All months' }) {
   const [open, setOpen] = useState(false)
   const MONTHS_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
   const MONTHS_LONG = ['January','February','March','April','May','June','July','August','September','October','November','December']
 
-  const [vy, vm] = value ? value.split('-').map(Number) : [new Date().getFullYear(), new Date().getMonth() + 1]
+  const hasValue = !!value
+  const [vy, vm] = hasValue ? value.split('-').map(Number) : [new Date().getFullYear(), new Date().getMonth() + 1]
   const [viewYear, setViewYear] = useState(vy)
 
   const wrapRef = useRef(null)
@@ -150,7 +151,7 @@ function MonthYearPicker({ value, onChange, accentColor = '#8B6914' }) {
 
   useEffect(() => { if (open) setViewYear(vy) }, [open])
 
-  const label = value ? `${MONTHS_LONG[vm - 1]} ${vy}` : 'Select month'
+  const label = hasValue ? `${MONTHS_LONG[vm - 1]} ${vy}` : clearLabel
 
   const selectMonth = (mIdx) => {
     const mm = String(mIdx + 1).padStart(2, '0')
@@ -158,7 +159,7 @@ function MonthYearPicker({ value, onChange, accentColor = '#8B6914' }) {
     setOpen(false)
   }
 
-  const isSelected = (mIdx) => value === `${viewYear}-${String(mIdx + 1).padStart(2, '0')}`
+  const isSelected = (mIdx) => hasValue && value === `${viewYear}-${String(mIdx + 1).padStart(2, '0')}`
   const isCurrentRealMonth = (mIdx) => {
     const now = new Date()
     return viewYear === now.getFullYear() && mIdx === now.getMonth()
@@ -202,12 +203,21 @@ function MonthYearPicker({ value, onChange, accentColor = '#8B6914' }) {
             })}
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 10, paddingTop: 10, borderTop: '0.5px solid rgba(0,0,0,0.08)' }}>
-            <button
-              onClick={() => { const now = new Date(); setViewYear(now.getFullYear()); onChange(`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`); setOpen(false) }}
-              style={{ fontSize: 11.5, color: accentColor, background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}
-            >
-              Jump to current month
-            </button>
+            {allowClear ? (
+              <button
+                onClick={() => { onChange(''); setOpen(false) }}
+                style={{ fontSize: 11.5, color: '#A32D2D', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}
+              >
+                Clear ({clearLabel})
+              </button>
+            ) : (
+              <button
+                onClick={() => { const now = new Date(); setViewYear(now.getFullYear()); onChange(`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`); setOpen(false) }}
+                style={{ fontSize: 11.5, color: accentColor, background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}
+              >
+                Jump to current month
+              </button>
+            )}
             <button onClick={() => setOpen(false)} style={{ fontSize: 11.5, color: '#999', background: 'none', border: 'none', cursor: 'pointer' }}>Close</button>
           </div>
         </div>
@@ -423,10 +433,7 @@ function Invoices({ invoices, payments, reload, setModal, setSelected }) {
             <option value="overdue">Overdue</option>
             <option value="partial">Partial</option>
           </select>
-          <select value={filterMonth} onChange={e => setFilterMonth(e.target.value)} style={selectStyle}>
-            <option value="">All months</option>
-            {monthOptions.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
-          </select>
+          <MonthYearPicker value={filterMonth} onChange={setFilterMonth} accentColor="#8B6914" allowClear clearLabel="All months" />
           {hasFilters && <button className="btn btn-sm" onClick={clearFilters} style={{ color: '#A32D2D', borderColor: '#A32D2D' }}><i className="ti ti-x"></i> Clear</button>}
           <div style={{ marginLeft: 'auto', fontSize: 12, color: '#666' }}>
             {filtered.length} invoice{filtered.length !== 1 ? 's' : ''} &nbsp;|&nbsp; {fmt(totalFiltered)} invoiced &nbsp;|&nbsp; <span style={{ color: totalBalance > 0 ? '#D85A30' : '#3B6D11' }}>{fmt(totalBalance)} outstanding</span>
@@ -622,10 +629,7 @@ function Unpaid({ invoices, payments, reload, setModal, setSelected }) {
             <option value="">All clients</option>
             {clients.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
-          <select value={filterMonth} onChange={e => setFilterMonth(e.target.value)} style={{ padding: '6px 10px', borderRadius: 8, border: '0.5px solid #8B6914', fontSize: 13, fontFamily: 'inherit', background: '#8B6914', color: '#fff', fontWeight: 500, cursor: 'pointer' }}>
-            <option value="">All months</option>
-            {monthOptions.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
-          </select>
+          <MonthYearPicker value={filterMonth} onChange={setFilterMonth} accentColor="#8B6914" allowClear clearLabel="All months" />
           <button className="btn btn-sm" style={{ background: "#8B6914", borderColor: "#6B5010", color: "#fff", fontWeight: 500 }} onClick={printReport}><i className="ti ti-printer"></i> Print</button>
           <button className="btn btn-sm" style={{ background: "#8B6914", borderColor: "#6B5010", color: "#fff", fontWeight: 500 }} onClick={sendAllReminders}><i className="ti ti-mail"></i> Email All</button>
         </div>
@@ -1498,10 +1502,7 @@ function Purchases({ purchases, suppliers, reload, setModal }) {
         {/* Filter bar */}
         <div style={{ background: '#fff', border: '0.5px solid rgba(139,105,20,0.2)', borderRadius: 12, padding: '12px 16px', marginBottom: 16, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
           <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search supplier or description..." style={{ ...selectStyle, background: '#fff', color: '#1a1a1a', minWidth: 220 }} />
-          <select value={filterMonth} onChange={e => setFilterMonth(e.target.value)} style={selectStyle}>
-            <option value="">All months</option>
-            {monthOptions.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
-          </select>
+          <MonthYearPicker value={filterMonth} onChange={setFilterMonth} accentColor="#8B6914" allowClear clearLabel="All months" />
           <select value={filterCategory} onChange={e => setFilterCategory(e.target.value)} style={selectStyle}>
             <option value="">All categories</option>
             {PURCHASE_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
