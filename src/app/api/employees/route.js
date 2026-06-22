@@ -16,7 +16,7 @@ export async function GET() {
 
 export async function POST(request) {
   const body = await request.json()
-  const { name, salary, vnpf_number, email } = body
+  const { name, salary, vnpf_number, email, job_title } = body
   if (!name || !salary) {
     return Response.json({ error: 'name and salary are required' }, { status: 400 })
   }
