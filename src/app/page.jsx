@@ -2302,7 +2302,7 @@ function NewEmployeeModal({ employee, onClose, onSave }) {
           <input type="text" value={form.job_title} onChange={e => setForm(f => ({ ...f, job_title: e.target.value }))} style={inputStyle} placeholder="e.g. Driver" />
         </Field>
         <Field label="VNPF member number">
-          <input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} style={inputStyle} placeholder="employee@email.com" />
+         <input type="text" value={form.vnpf_number} onChange={e => setForm(f => ({ ...f, vnpf_number: e.target.value }))} style={inputStyle} placeholder="e.g. VN-12345" />
         </Field>
         <Field label="Monthly gross salary (VT) *">
           <input type="number" value={form.salary} min="0" onChange={e => setForm(f => ({ ...f, salary: e.target.value }))} style={inputStyle} placeholder="0" />
