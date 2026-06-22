@@ -2216,7 +2216,7 @@ function VNPF({ employees, reload, setModal, setSelected }) {
           ) : (
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
               <thead><tr style={{ background: '#E8D5A3' }}>
-                <Th>Name</Th><Th>Job Title</Th><Th>VNPF Number</Th><Th>Email</Th>
+                <Th>Name</Th><Th>Job Title</Th><Th>VNPF Number</Th>
                 <Th style={{ textAlign: 'right' }}>Gross Salary</Th>
                 <Th style={{ textAlign: 'right' }}>Employee 6%</Th>
                 <Th style={{ textAlign: 'right' }}>Employer 6%</Th>
