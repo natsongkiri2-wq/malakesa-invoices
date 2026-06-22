@@ -2109,14 +2109,14 @@ function VNPF({ employees, reload, setModal, setSelected }) {
         </div>
         <table>
           <thead><tr>
-            <th>Employee Name</th><th>VNPF Number</th>
+            <th>Employee Name</th><th>Job Title</th><th>VNPF Number</th>
             <th class="right">Gross Salary</th>
             <th class="right">Employee 6%</th>
             <th class="right">Employer 6%</th>
             <th class="right">Total Contribution</th>
           </tr></thead>
           <tbody>
-            ${rows.map(r => '<tr><td><strong>' + r.name + '</strong></td><td>' + (r.vnpf_number || '—') + '</td><td class="right">VT ' + Number(r.salary || 0).toLocaleString() + '</td><td class="right">VT ' + Number(r.employee).toLocaleString() + '</td><td class="right">VT ' + Number(r.employer).toLocaleString() + '</td><td class="right green">VT ' + Number(r.total).toLocaleString() + '</td></tr>').join('')}
+            ${rows.map(r => '<tr><td><strong>' + r.name + '</strong></td><td>' + (r.job_title || '—') + '</td><td>' + (r.vnpf_number || '—') + '</td><td class="right">VT ' + Number(r.salary || 0).toLocaleString() + '</td><td class="right">VT ' + Number(r.employee).toLocaleString() + '</td><td class="right">VT ' + Number(r.employer).toLocaleString() + '</td><td class="right green">VT ' + Number(r.total).toLocaleString() + '</td></tr>').join('')}
             <tr class="summary-row"><td colspan="2">TOTAL (${rows.length} employees)</td><td class="right">VT ${Number(totalSalary).toLocaleString()}</td><td class="right">VT ${Number(totalEmployee).toLocaleString()}</td><td class="right">VT ${Number(totalEmployer).toLocaleString()}</td><td class="right">VT ${Number(totalContribution).toLocaleString()}</td></tr>
           </tbody>
         </table>
@@ -2298,7 +2298,7 @@ function NewEmployeeModal({ employee, onClose, onSave }) {
         <Field label="Employee name *">
           <input type="text" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} style={inputStyle} placeholder="e.g. John Tarileo" />
         </Field>
-        <Field label="VNPF member number">
+        <Field label="Job title">
           <input type="text" value={form.vnpf_number} onChange={e => setForm(f => ({ ...f, vnpf_number: e.target.value }))} style={inputStyle} placeholder="e.g. VN-12345" />
         </Field>
         <Field label="Email">
