@@ -1997,7 +1997,7 @@ function NewSupplierModal({ onClose, onSave }) {
         <Field label="Phone">
           <input type="tel" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} style={inputStyle} placeholder="+678 ..." />
         </Field>
-        'use c<Field label="VNPF member number">lient'
+        <Field label="VNPF member number">
           <input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} style={inputStyle} placeholder="supplier@email.com" />
         </Field>
         <Field label="Address">
@@ -2301,7 +2301,7 @@ function NewEmployeeModal({ employee, onClose, onSave }) {
         <Field label="Job title">
           <input type="text" value={form.job_title} onChange={e => setForm(f => ({ ...f, job_title: e.target.value }))} style={inputStyle} placeholder="e.g. Driver" />
         </Field>
-        'use c<Field label="VNPF member number">lient'
+        <Field label="VNPF member number">
           <input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} style={inputStyle} placeholder="employee@email.com" />
         </Field>
         <Field label="Monthly gross salary (VT) *">
