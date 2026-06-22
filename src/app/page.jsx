@@ -2216,7 +2216,7 @@ function VNPF({ employees, reload, setModal, setSelected }) {
           ) : (
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
               <thead><tr style={{ background: '#E8D5A3' }}>
-                <Th>Name</Th><Th>VNPF Number</Th><Th>Email</Th>
+                <Th>Name</Th><Th>Job Title</Th><Th>VNPF Number</Th><Th>Email</Th>
                 <Th style={{ textAlign: 'right' }}>Gross Salary</Th>
                 <Th style={{ textAlign: 'right' }}>Employee 6%</Th>
                 <Th style={{ textAlign: 'right' }}>Employer 6%</Th>
@@ -2242,7 +2242,7 @@ function VNPF({ employees, reload, setModal, setSelected }) {
                   </tr>
                 ))}
                 <tr style={{ background: '#E8D5A3', fontWeight: 700 }}>
-                  <td colSpan={3} style={{ padding: '9px 14px', fontSize: 13 }}>TOTAL</td>
+                  <td colSpan={4} style={{ padding: '9px 14px', fontSize: 13 }}>TOTAL</td>
                   <td style={{ padding: '9px 14px', textAlign: 'right', fontSize: 13 }}>{fmt(totalSalary)}</td>
                   <td style={{ padding: '9px 14px', textAlign: 'right', fontSize: 13 }}>{fmt(totalEmployee)}</td>
                   <td style={{ padding: '9px 14px', textAlign: 'right', fontSize: 13 }}>{fmt(totalEmployer)}</td>
