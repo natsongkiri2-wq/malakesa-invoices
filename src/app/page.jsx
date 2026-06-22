@@ -2227,7 +2227,7 @@ function VNPF({ employees, reload, setModal, setSelected }) {
                 {rows.map(r => (
                   <tr key={r.id} style={{ borderBottom: '0.5px solid rgba(0,0,0,0.09)' }}>
                     <Td><strong>{r.name}</strong></Td>
-                    <Td style={{ color: '#666' }}>{r.vnpf_number || '—'}</Td>
+                    <Td style={{ color: '#666' }}>{r.job_title || '—'}</Td>
                     <Td style={{ color: '#666' }}>{r.email || '—'}</Td>
                     <Td style={{ textAlign: 'right' }}>{fmt(r.salary)}</Td>
                     <Td style={{ textAlign: 'right' }}>{fmt(r.employee)}</Td>
@@ -2299,7 +2299,7 @@ function NewEmployeeModal({ employee, onClose, onSave }) {
           <input type="text" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} style={inputStyle} placeholder="e.g. John Tarileo" />
         </Field>
         <Field label="Job title">
-          <input type="text" value={form.vnpf_number} onChange={e => setForm(f => ({ ...f, vnpf_number: e.target.value }))} style={inputStyle} placeholder="e.g. VN-12345" />
+          <input type="text" value={form.job_title} onChange={e => setForm(f => ({ ...f, job_title: e.target.value }))} style={inputStyle} placeholder="e.g. e.target.value }))} style={inputStyle} placeholder="e.g. VN-12345" />
         </Field>
         <Field label="Email">
           <input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} style={inputStyle} placeholder="employee@email.com" />
