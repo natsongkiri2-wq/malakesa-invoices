@@ -2299,7 +2299,7 @@ function NewEmployeeModal({ employee, onClose, onSave }) {
           <input type="text" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} style={inputStyle} placeholder="e.g. John Tarileo" />
         </Field>
         <Field label="Job title">
-          <input type="text" value={form.job_title} onChange={e => setForm(f => ({ ...f, job_title: e.target.value }))} style={inputStyle} placeholder="e.g. e.target.value }))} style={inputStyle} placeholder="e.g. VN-12345" />
+          <input type="text" value={form.job_title} onChange={e => setForm(f => ({ ...f, job_title: e.target.value }))} style={inputStyle} placeholder="e.g. Driver" />
         </Field>
         <Field label="Email">
           <input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} style={inputStyle} placeholder="employee@email.com" />
