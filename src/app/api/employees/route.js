@@ -22,7 +22,7 @@ export async function POST(request) {
   }
   const { data, error } = await supabase
     .from('employees')
-    .insert([{ name, salary: Number(salary), vnpf_number, email }])
+    .insert([{ name, salary: Number(salary), vnpf_number, email, job_title }])
     .select()
     .single()
   if (error) return Response.json({ error: error.message }, { status: 500 })

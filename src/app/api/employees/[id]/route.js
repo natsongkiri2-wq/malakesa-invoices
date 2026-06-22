@@ -14,7 +14,7 @@ export async function PATCH(request, { params }) {
   }
   const { data, error } = await supabase
     .from('employees')
-    .update({ name, salary: Number(salary), vnpf_number, email })
+    .update({ name, salary: Number(salary), vnpf_number, email, job_title })
     .eq('id', id)
     .select()
     .single()
