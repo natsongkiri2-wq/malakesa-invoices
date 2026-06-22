@@ -1997,7 +1997,7 @@ function NewSupplierModal({ onClose, onSave }) {
         <Field label="Phone">
           <input type="tel" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} style={inputStyle} placeholder="+678 ..." />
         </Field>
-        <Field label="VNPF member number">
+        <Field label="Email">
           <input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} style={inputStyle} placeholder="supplier@email.com" />
         </Field>
         <Field label="Address">
