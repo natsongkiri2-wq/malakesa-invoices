@@ -528,12 +528,12 @@ function Payments({ payments, invoices, reload, setModal, setSelected }) {
           <div style={{ padding: '12px 20px', borderBottom: '0.5px solid rgba(0,0,0,0.09)', fontWeight: 500, fontSize: 13 }}>Payment history</div>
           {payments.length === 0 ? <Empty icon="ti-cash-off" msg="No payments recorded yet" /> : (
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-              <thead><tr style={{ background: '#E8D5A3' }}><Th>Date</Th><Th>Invoice #</Th><Th>Client</Th><Th>Method</Th><Th>Amount</Th><Th>Note</Th></tr></thead>
+              <thead><tr style={{ background: '#E8D5A3' }}><Th>Receipt #</Th><Th>Date</Th><Th>Invoice #</Th><Th>Client</Th><Th>Method</Th><Thte</Th></tr></thead>
               <tbody>{[...payments].reverse().map(p => {
                 const inv = getInv(p.invoice_id)
                 return (
                   <tr key={p.id} style={{ borderBottom: '0.5px solid rgba(0,0,0,0.09)' }}>
-                    <Td>{fmtDate(p.date)}</Td><Td><strong>{inv.number || '—'}</strong></Td><Td>{inv.client_name || '—'}</Td>
+                    <Td style={{ color: '#8B6914', fontWeight: 500 }}>{p.receipt_number || '—'}</Td><Td>{fmtDate(p.date)}</Td><Td><strong>{inv.numb<Td>{inv.client_name || '—'}</Td>
                     <Td><span style={{ background: '#E8D5A3', padding: '2px 8px', borderRadius: 99, fontSize: 11 }}>{p.method || 'Cash'}</span></Td>
                     <Td style={{ color: '#3B6D11', fontWeight: 500 }}>{fmt(p.amount)}</Td>
                     <Td style={{ color: '#666' }}>{p.note || ''}</Td>
