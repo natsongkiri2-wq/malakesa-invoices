@@ -485,6 +485,90 @@ function Payments({ payments, invoices, reload, setModal, setSelected }) {
   const total = payments.reduce((s, p) => s + Number(p.amount), 0)
   const thisMonth = payments.filter(p => p.date?.startsWith(new Date().toISOString().slice(0, 7))).reduce((s, p) => s + Number(p.amount), 0)
   const getInv = (id) => invoices.find(i => i.id === id) || {}
+  const [receiptStatus, setReceiptStatus] = React.useState({})
+
+  const printReceipt = (payment) => {
+    const inv = getInv(payment.invoice_id)
+    const w = window.open('', '_blank')
+    if (!w) { alert('Please allow popups to print receipts.'); return }
+    const receiptNum = payment.receipt_number || `RCT-${(payment.id||'').slice(-4).toUpperCase()}`
+    w.document.write(`<!DOCTYPE html><html><head><title>${receiptNum}</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; background: #f0ebe0; }
+    .page { max-width: 520px; margin: 20px auto; background: #fff; border-radius: 4px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.15); }
+    .header { background: linear-gradient(135deg, #1A0D06 0%, #3D2214 50%, #5C3D0A 100%); padding: 24px 32px; text-align: center; }
+    .rec-label { font-size: 10px; color: rgba(255,255,255,0.6); letter-spacing: 3px; margin-top: 10px; }
+    .rec-num { font-size: 20px; font-weight: 700; color: #FFD700; margin-top: 2px; }
+    .body { padding: 24px 32px; }
+    .paid-stamp { text-align: center; margin: 16px 0; }
+    .paid-box { display: inline-block; border: 3px solid #3B6D11; color: #3B6D11; font-size: 22px; font-weight: 900; letter-spacing: 6px; padding: 6px 24px; border-radius: 4px; transform: rotate(-3deg); }
+    .section { margin: 16px 0; padding: 14px 16px; background: #faf6ee; border-radius: 6px; }
+    .row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #f0ebe0; font-size: 13px; }
+    .row:last-child { border-bottom: none; }
+    .label { color: #888; }
+    .val { font-weight: 600; color: #222; }
+    .amount-box { background: linear-gradient(135deg, #3D2214, #8B6914); border-radius: 6px; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; margin: 16px 0; }
+    .thankyou { text-align: center; font-size: 13px; font-style: italic; color: #8B6914; margin: 16px 0 8px; }
+    .footer { background: linear-gradient(135deg, #1A0D06, #5C3D0A); padding: 14px 32px; text-align: center; color: rgba(255,255,255,0.7); font-size: 10px; line-height: 1.9; }
+    .noprint { background: #333; color: #fff; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; }
+    .printbtn { background: #8B6914; color: #fff; border: none; padding: 7px 18px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; }
+    @media print { .noprint { display: none; } body { background: #fff; } .page { box-shadow: none; margin: 0; max-width: 100%; } }
+  </style></head><body>
+  <div class="noprint"><span>${receiptNum}</span><button class="printbtn" onclick="window.print()">Print / Save PDF</button></div>
+  <div class="page">
+    <div class="header">
+      <img src="${MALAKESA_LOGO}" alt="Malakesa Transfer and Tour" style="width:200px;border-radius:6px;display:block;margin:0 auto" />
+      <div class="rec-label">PAYMENT RECEIPT</div>
+      <div class="rec-num">${receiptNum}</div>
+    </div>
+    <div class="body">
+      <div class="paid-stamp"><div class="paid-box">PAID</div></div>
+      <div class="section">
+        <div class="row"><span class="label">Receipt No.</span><span class="val">${receiptNum}</span></div>
+        <div class="row"><span class="label">Invoice No.</span><span class="val">${inv.number || '\u2014'}</span></div>
+        <div class="row"><span class="label">Date paid</span><span class="val">${fmtDate(payment.date)}</span></div>
+        <div class="row"><span class="label">Payment method</span><span class="val">${payment.method}</span></div>
+        ${payment.note ? '<div class="row"><span class="label">Notes</span><span class="val">' + payment.note + '</span></div>' : ''}
+      </div>
+      <div class="section">
+        <div class="row"><span class="label">Client</span><span class="val">${inv.client_name || '\u2014'}</span></div>
+        <div class="row"><span class="label">Invoice total</span><span class="val">VT ${Number(inv.total||0).toLocaleString()}</span></div>
+      </div>
+      <div class="amount-box">
+        <span style="color:#fff;font-weight:700;font-size:15px">AMOUNT RECEIVED</span>
+        <span style="color:#FFD700;font-weight:700;font-size:22px">VT ${Number(payment.amount).toLocaleString()}</span>
+      </div>
+      <div class="thankyou">Tankiu Tumas \u2014 Thank you for your payment!</div>
+    </div>
+    <div class="footer">
+      Malakesa Transfer and Tour | Port Vila, Shefa Province, Vanuatu<br>
+      +678 22712 | +678 7798712 | accounts@malakesa.vu
+    </div>
+  </div>
+  <script>window.onload=()=>window.print()<\/script></body></html>`)
+    w.document.close()
+  }
+
+  const emailReceipt = async (payment) => {
+    const pid = payment.id || 'x'
+    setReceiptStatus(s => ({ ...s, [pid]: 'sending' }))
+    try {
+      const res = await fetch('/api/send-receipt', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ invoiceId: payment.invoice_id, paymentId: pid }) })
+      const data = await res.json()
+      if (res.ok) {
+        setReceiptStatus(s => ({ ...s, [pid]: 'sent' }))
+        setTimeout(() => setReceiptStatus(s => ({ ...s, [pid]: '' })), 5000)
+      } else {
+        setReceiptStatus(s => ({ ...s, [pid]: 'error' }))
+        setTimeout(() => setReceiptStatus(s => ({ ...s, [pid]: '' })), 6000)
+      }
+    } catch (e) {
+      setReceiptStatus(s => ({ ...s, [pid]: 'error' }))
+      setTimeout(() => setReceiptStatus(s => ({ ...s, [pid]: '' })), 6000)
+    }
+  }
+
   const unpaidInvoices = invoices.filter(i => ['unpaid','overdue','partial'].includes(getStatus(i, payments)))
   return (
     <>
@@ -528,7 +612,7 @@ function Payments({ payments, invoices, reload, setModal, setSelected }) {
           <div style={{ padding: '12px 20px', borderBottom: '0.5px solid rgba(0,0,0,0.09)', fontWeight: 500, fontSize: 13 }}>Payment history</div>
           {payments.length === 0 ? <Empty icon="ti-cash-off" msg="No payments recorded yet" /> : (
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-              <thead><tr style={{ background: '#E8D5A3' }}><Th>Receipt #</Th><Th>Date</Th><Th>Invoice #</Th><Th>Client</Th><Th>Method</Th><Th>Amount</Th><Th>Note</Th></tr></thead>
+              <thead><tr style={{ background: '#E8D5A3' }}><Th>Receipt #</Th><Th>Date</Th><Th>Invoice #</Th><Th>Client</Th><Th>Method</Th><Th>Amount</Th><Th>Note</Th><Th>Actions</Th></tr></thead>
               <tbody>{[...payments].reverse().map(p => {
                 const inv = getInv(p.invoice_id)
                 return (
@@ -537,6 +621,14 @@ function Payments({ payments, invoices, reload, setModal, setSelected }) {
                     <Td><span style={{ background: '#E8D5A3', padding: '2px 8px', borderRadius: 99, fontSize: 11 }}>{p.method || 'Cash'}</span></Td>
                     <Td style={{ color: '#3B6D11', fontWeight: 500 }}>{fmt(p.amount)}</Td>
                     <Td style={{ color: '#666' }}>{p.note || ''}</Td>
+                    <Td>
+                      <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                        <button className="btn btn-sm" style={{ fontSize: 11, padding: '2px 8px' }} onClick={() => printReceipt(p)}><i className="ti ti-printer"></i> Print</button>
+                        <button className="btn btn-sm" style={{ fontSize: 11, padding: '2px 8px' }} onClick={() => emailReceipt(p)} disabled={receiptStatus[p.id] === 'sending'}><i className="ti ti-mail"></i> {receiptStatus[p.id] === 'sending' ? '...' : 'Email'}</button>
+                        {receiptStatus[p.id] === 'sent' && <span style={{ fontSize: 11, color: '#3B6D11' }}>✓ Sent</span>}
+                        {receiptStatus[p.id] === 'error' && <span style={{ fontSize: 11, color: '#D85A30' }}>Failed</span>}
+                      </div>
+                    </Td>
                   </tr>
                 )
               })}</tbody>
