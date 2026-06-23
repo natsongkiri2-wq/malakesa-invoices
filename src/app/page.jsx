@@ -2908,7 +2908,7 @@ function ViewInvoiceModal({ invoice, payments, onClose, onPay }) {
           <div style={{ fontWeight: 500, marginBottom: 8 }}>Payments received</div>
           {invPayments.map(p => (
             <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '7px 0', borderBottom: '0.5px solid rgba(0,0,0,0.09)', fontSize: 13, gap: 8 }}>
-              <span><span style={{ color: '#8B6914', fontWeight: 600, marginRight: 6 }}>{p.receipt_number || '—'}</span>{fmtDate(p.date)} — <}</span>{p.note ? ` · ${p.note}` : ''}</span>
+              <span><span style={{ color: '#8B6914', fontWeight: 600, marginRight: 6 }}>{p.receipt_number || '—'}</span>{fmtDate(p.date)} — <span style={{ background: '#E8D5A3', padding: '1px 8px', borderRadius: 99, fontSize: 11 }}>{p.method}</span>{p.note ? ` · ${p.note}` : ''}</span>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <span style={{ color: '#3B6D11', fontWeight: 500 }}>{fmt(p.amount)}</span>
                 <button className="btn btn-sm" style={{ fontSize: 11, padding: '2px 8px' }} onClick={() => printReceipt(p)}><i className="ti ti-printer"></i> Receipt</button>
