@@ -485,7 +485,7 @@ function Payments({ payments, invoices, reload, setModal, setSelected }) {
   const total = payments.reduce((s, p) => s + Number(p.amount), 0)
   const thisMonth = payments.filter(p => p.date?.startsWith(new Date().toISOString().slice(0, 7))).reduce((s, p) => s + Number(p.amount), 0)
   const getInv = (id) => invoices.find(i => i.id === id) || {}
-  const [receiptStatus, setReceiptStatus] = React.useState({})
+  const [receiptStatus, setReceiptStatus] = useState({})
 
   const printReceipt = (payment) => {
     const inv = getInv(payment.invoice_id)
