@@ -1098,7 +1098,7 @@ function Reports({ invoices, payments, purchases }) {
     <table><thead><tr><th>Service / Description</th><th class="right">Qty</th><th class="right">Revenue (ex-VAT)</th></tr></thead>
     <tbody>${serviceRows.map(s => '<tr><td>' + s.desc + '</td><td class="right">' + s.qty + '</td><td class="right green">VT ' + Number(s.revenue).toLocaleString() + '</td></tr>').join('')}</tbody></table>
     <h2>Payment Methods</h2>
-    <table><thead><tr><th>Method</th><th class="right">Amount</th><th class="right">% of collected</th></tr></thead><th class="right">Amount</th><th class="right">% of collected</th></tr></thead>
+    <table><thead><tr><th>Method</th><th class="right">Amount</th><th class="right">% of collected</th></tr></thead>t">Amount</th><th class="right">% of collected</th></tr></thead>
     <tbody>${Object.entries(byMethod).map(([m, a]) => '<tr><td>' + m + '</td><td class="right green">VT ' + Number(a).toLocaleString() + '</td><td class="right">' + (totalCol > 0 ? Math.round((a/totalCol)*100) : 0) + '%</td></tr>').join('')}</tbody></table>
     <div class="footer">Malakesa Transfer and Tour &nbsp;|&nbsp; Port Vila, Vanuatu &nbsp;|&nbsp; This report is confidential</div>
     <script>window.onload=()=>window.print()<\/script></body></html>`)
