@@ -12,6 +12,14 @@ export async function GET() {
 
 export async function POST(req) {
   const body = await req.json()
+
+  // Generate next receipt number
+  const { count } = await supabase
+    .from('payments')
+    .select('*', { count: 'exact', head: true })
+  const nextNum = String((count || 0) + 1).padStart(4, '0')
+  const receipt_number = `RCT-${nextNum}`
+
   const { data, error } = await supabase
     .from('payments')
     .insert({
@@ -20,6 +28,7 @@ export async function POST(req) {
       method: body.method || 'Cash',
       date: body.date,
       note: body.note || null,
+      receipt_number,
     })
     .select()
     .single()
