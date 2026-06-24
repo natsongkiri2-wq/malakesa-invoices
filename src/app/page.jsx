@@ -1346,7 +1346,17 @@ function Reports({ invoices, payments, purchases }) {
           </div>
 
           {/* VAT info banner */}
-          <div style={{ background: '#EAF3DE', border: '0.5px solid #C0DD97', borderRadius: 8, padding: '10px 16px', marginBottom: 16, fontSize: 13, color: '#27500A', display: 'flex', alignItems: 'center', gap: 10 }}>
+          {(salaryRecords || []).length > 0 && (() => {
+        const allMonths = [...new Set((salaryRecords||[]).map(r => r.month))].sort().reverse()
+        const monthsNotCurrent = allMonths.filter(m => m !== vnpfMonth)
+        return monthsNotCurrent.length > 0 ? (
+          <div style={{ background: '#FFF8E1', border: '0.5px solid #FFD700', borderRadius: 8, padding: '8px 14px', marginBottom: 12, fontSize: 12, color: '#8B6914', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <i className="ti ti-info-circle"></i>
+            <span>Pay runs also exist for: {monthsNotCurrent.join(', ')}. Use the month picker above to view those schedules.</span>
+          </div>
+        ) : null
+      })()}
+      <div style={{ background: '#EAF3DE', border: '0.5px solid #C0DD97', borderRadius: 8, padding: '10px 16px', marginBottom: 16, fontSize: 13, color: '#27500A', display: 'flex', alignItems: 'center', gap: 10 }}>
             <i className="ti ti-receipt-tax" style={{ fontSize: 18 }}></i>
             <span><strong>VAT Period: {vatMonthLabel}</strong> &nbsp;|&nbsp; TIN: 445579 &nbsp;|&nbsp; Rate: 15% &nbsp;|&nbsp; Output VAT to declare: <strong>{fmt(vatTotalTax)}</strong></span>
           </div>
@@ -2300,7 +2310,13 @@ function VNPF({ employees, salaryRecords, reload, setModal, setSelected }) {
 
 function VNPFContributions({ rows, totalSalary, totalEmployee, totalEmployer, totalContribution, monthLabel, vnpfMonth, salaryRecords, emailStatus, setModal, setSelected, handleDelete, fmt }) {
   // Salary records for this month - accumulate processed pay runs
-  const monthRecords = (salaryRecords || []).filter(r => r.month === vnpfMonth)
+  const monthRecords = (salaryRecords || []).filter(r => {
+    if (!r.month || !vnpfMonth) return false
+    // Normalize both to YYYY-MM format for comparison
+    const rMonth = String(r.month).slice(0, 7)
+    const vMonth = String(vnpfMonth).slice(0, 7)
+    return rMonth === vMonth
+  })
   const hasProcessed = monthRecords.length > 0
 
   // Build per-employee processed totals for the month
@@ -2335,6 +2351,16 @@ function VNPFContributions({ rows, totalSalary, totalEmployee, totalEmployer, to
           {emailStatus.startsWith('error') ? emailStatus.replace('error: ', 'Failed: ') : emailStatus}
         </div>
       )}
+      {(salaryRecords || []).length > 0 && (() => {
+        const allMonths = [...new Set((salaryRecords||[]).map(r => r.month))].sort().reverse()
+        const monthsNotCurrent = allMonths.filter(m => m !== vnpfMonth)
+        return monthsNotCurrent.length > 0 ? (
+          <div style={{ background: '#FFF8E1', border: '0.5px solid #FFD700', borderRadius: 8, padding: '8px 14px', marginBottom: 12, fontSize: 12, color: '#8B6914', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <i className="ti ti-info-circle"></i>
+            <span>Pay runs also exist for: {monthsNotCurrent.join(', ')}. Use the month picker above to view those schedules.</span>
+          </div>
+        ) : null
+      })()}
       <div style={{ background: '#EAF3DE', border: '0.5px solid #C0DD97', borderRadius: 8, padding: '10px 16px', marginBottom: 16, fontSize: 13, color: '#27500A', display: 'flex', alignItems: 'center', gap: 10 }}>
         <i className="ti ti-building-bank" style={{ fontSize: 18 }}></i>
         <span><strong>VNPF Period: {monthLabel}</strong> &nbsp;|&nbsp; Employee rate: 6% &nbsp;|&nbsp; Employer rate: 6% &nbsp;|&nbsp; Total payable: <strong>{fmt(hasProcessed ? schedTotal : totalContribution)}</strong> &nbsp;|&nbsp; {hasProcessed ? <span style={{color:'#27500A',fontWeight:600}}>{monthRecords.length} pay run(s) processed</span> : <span style={{color:'#8B6914'}}>No pay runs processed yet</span>}</span>
