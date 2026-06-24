@@ -17,6 +17,8 @@ export async function POST(req) {
     .insert({
       employee_id: body.employee_id,
       month: body.month,
+      pay_date: body.pay_date || null,
+      days_worked: body.days_worked || null,
       gross: body.gross,
       allowances: body.allowances || [],
       deductions: body.deductions || [],

@@ -2410,240 +2410,114 @@ function SalariesTab({ employees, salaryRecords, reload, fmt }) {
   const [salaryMonth, setSalaryMonth] = useState(nowD.toISOString().slice(0, 7))
   const monthLabel = monthOptions.find(m => m.value === salaryMonth)?.label || salaryMonth
   const activeEmployees = employees.filter(e => e.active !== false)
-  const [overrides, setOverrides] = useState({})
-  const [selectedEmp, setSelectedEmp] = useState(null)
+  const [payRunModal, setPayRunModal] = useState(null) // emp object when open
 
-  const getOv = (id) => overrides[id] || { allowances: [], deductions: [], notes: '', grossOverride: '' }
-  const setOv = (id, val) => setOverrides(o => ({ ...o, [id]: { ...getOv(id), ...val } }))
-
-  // Which employees have been processed this month
+  // Records for selected month
   const monthRecords = (salaryRecords || []).filter(r => r.month === salaryMonth)
-  const processedEmpIds = new Set(monthRecords.map(r => r.employee_id))
-  const runCountByEmp = {}
-  monthRecords.forEach(r => { runCountByEmp[r.employee_id] = (runCountByEmp[r.employee_id] || 0) + 1 })
-  const [processing, setProcessing] = useState({})
 
-  const processPay = async (emp) => {
-    const pay = calcPay(emp)
-    const ov = getOv(emp.id)
-    setProcessing(p => ({ ...p, [emp.id]: true }))
-    try {
-      const res = await fetch('/api/salary-records', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          employee_id: emp.id,
-          month: salaryMonth,
-          gross: pay.gross,
-          allowances: ov.allowances || [],
-          deductions: ov.deductions || [],
-          vnpf_employee: pay.vnpfDeduction,
-          net_pay: pay.netPay,
-          notes: ov.notes || ''
-        })
-      })
-      if (res.ok) { reload(); setOv(emp.id, { allowances: [], deductions: [], notes: '' }) }
-      else { alert('Failed to process pay. Please try again.') }
-    } catch(e) { alert('Error: ' + e.message) }
-    setProcessing(p => ({ ...p, [emp.id]: false }))
+  // Per-employee summary for this month
+  const empSummary = (id) => {
+    const recs = monthRecords.filter(r => r.employee_id === id)
+    const totalGross = recs.reduce((s, r) => s + Number(r.gross || 0), 0)
+    const totalAllowances = recs.reduce((s, r) => s + (r.allowances || []).reduce((a, x) => a + Number(x.amount || 0), 0), 0)
+    const totalVnpf = recs.reduce((s, r) => s + Number(r.vnpf_employee || 0), 0)
+    const totalNet = recs.reduce((s, r) => s + Number(r.net_pay || 0), 0)
+    return { runs: recs.length, totalGross, totalAllowances, totalVnpf, totalNet, records: recs }
   }
 
-  const calcPay = (emp) => {
-    const ov = getOv(emp.id)
-    const gross = ov.grossOverride !== '' && ov.grossOverride !== undefined ? Number(ov.grossOverride || 0) : Number(emp.salary || 0)
-    const totalAllowances = (ov.allowances || []).reduce((s, a) => s + Number(a.amount || 0), 0)
-    const vnpfDeduction = Math.round(gross * 0.06)
-    const otherDeductions = (ov.deductions || []).reduce((s, d) => s + Number(d.amount || 0), 0)
-    const totalDeductions = vnpfDeduction + otherDeductions
-    const netPay = gross + totalAllowances - totalDeductions
-    return { gross, totalAllowances, vnpfDeduction, otherDeductions, totalDeductions, netPay }
-  }
-
-  const printPayslip = (emp) => {
-    const pay = calcPay(emp)
-    const ov = getOv(emp.id)
-    const w = window.open('', '_blank')
-    if (!w) { alert('Please allow popups to print payslips.'); return }
-    const issued = new Date().toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' })
-    const allowanceRows = (ov.allowances || []).map(a => `<div class='row'><span class='lbl'>${a.label || 'Allowance'}</span><span class='amt grn'>VT ${Number(a.amount||0).toLocaleString()}</span></div>`).join('')
-    const deductionRows = (ov.deductions || []).map(d => `<div class='row'><span class='lbl'>${d.label || 'Deduction'}</span><span class='amt red'>VT ${Number(d.amount||0).toLocaleString()}</span></div>`).join('')
-    const notesHtml = ov.notes ? `<div class='notes'><strong>Notes:</strong> ${ov.notes}</div>` : ''
-    w.document.write(`<!DOCTYPE html><html><head><title>Payslip - ${emp.name} - ${monthLabel}</title><style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:Arial,sans-serif;background:#f0ebe0;color:#222;font-size:13px}
-.page{max-width:680px;margin:20px auto;background:#fff;border-radius:4px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.15)}
-.hdr{background:linear-gradient(135deg,#1A0D06 0%,#3D2214 50%,#5C3D0A 100%);padding:24px 36px;display:flex;justify-content:space-between;align-items:flex-start}
-.hdr-r{text-align:right;color:#fff}
-.ps-title{font-size:10px;letter-spacing:3px;color:rgba(255,255,255,.6);text-transform:uppercase;margin-top:10px}
-.ps-period{font-size:18px;font-weight:700;color:#FFD700;margin-top:3px}
-.ps-date{font-size:11px;color:rgba(255,255,255,.7);margin-top:4px}
-.emp-bar{background:#3D2214;padding:12px 36px;display:flex;justify-content:space-between;align-items:center}
-.emp-name{color:#FFD700;font-weight:700;font-size:16px}
-.emp-det{color:rgba(255,255,255,.75);font-size:11px;margin-top:3px}
-.emp-r{text-align:right;color:rgba(255,255,255,.75);font-size:11px}
-.body{padding:24px 36px}
-.sec{font-size:10px;font-weight:800;color:#8B6914;text-transform:uppercase;letter-spacing:2px;border-bottom:2px solid #E8D5A3;padding-bottom:4px;margin:20px 0 10px}
-.row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:.5px solid #f0ebe0;font-size:13px}
-.row:last-child{border-bottom:none}
-.lbl{color:#555}
-.amt{font-weight:500}
-.grn{color:#2E7D2E}
-.red{color:#A32D2D}
-.bold{font-weight:700}
-.net-box{background:linear-gradient(135deg,#1A0D06,#3D2214);border-radius:8px;padding:16px 24px;margin:20px 0;display:flex;justify-content:space-between;align-items:center}
-.net-lbl{color:rgba(255,255,255,.8);font-size:13px;font-weight:600}
-.net-amt{color:#FFD700;font-size:26px;font-weight:900}
-.notes{background:#faf6ee;border-left:4px solid #8B6914;padding:10px 14px;border-radius:0 6px 6px 0;font-size:12px;color:#555;margin-top:12px}
-.sigs{display:flex;justify-content:space-between;margin-top:32px;gap:40px}
-.sig{flex:1;border-top:1px solid #ccc;padding-top:6px;font-size:11px;color:#888;text-align:center}
-.ftr{background:linear-gradient(135deg,#1A0D06,#5C3D0A);padding:14px 36px;display:flex;justify-content:space-between;color:rgba(255,255,255,.7);font-size:10px;line-height:1.9}
-.noprint{background:#333;color:#fff;padding:10px 20px;display:flex;justify-content:space-between;align-items:center;font-size:13px}
-.printbtn{background:#8B6914;color:#fff;border:none;padding:7px 18px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600}
-@media print{.noprint{display:none}body{background:#fff}.page{box-shadow:none;margin:0;max-width:100%}}
-</style></head><body>
-<div class='noprint'><span>Payslip — ${emp.name} — ${monthLabel}</span><button class='printbtn' onclick='window.print()'>Print / Save PDF</button></div>
-<div class='page'>
-  <div class='hdr'>
-    <div>
-      <img src='${MALAKESA_LOGO}' alt='Malakesa' style='width:200px;border-radius:6px;display:block'/>
-      <div class='ps-date' style='margin-top:8px'>Port Vila, Shefa Province, Vanuatu | TIN: 445579</div>
-    </div>
-    <div class='hdr-r'>
-      <div class='ps-title'>Pay Slip</div>
-      <div class='ps-period'>${monthLabel}</div>
-      <div class='ps-date'>Issued: ${issued}</div>
-    </div>
-  </div>
-  <div class='emp-bar'>
-    <div>
-      <div class='emp-name'>${emp.name}</div>
-      <div class='emp-det'>${emp.job_title || 'Employee'} | VNPF: ${emp.vnpf_number || 'N/A'}</div>
-    </div>
-    <div class='emp-r'>
-      <div>Pay Period: <strong style='color:#FFD700'>${monthLabel}</strong></div>
-      <div>Pay Date: ${issued}</div>
-    </div>
-  </div>
-  <div class='body'>
-    <div class='sec'>Earnings</div>
-    <div class='row'><span class='lbl'>Basic Salary</span><span class='amt grn'>VT ${Number(pay.gross).toLocaleString()}</span></div>
-    ${allowanceRows}
-    <div class='row bold'><span>Total Earnings</span><span class='amt grn'>VT ${Number(pay.gross + pay.totalAllowances).toLocaleString()}</span></div>
-    <div class='sec'>Deductions</div>
-    <div class='row'><span class='lbl'>VNPF Employee Contribution (6%)</span><span class='amt red'>VT ${Number(pay.vnpfDeduction).toLocaleString()}</span></div>
-    ${deductionRows}
-    <div class='row bold'><span>Total Deductions</span><span class='amt red'>VT ${Number(pay.totalDeductions).toLocaleString()}</span></div>
-    <div class='net-box'>
-      <div class='net-lbl'>NET PAY — ${monthLabel}</div>
-      <div class='net-amt'>VT ${Number(pay.netPay).toLocaleString()}</div>
-    </div>
-    ${notesHtml}
-    <div class='sigs'>
-      <div class='sig'>Employee Signature &amp; Date</div>
-      <div class='sig'>Prepared by &amp; Date</div>
-      <div class='sig'>Authorised by &amp; Date</div>
-    </div>
-  </div>
-  <div class='ftr'>
-    <div><strong style='color:#FFD700'>Malakesa Transfer &amp; Tour</strong><br>Port Vila, Shefa Province, Vanuatu<br>TIN: 445579 | PO Box 823</div>
-    <div style='text-align:right'>Tel: +678 22712 | Mob: +678 7798712<br>Email: accounts@malakesa.vu<br><span style='opacity:.6'>Computer generated payslip — No signature required</span></div>
-  </div>
-</div>
-<script>window.onload=()=>window.print()<\/script></body></html>`)
-    w.document.close()
-  }
-
-  const totalNetPay = activeEmployees.reduce((s, e) => s + calcPay(e).netPay, 0)
-  const totalGross = activeEmployees.reduce((s, e) => s + calcPay(e).gross, 0)
-  const totalDeductions = activeEmployees.reduce((s, e) => s + calcPay(e).totalDeductions, 0)
+  const totalNetAll = activeEmployees.reduce((s, e) => s + empSummary(e.id).totalNet, 0)
+  const totalGrossAll = activeEmployees.reduce((s, e) => s + empSummary(e.id).totalGross, 0)
+  const totalVnpfAll = activeEmployees.reduce((s, e) => s + empSummary(e.id).totalVnpf, 0)
 
   return (
     <div style={{ padding: 20 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
         <MonthYearPicker value={salaryMonth} onChange={setSalaryMonth} accentColor="#8B6914" />
-        <span style={{ fontSize: 13, color: '#666' }}>Pay period: <strong>{monthLabel}</strong></span>
+        <span style={{ fontSize: 13, color: '#666' }}>Showing pay runs for: <strong>{monthLabel}</strong></span>
       </div>
+
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12, marginBottom: 16 }}>
-        <StatCard label="Total Gross Salaries" value={fmt(totalGross)} sub={`${activeEmployees.length} employees`} />
-        <StatCard label="Total Deductions" value={fmt(totalDeductions)} color="#A32D2D" />
-        <StatCard label="Total Net Pay" value={fmt(totalNetPay)} color="#2E7D2E" />
+        <StatCard label="Total Gross Paid" value={fmt(monthRecords.length > 0 ? totalGrossAll : activeEmployees.reduce((s,e)=>s+Number(e.salary||0),0))} sub={monthRecords.length > 0 ? `${monthRecords.length} pay run(s) this month` : `${activeEmployees.length} employees (not yet processed)`} />
+        <StatCard label="Total VNPF (Employee 6%)" value={fmt(totalVnpfAll)} color="#8B6914" sub={monthRecords.length > 0 ? 'Accumulated from pay runs' : 'Process pay runs to calculate'} />
+        <StatCard label="Total Net Pay" value={fmt(totalNetAll)} color="#2E7D2E" sub={monthRecords.length > 0 ? 'Confirmed net pay' : 'Process pay runs to calculate'} />
       </div>
+
       {activeEmployees.length === 0 ? (
         <Card><div style={{ textAlign: 'center', padding: '48px 20px', color: '#666' }}><i className="ti ti-users" style={{ fontSize: 36, display: 'block', marginBottom: 10 }}></i><p>No employees yet. Add employees in the VNPF Contributions tab.</p></div></Card>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {activeEmployees.map(emp => {
-            const pay = calcPay(emp)
-            const ov = getOv(emp.id)
-            const isOpen = selectedEmp === emp.id
+            const sum = empSummary(emp.id)
             return (
               <Card key={emp.id} style={{ padding: 0, overflow: 'hidden' }}>
-                <div style={{ padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', background: isOpen ? '#faf6ee' : '#fff' }} onClick={() => setSelectedEmp(isOpen ? null : emp.id)}>
+                {/* Employee header row */}
+                <div style={{ padding: '14px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: sum.runs > 0 ? '#f6fbf0' : '#fff', borderBottom: sum.runs > 0 ? '0.5px solid #C0DD97' : 'none' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'linear-gradient(135deg,#3D2214,#8B6914)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#FFD700', fontWeight: 700, fontSize: 14 }}>{emp.name?.charAt(0)}</div>
+                    <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'linear-gradient(135deg,#3D2214,#8B6914)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#FFD700', fontWeight: 700, fontSize: 16 }}>{emp.name?.charAt(0)}</div>
                     <div>
-                      <div style={{ fontWeight: 600, fontSize: 14 }}>{emp.name}</div>
+                      <div style={{ fontWeight: 700, fontSize: 15 }}>{emp.name}</div>
                       <div style={{ fontSize: 12, color: '#666' }}>{emp.job_title || 'Employee'}{emp.vnpf_number ? ` | VNPF: ${emp.vnpf_number}` : ''}</div>
+                      <div style={{ fontSize: 12, color: '#888' }}>Base salary: {fmt(emp.salary)}</div>
                     </div>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                    <div style={{ textAlign: 'right' }}>
-                      <div style={{ fontSize: 12, color: '#666' }}>Gross: {fmt(pay.gross)}</div>
-                      <div style={{ fontSize: 12, color: '#A32D2D' }}>Deductions: -{fmt(pay.totalDeductions)}</div>
-                    </div>
-                    <div style={{ fontSize: 16, fontWeight: 700, color: '#2E7D2E', minWidth: 100, textAlign: 'right' }}>Net: {fmt(pay.netPay)}</div>
-                    {runCountByEmp[emp.id] && <span style={{ background: '#EAF3DE', color: '#27500A', borderRadius: 99, padding: '2px 10px', fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap' }}>\u2713 {runCountByEmp[emp.id]} run{runCountByEmp[emp.id] !== 1 ? 's' : ''} processed</span>}
-                    <button className="btn btn-sm" style={{ background: '#3B6D11', borderColor: '#2A5009', color: '#fff' }} onClick={e => { e.stopPropagation(); printPayslip(emp) }}><i className="ti ti-printer"></i> Payslip</button>
-                    <button className="btn btn-sm" style={{ background: '#8B6914', borderColor: '#6B5010', color: '#fff', fontWeight: 600 }} onClick={e => { e.stopPropagation(); processPay(emp) }} disabled={processing[emp.id]}><i className="ti ti-check"></i> {processing[emp.id] ? 'Processing...' : 'Process Pay'}</button>
-                    <i className={`ti ${isOpen ? 'ti-chevron-up' : 'ti-chevron-down'}`} style={{ color: '#8B6914', fontSize: 16 }}></i>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                    {sum.runs > 0 ? (
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontSize: 12, color: '#27500A', fontWeight: 600 }}>{sum.runs} pay run{sum.runs !== 1 ? 's' : ''} this month</div>
+                        <div style={{ fontSize: 12, color: '#666' }}>Gross: {fmt(sum.totalGross)} | VNPF: {fmt(sum.totalVnpf)}</div>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: '#2E7D2E' }}>Net: {fmt(sum.totalNet)}</div>
+                      </div>
+                    ) : (
+                      <div style={{ fontSize: 12, color: '#aaa', textAlign: 'right' }}>No pay runs<br/>for {monthLabel}</div>
+                    )}
+                    <button className="btn btn-primary" style={{ whiteSpace: 'nowrap' }} onClick={() => setPayRunModal(emp)}>
+                      <i className="ti ti-plus"></i> New Pay Run
+                    </button>
                   </div>
                 </div>
-                {isOpen && (
-                  <div style={{ padding: 16, borderTop: '0.5px solid rgba(0,0,0,0.09)', background: '#fafaf8' }}>
-                    <div style={{ marginBottom: 14, padding: '12px 16px', background: '#fff', borderRadius: 8, border: '1.5px solid #E8D5A3', display: 'flex', alignItems: 'center', gap: 12 }}>
-                      <label style={{ fontSize: 13, fontWeight: 600, color: '#3D2214', whiteSpace: 'nowrap' }}>Gross Salary for this pay run (VT)</label>
-                      <input type="number" value={ov.grossOverride !== undefined && ov.grossOverride !== '' ? ov.grossOverride : ''} placeholder={`Default: ${Number(emp.salary||0).toLocaleString()}`} onChange={e => setOv(emp.id, { grossOverride: e.target.value })} style={{ ...inputStyle, flex: 1, fontSize: 13, fontWeight: 600 }} />
-                      {ov.grossOverride !== '' && ov.grossOverride !== undefined && <button className="btn btn-sm" style={{ color: '#8B6914', fontSize: 11 }} onClick={() => setOv(emp.id, { grossOverride: '' })}>Reset to default</button>}
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-                      <div>
-                        <div style={{ fontWeight: 600, fontSize: 13, color: '#2E7D2E', marginBottom: 8 }}>+ Allowances / Extra Pay</div>
-                        {(ov.allowances || []).map((a, i) => (
-                          <div key={i} style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
-                            <input type="text" placeholder="e.g. Overtime" value={a.label} onChange={e => { const arr = [...(ov.allowances||[])]; arr[i] = { ...arr[i], label: e.target.value }; setOv(emp.id, { allowances: arr }) }} style={{ ...inputStyle, flex: 2, fontSize: 12 }} />
-                            <input type="number" placeholder="Amount" value={a.amount} onChange={e => { const arr = [...(ov.allowances||[])]; arr[i] = { ...arr[i], amount: e.target.value }; setOv(emp.id, { allowances: arr }) }} style={{ ...inputStyle, flex: 1, fontSize: 12 }} />
-                            <button className="btn btn-sm" style={{ color: '#A32D2D', borderColor: '#A32D2D', padding: '2px 6px' }} onClick={() => { const arr = (ov.allowances||[]).filter((_,j) => j !== i); setOv(emp.id, { allowances: arr }) }}><i className="ti ti-x"></i></button>
-                          </div>
-                        ))}
-                        <button className="btn btn-sm" onClick={() => setOv(emp.id, { allowances: [...(ov.allowances||[]), { label: '', amount: '' }] })} style={{ fontSize: 11, marginTop: 2 }}><i className="ti ti-plus"></i> Add Allowance</button>
-                      </div>
-                      <div>
-                        <div style={{ fontWeight: 600, fontSize: 13, color: '#A32D2D', marginBottom: 8 }}>– Other Deductions</div>
-                        <div style={{ display: 'flex', gap: 6, marginBottom: 6, alignItems: 'center' }}>
-                          <span style={{ fontSize: 12, color: '#555', flex: 2 }}>VNPF Employee 6%</span>
-                          <span style={{ fontSize: 12, fontWeight: 500, color: '#A32D2D', flex: 1, textAlign: 'right' }}>{fmt(pay.vnpfDeduction)}</span>
-                          <div style={{ width: 28 }}></div>
-                        </div>
-                        {(ov.deductions || []).map((d, i) => (
-                          <div key={i} style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
-                            <input type="text" placeholder="e.g. Loan repayment" value={d.label} onChange={e => { const arr = [...(ov.deductions||[])]; arr[i] = { ...arr[i], label: e.target.value }; setOv(emp.id, { deductions: arr }) }} style={{ ...inputStyle, flex: 2, fontSize: 12 }} />
-                            <input type="number" placeholder="Amount" value={d.amount} onChange={e => { const arr = [...(ov.deductions||[])]; arr[i] = { ...arr[i], amount: e.target.value }; setOv(emp.id, { deductions: arr }) }} style={{ ...inputStyle, flex: 1, fontSize: 12 }} />
-                            <button className="btn btn-sm" style={{ color: '#A32D2D', borderColor: '#A32D2D', padding: '2px 6px' }} onClick={() => { const arr = (ov.deductions||[]).filter((_,j) => j !== i); setOv(emp.id, { deductions: arr }) }}><i className="ti ti-x"></i></button>
-                          </div>
-                        ))}
-                        <button className="btn btn-sm" onClick={() => setOv(emp.id, { deductions: [...(ov.deductions||[]), { label: '', amount: '' }] })} style={{ fontSize: 11, marginTop: 2 }}><i className="ti ti-plus"></i> Add Deduction</button>
-                      </div>
-                    </div>
-                    <div style={{ marginTop: 14 }}>
-                      <label style={{ fontSize: 12, fontWeight: 500, color: '#555', display: 'block', marginBottom: 4 }}>Notes / Remarks</label>
-                      <input type="text" value={ov.notes} onChange={e => setOv(emp.id, { notes: e.target.value })} placeholder="e.g. Includes bonus for June" style={{ ...inputStyle, width: '100%', fontSize: 12 }} />
-                    </div>
-                    <div style={{ marginTop: 14, padding: '12px 16px', background: '#fff', borderRadius: 8, border: '0.5px solid #E8D5A3', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
-                      <div style={{ fontSize: 13 }}><span style={{ color: '#666' }}>Gross: </span><strong>{fmt(pay.gross)}</strong></div>
-                      <div style={{ fontSize: 13 }}><span style={{ color: '#2E7D2E' }}>+ Allowances: </span><strong style={{ color: '#2E7D2E' }}>{fmt(pay.totalAllowances)}</strong></div>
-                      <div style={{ fontSize: 13 }}><span style={{ color: '#A32D2D' }}>– Deductions: </span><strong style={{ color: '#A32D2D' }}>{fmt(pay.totalDeductions)}</strong></div>
-                      <div style={{ fontSize: 15, fontWeight: 700 }}><span style={{ color: '#2E7D2E' }}>Net Pay: </span><strong style={{ color: '#2E7D2E' }}>{fmt(pay.netPay)}</strong></div>
-                    </div>
+
+                {/* Pay run history for this month */}
+                {sum.runs > 0 && (
+                  <div style={{ padding: '0' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                      <thead>
+                        <tr style={{ background: '#E8D5A3' }}>
+                          <Th style={{ fontSize: 11 }}>Pay Date</Th>
+                          <Th style={{ fontSize: 11, textAlign: 'right' }}>Gross</Th>
+                          <Th style={{ fontSize: 11, textAlign: 'right' }}>Allowances</Th>
+                          <Th style={{ fontSize: 11, textAlign: 'right' }}>VNPF 6%</Th>
+                          <Th style={{ fontSize: 11, textAlign: 'right' }}>Other Deductions</Th>
+                          <Th style={{ fontSize: 11, textAlign: 'right' }}>Net Pay</Th>
+                          <Th style={{ fontSize: 11 }}>Notes</Th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {sum.records.map((rec, i) => {
+                          const recAllowances = (rec.allowances || []).reduce((s, a) => s + Number(a.amount || 0), 0)
+                          const recOtherDeductions = (rec.deductions || []).reduce((s, d) => s + Number(d.amount || 0), 0)
+                          return (
+                            <tr key={rec.id} style={{ borderBottom: '0.5px solid rgba(0,0,0,0.07)', background: i % 2 === 0 ? '#fff' : '#fafaf8' }}>
+                              <Td style={{ fontSize: 12 }}>{rec.pay_date ? fmtDate(rec.pay_date) : rec.month}</Td>
+                              <Td style={{ textAlign: 'right', fontSize: 12 }}>{fmt(rec.gross)}</Td>
+                              <Td style={{ textAlign: 'right', fontSize: 12, color: '#2E7D2E' }}>{recAllowances > 0 ? '+' + fmt(recAllowances) : '—'}</Td>
+                              <Td style={{ textAlign: 'right', fontSize: 12, color: '#A32D2D' }}>{fmt(rec.vnpf_employee)}</Td>
+                              <Td style={{ textAlign: 'right', fontSize: 12, color: '#A32D2D' }}>{recOtherDeductions > 0 ? fmt(recOtherDeductions) : '—'}</Td>
+                              <Td style={{ textAlign: 'right', fontSize: 12, fontWeight: 600, color: '#2E7D2E' }}>{fmt(rec.net_pay)}</Td>
+                              <Td style={{ fontSize: 11, color: '#888' }}>{rec.notes || '—'}</Td>
+                            </tr>
+                          )
+                        })}
+                        <tr style={{ background: '#f0ebe0', fontWeight: 700, fontSize: 12 }}>
+                          <td style={{ padding: '7px 14px' }}>TOTAL ({sum.runs} run{sum.runs!==1?'s':''})</td>
+                          <td style={{ padding: '7px 14px', textAlign: 'right' }}>{fmt(sum.totalGross)}</td>
+                          <td style={{ padding: '7px 14px', textAlign: 'right', color: '#2E7D2E' }}>{fmt(sum.totalAllowances)}</td>
+                          <td style={{ padding: '7px 14px', textAlign: 'right', color: '#A32D2D' }}>{fmt(sum.totalVnpf)}</td>
+                          <td style={{ padding: '7px 14px', textAlign: 'right' }}></td>
+                          <td style={{ padding: '7px 14px', textAlign: 'right', color: '#2E7D2E' }}>{fmt(sum.totalNet)}</td>
+                          <td></td>
+                        </tr>
+                      </tbody>
+                    </table>
                   </div>
                 )}
               </Card>
@@ -2651,6 +2525,193 @@ body{font-family:Arial,sans-serif;background:#f0ebe0;color:#222;font-size:13px}
           })}
         </div>
       )}
+
+      {payRunModal && (
+        <PayRunModal
+          emp={payRunModal}
+          defaultMonth={salaryMonth}
+          onClose={() => setPayRunModal(null)}
+          onSave={() => { setPayRunModal(null); reload() }}
+          fmt={fmt}
+        />
+      )}
+    </div>
+  )
+}
+
+function PayRunModal({ emp, defaultMonth, onClose, onSave, fmt }) {
+  const nowD = new Date()
+  const MONTHS_LONG = ['January','February','March','April','May','June','July','August','September','October','November','December']
+  const monthOptions = Array.from({ length: 24 }, (_, i) => {
+    const d = new Date(nowD.getFullYear(), nowD.getMonth() - i, 1)
+    return { value: d.toISOString().slice(0, 7), label: MONTHS_LONG[d.getMonth()] + ' ' + d.getFullYear() }
+  })
+
+  const [form, setForm] = useState({
+    month: defaultMonth,
+    pay_date: nowD.toISOString().slice(0, 10),
+    days_worked: '',
+    gross: emp.salary || '',
+    allowances: [],
+    deductions: [],
+    notes: ''
+  })
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+
+  const setF = (key, val) => setForm(f => ({ ...f, [key]: val }))
+
+  const gross = Number(form.gross || 0)
+  const totalAllowances = form.allowances.reduce((s, a) => s + Number(a.amount || 0), 0)
+  const vnpfDeduction = Math.round(gross * 0.06)
+  const otherDeductions = form.deductions.reduce((s, d) => s + Number(d.amount || 0), 0)
+  const totalDeductions = vnpfDeduction + otherDeductions
+  const netPay = gross + totalAllowances - totalDeductions
+
+  const handleSave = async () => {
+    setError('')
+    if (!form.gross || gross <= 0) { setError('Gross salary is required'); return }
+    if (!form.pay_date) { setError('Pay date is required'); return }
+    setSaving(true)
+    try {
+      const res = await fetch('/api/salary-records', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          employee_id: emp.id,
+          month: form.month,
+          pay_date: form.pay_date,
+          days_worked: form.days_worked ? Number(form.days_worked) : null,
+          gross,
+          allowances: form.allowances,
+          deductions: form.deductions,
+          vnpf_employee: vnpfDeduction,
+          net_pay: netPay,
+          notes: form.notes || null
+        })
+      })
+      if (!res.ok) { const d = await res.json(); setError(d.error || 'Failed to save'); setSaving(false); return }
+      onSave()
+    } catch(e) { setError('Network error: ' + e.message); setSaving(false) }
+  }
+
+  const addAllowance = () => setF('allowances', [...form.allowances, { label: '', amount: '' }])
+  const addDeduction = () => setF('deductions', [...form.deductions, { label: '', amount: '' }])
+  const updateAllowance = (i, key, val) => { const arr = [...form.allowances]; arr[i] = { ...arr[i], [key]: val }; setF('allowances', arr) }
+  const updateDeduction = (i, key, val) => { const arr = [...form.deductions]; arr[i] = { ...arr[i], [key]: val }; setF('deductions', arr) }
+  const removeAllowance = (i) => setF('allowances', form.allowances.filter((_,j) => j !== i))
+  const removeDeduction = (i) => setF('deductions', form.deductions.filter((_,j) => j !== i))
+
+  const monthLabel = monthOptions.find(m => m.value === form.month)?.label || form.month
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+      <div style={{ background: '#fff', borderRadius: 12, width: '100%', maxWidth: 660, maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 8px 40px rgba(0,0,0,0.25)' }}>
+
+        {/* Modal Header */}
+        <div style={{ background: 'linear-gradient(135deg,#1A0D06,#3D2214,#5C3D0A)', padding: '18px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase' }}>New Pay Run</div>
+            <div style={{ color: '#FFD700', fontSize: 18, fontWeight: 700, marginTop: 2 }}>{emp.name}</div>
+            <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: 12, marginTop: 2 }}>{emp.job_title || 'Employee'} | Base salary: {fmt(emp.salary)}</div>
+          </div>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#fff', fontSize: 22, cursor: 'pointer', opacity: 0.7 }}>&times;</button>
+        </div>
+
+        {/* Modal Body */}
+        <div style={{ overflow: 'auto', padding: 24, flex: 1 }}>
+          {error && <Alert type="danger">{error}</Alert>}
+
+          {/* Pay Period & Date */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 18 }}>
+            <Field label="Pay period (month)">
+              <select value={form.month} onChange={e => setF('month', e.target.value)} style={inputStyle}>
+                {monthOptions.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+              </select>
+            </Field>
+            <Field label="Pay date *">
+              <input type="date" value={form.pay_date} onChange={e => setF('pay_date', e.target.value)} style={inputStyle} />
+            </Field>
+            <Field label="Days worked (optional)">
+              <input type="number" value={form.days_worked} onChange={e => setF('days_worked', e.target.value)} placeholder="e.g. 22" min="0" max="31" style={inputStyle} />
+            </Field>
+          </div>
+
+          {/* Gross Salary */}
+          <div style={{ background: '#faf6ee', border: '1.5px solid #E8D5A3', borderRadius: 8, padding: '14px 16px', marginBottom: 18 }}>
+            <Field label={`Gross salary for this pay run (VT) * — base: ${fmt(emp.salary)}`}>
+              <input type="number" value={form.gross} onChange={e => setF('gross', e.target.value)} placeholder={String(emp.salary || 0)} style={{ ...inputStyle, fontSize: 16, fontWeight: 600 }} />
+            </Field>
+          </div>
+
+          {/* Allowances & Deductions */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 18 }}>
+            <div>
+              <div style={{ fontWeight: 600, fontSize: 13, color: '#2E7D2E', marginBottom: 10 }}>+ Allowances / Extra Pay</div>
+              {form.allowances.map((a, i) => (
+                <div key={i} style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
+                  <input type="text" placeholder="e.g. Overtime" value={a.label} onChange={e => updateAllowance(i, 'label', e.target.value)} style={{ ...inputStyle, flex: 2, fontSize: 12 }} />
+                  <input type="number" placeholder="Amount" value={a.amount} onChange={e => updateAllowance(i, 'amount', e.target.value)} style={{ ...inputStyle, flex: 1, fontSize: 12 }} />
+                  <button className="btn btn-sm" style={{ color: '#A32D2D', borderColor: '#A32D2D', padding: '2px 6px' }} onClick={() => removeAllowance(i)}><i className="ti ti-x"></i></button>
+                </div>
+              ))}
+              <button className="btn btn-sm" onClick={addAllowance} style={{ fontSize: 11, marginTop: 2 }}><i className="ti ti-plus"></i> Add Allowance</button>
+            </div>
+
+            <div>
+              <div style={{ fontWeight: 600, fontSize: 13, color: '#A32D2D', marginBottom: 10 }}>— Deductions</div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', fontSize: 13, borderBottom: '0.5px solid #f0ebe0', marginBottom: 6 }}>
+                <span style={{ color: '#555' }}>VNPF Employee Contribution (6%)</span>
+                <span style={{ fontWeight: 600, color: '#A32D2D' }}>{fmt(vnpfDeduction)}</span>
+              </div>
+              {form.deductions.map((d, i) => (
+                <div key={i} style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
+                  <input type="text" placeholder="e.g. Loan repayment" value={d.label} onChange={e => updateDeduction(i, 'label', e.target.value)} style={{ ...inputStyle, flex: 2, fontSize: 12 }} />
+                  <input type="number" placeholder="Amount" value={d.amount} onChange={e => updateDeduction(i, 'amount', e.target.value)} style={{ ...inputStyle, flex: 1, fontSize: 12 }} />
+                  <button className="btn btn-sm" style={{ color: '#A32D2D', borderColor: '#A32D2D', padding: '2px 6px' }} onClick={() => removeDeduction(i)}><i className="ti ti-x"></i></button>
+                </div>
+              ))}
+              <button className="btn btn-sm" onClick={addDeduction} style={{ fontSize: 11, marginTop: 2 }}><i className="ti ti-plus"></i> Add Deduction</button>
+            </div>
+          </div>
+
+          {/* Notes */}
+          <Field label="Notes / Remarks">
+            <input type="text" value={form.notes} onChange={e => setF('notes', e.target.value)} placeholder="e.g. Weekly pay run 1 of 4, includes overtime" style={inputStyle} />
+          </Field>
+
+          {/* Live Pay Summary */}
+          <div style={{ background: 'linear-gradient(135deg,#1A0D06,#3D2214)', borderRadius: 10, padding: '16px 20px', marginTop: 18 }}>
+            <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 12 }}>Pay Summary — {monthLabel}</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12 }}>
+              {[
+                ['Gross', fmt(gross), '#fff'],
+                ['+ Allowances', fmt(totalAllowances), '#86d86a'],
+                ['— Deductions', fmt(totalDeductions), '#ff8a8a'],
+                ['Net Pay', fmt(netPay), '#FFD700'],
+              ].map(([label, value, color]) => (
+                <div key={label} style={{ textAlign: 'center' }}>
+                  <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11, marginBottom: 4 }}>{label}</div>
+                  <div style={{ color, fontWeight: 700, fontSize: label === 'Net Pay' ? 20 : 15 }}>{value}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{ marginTop: 12, padding: '8px 12px', background: 'rgba(255,255,255,0.08)', borderRadius: 6, fontSize: 12, color: 'rgba(255,255,255,0.7)', display: 'flex', justifyContent: 'space-between' }}>
+              <span>VNPF Employee (6%): <strong style={{ color: '#ff8a8a' }}>{fmt(vnpfDeduction)}</strong></span>
+              <span>VNPF Employer (6%): <strong style={{ color: '#ff8a8a' }}>{fmt(Math.round(gross * 0.06))}</strong></span>
+              <span>Total VNPF contribution: <strong style={{ color: '#FFD700' }}>{fmt(Math.round(gross * 0.12))}</strong></span>
+            </div>
+          </div>
+        </div>
+
+        {/* Modal Footer */}
+        <div style={{ padding: '14px 24px', borderTop: '0.5px solid rgba(0,0,0,0.09)', display: 'flex', justifyContent: 'flex-end', gap: 10, background: '#fafaf8' }}>
+          <button className="btn" onClick={onClose}>Cancel</button>
+          <button className="btn btn-primary" onClick={handleSave} disabled={saving}>
+            <i className="ti ti-check"></i> {saving ? 'Processing...' : 'Process Pay Run'}
+          </button>
+        </div>
+      </div>
     </div>
   )
 }
