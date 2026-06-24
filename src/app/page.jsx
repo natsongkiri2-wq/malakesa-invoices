@@ -2413,7 +2413,7 @@ function SalariesTab({ employees, salaryRecords, reload, fmt }) {
   const [overrides, setOverrides] = useState({})
   const [selectedEmp, setSelectedEmp] = useState(null)
 
-  const getOv = (id) => overrides[id] || { allowances: [], deductions: [], notes: '' }
+  const getOv = (id) => overrides[id] || { allowances: [], deductions: [], notes: '', grossOverride: '' }
   const setOv = (id, val) => setOverrides(o => ({ ...o, [id]: { ...getOv(id), ...val } }))
 
   // Which employees have been processed this month
@@ -2449,8 +2449,8 @@ function SalariesTab({ employees, salaryRecords, reload, fmt }) {
   }
 
   const calcPay = (emp) => {
-    const gross = Number(emp.salary || 0)
     const ov = getOv(emp.id)
+    const gross = ov.grossOverride !== '' && ov.grossOverride !== undefined ? Number(ov.grossOverride || 0) : Number(emp.salary || 0)
     const totalAllowances = (ov.allowances || []).reduce((s, a) => s + Number(a.amount || 0), 0)
     const vnpfDeduction = Math.round(gross * 0.06)
     const otherDeductions = (ov.deductions || []).reduce((s, d) => s + Number(d.amount || 0), 0)
@@ -2600,6 +2600,11 @@ body{font-family:Arial,sans-serif;background:#f0ebe0;color:#222;font-size:13px}
                 </div>
                 {isOpen && (
                   <div style={{ padding: 16, borderTop: '0.5px solid rgba(0,0,0,0.09)', background: '#fafaf8' }}>
+                    <div style={{ marginBottom: 14, padding: '12px 16px', background: '#fff', borderRadius: 8, border: '1.5px solid #E8D5A3', display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <label style={{ fontSize: 13, fontWeight: 600, color: '#3D2214', whiteSpace: 'nowrap' }}>Gross Salary for this pay run (VT)</label>
+                      <input type="number" value={ov.grossOverride !== undefined && ov.grossOverride !== '' ? ov.grossOverride : ''} placeholder={`Default: ${Number(emp.salary||0).toLocaleString()}`} onChange={e => setOv(emp.id, { grossOverride: e.target.value })} style={{ ...inputStyle, flex: 1, fontSize: 13, fontWeight: 600 }} />
+                      {ov.grossOverride !== '' && ov.grossOverride !== undefined && <button className="btn btn-sm" style={{ color: '#8B6914', fontSize: 11 }} onClick={() => setOv(emp.id, { grossOverride: '' })}>Reset to default</button>}
+                    </div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
                       <div>
                         <div style={{ fontWeight: 600, fontSize: 13, color: '#2E7D2E', marginBottom: 8 }}>+ Allowances / Extra Pay</div>
