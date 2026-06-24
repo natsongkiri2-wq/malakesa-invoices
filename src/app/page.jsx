@@ -2109,6 +2109,7 @@ const VNPF_EMPLOYEE_RATE = 0.06
 const VNPF_EMPLOYER_RATE = 0.06
 
 function VNPF({ employees, reload, setModal, setSelected }) {
+  const [vnpfTab, setVnpfTab] = useState('contributions')
   const nowD = new Date()
   const MONTHS_LONG = ['January','February','March','April','May','June','July','August','September','October','November','December']
   const monthOptions = Array.from({ length: 24 }, (_, i) => {
@@ -2263,92 +2264,324 @@ function VNPF({ employees, reload, setModal, setSelected }) {
     }
   }
 
+  const tabStyle = (active) => ({ padding: '7px 18px', border: 'none', borderBottom: active ? '3px solid #8B6914' : '3px solid transparent', background: 'none', fontWeight: active ? 600 : 400, color: active ? '#8B6914' : '#666', cursor: 'pointer', fontSize: 13, whiteSpace: 'nowrap' })
+
   return (
     <>
-      <Topbar title="VNPF Contributions">
+      <Topbar title="VNPF & Salaries">
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-          <MonthYearPicker value={vnpfMonth} onChange={setVnpfMonth} accentColor="#8B6914" />
-          <button className="btn btn-sm" style={{ background: '#2E7D2E', borderColor: '#1A4D1A', color: '#fff', fontWeight: 500 }} onClick={printSchedule}><i className="ti ti-printer"></i> Print Schedule</button>
-          <button className="btn btn-sm" style={{ background: '#8B6914', borderColor: '#6B5010', color: '#fff', fontWeight: 500 }} onClick={emailSchedule} disabled={emailStatus === 'sending' || rows.length === 0}>
-            <i className="ti ti-mail"></i> {emailStatus === 'sending' ? 'Sending...' : 'Email to VNPF'}
-          </button>
+          {vnpfTab === 'contributions' && <>
+            <MonthYearPicker value={vnpfMonth} onChange={setVnpfMonth} accentColor="#8B6914" />
+            <button className="btn btn-sm" style={{ background: '#2E7D2E', borderColor: '#1A4D1A', color: '#fff', fontWeight: 500 }} onClick={printSchedule}><i className="ti ti-printer"></i> Print Schedule</button>
+            <button className="btn btn-sm" style={{ background: '#8B6914', borderColor: '#6B5010', color: '#fff', fontWeight: 500 }} onClick={emailSchedule} disabled={emailStatus === 'sending' || rows.length === 0}>
+              <i className="ti ti-mail"></i> {emailStatus === 'sending' ? 'Sending...' : 'Email to VNPF'}
+            </button>
+          </>}
           <button className="btn btn-primary" onClick={() => setModal('newEmployee')}><i className="ti ti-plus"></i> Add Employee</button>
         </div>
       </Topbar>
-      <div style={{ padding: 20 }}>
-        {emailStatus && emailStatus !== 'sending' && (
-          <div style={{ background: emailStatus.startsWith('error') ? '#FCEBEB' : '#EAF3DE', color: emailStatus.startsWith('error') ? '#791F1F' : '#27500A', border: '0.5px solid ' + (emailStatus.startsWith('error') ? '#F7C1C1' : '#C0DD97'), padding: '10px 14px', borderRadius: 8, fontSize: 13, marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <i className={`ti ${emailStatus.startsWith('error') ? 'ti-alert-circle' : 'ti-check'}`}></i>
-            {emailStatus.startsWith('error') ? emailStatus.replace('error: ', 'Failed: ') : emailStatus}
-          </div>
-        )}
-
-        <div style={{ background: '#EAF3DE', border: '0.5px solid #C0DD97', borderRadius: 8, padding: '10px 16px', marginBottom: 16, fontSize: 13, color: '#27500A', display: 'flex', alignItems: 'center', gap: 10 }}>
-          <i className="ti ti-building-bank" style={{ fontSize: 18 }}></i>
-          <span><strong>VNPF Period: {monthLabel}</strong> &nbsp;|&nbsp; Employee rate: 6% &nbsp;|&nbsp; Employer rate: 6% &nbsp;|&nbsp; Total payable: <strong>{fmt(totalContribution)}</strong></span>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12, marginBottom: 16 }}>
-          <StatCard label="Total gross salaries" value={fmt(totalSalary)} sub={`${rows.length} employees`} />
-          <StatCard label="Employee contributions (6%)" value={fmt(totalEmployee)} color="#8B6914" />
-          <StatCard label="Employer contributions (6%)" value={fmt(totalEmployer)} color="#8B6914" />
-          <StatCard label="Total payable to VNPF" value={fmt(totalContribution)} color="#2E7D2E" />
-        </div>
-
-        <Card style={{ padding: 0, overflow: 'hidden' }}>
-          <div style={{ padding: '12px 20px', borderBottom: '0.5px solid rgba(0,0,0,0.09)', fontWeight: 500, fontSize: 13 }}>
-            Contribution Schedule — {monthLabel}
-          </div>
-          {rows.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '48px 20px', color: '#666' }}>
-              <i className="ti ti-users-plus" style={{ fontSize: 36, display: 'block', marginBottom: 10 }}></i>
-              <p style={{ marginBottom: 14 }}>No employees added yet</p>
-              <button className="btn btn-primary" onClick={() => setModal('newEmployee')}>Add first employee</button>
-            </div>
-          ) : (
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-              <thead><tr style={{ background: '#E8D5A3' }}>
-                <Th>Name</Th><Th>Job Title</Th><Th>VNPF Number</Th>
-                <Th style={{ textAlign: 'right' }}>Gross Salary</Th>
-                <Th style={{ textAlign: 'right' }}>Employee 6%</Th>
-                <Th style={{ textAlign: 'right' }}>Employer 6%</Th>
-                <Th style={{ textAlign: 'right' }}>Total</Th>
-                <Th style={{ textAlign: 'center' }}>Actions</Th>
-              </tr></thead>
-              <tbody>
-                {rows.map(r => (
-                  <tr key={r.id} style={{ borderBottom: '0.5px solid rgba(0,0,0,0.09)' }}>
-                    <Td><strong>{r.name}</strong></Td>
-                    <Td style={{ color: '#666' }}>{r.job_title || '—'}</Td>
-                    <Td style={{ color: '#666' }}>{r.email || '—'}</Td>
-                    <Td style={{ textAlign: 'right' }}>{fmt(r.salary)}</Td>
-                    <Td style={{ textAlign: 'right' }}>{fmt(r.employee)}</Td>
-                    <Td style={{ textAlign: 'right' }}>{fmt(r.employer)}</Td>
-                    <Td style={{ textAlign: 'right', fontWeight: 500, color: '#2E7D2E' }}>{fmt(r.total)}</Td>
-                    <Td>
-                      <div style={{ display: 'flex', gap: 5, justifyContent: 'center' }}>
-                        <button className="btn btn-sm" onClick={() => { setSelected(r); setModal('editEmployee') }}><i className="ti ti-pencil"></i></button>
-                        <button className="btn btn-sm" style={{ borderColor: '#A32D2D', color: '#A32D2D' }} onClick={() => handleDelete(r.id)}><i className="ti ti-trash"></i></button>
-                      </div>
-                    </Td>
-                  </tr>
-                ))}
-                <tr style={{ background: '#E8D5A3', fontWeight: 700 }}>
-                  <td colSpan={4} style={{ padding: '9px 14px', fontSize: 13 }}>TOTAL</td>
-                  <td style={{ padding: '9px 14px', textAlign: 'right', fontSize: 13 }}>{fmt(totalSalary)}</td>
-                  <td style={{ padding: '9px 14px', textAlign: 'right', fontSize: 13 }}>{fmt(totalEmployee)}</td>
-                  <td style={{ padding: '9px 14px', textAlign: 'right', fontSize: 13 }}>{fmt(totalEmployer)}</td>
-                  <td style={{ padding: '9px 14px', textAlign: 'right', fontSize: 13, color: '#2E7D2E' }}>{fmt(totalContribution)}</td>
-                  <td></td>
-                </tr>
-              </tbody>
-            </table>
-          )}
-        </Card>
+      <div style={{ borderBottom: '0.5px solid rgba(0,0,0,0.1)', display: 'flex', paddingLeft: 20, background: '#fff' }}>
+        <button style={tabStyle(vnpfTab === 'contributions')} onClick={() => setVnpfTab('contributions')}><i className="ti ti-building-bank" style={{ marginRight: 5 }}></i>VNPF Contributions</button>
+        <button style={tabStyle(vnpfTab === 'salaries')} onClick={() => setVnpfTab('salaries')}><i className="ti ti-cash" style={{ marginRight: 5 }}></i>Salaries & Payslips</button>
       </div>
+      {vnpfTab === 'contributions' && <VNPFContributions
+        rows={rows} totalSalary={totalSalary} totalEmployee={totalEmployee} totalEmployer={totalEmployer}
+        totalContribution={totalContribution} monthLabel={monthLabel}
+        emailStatus={emailStatus} setModal={setModal} setSelected={setSelected}
+        handleDelete={handleDelete} fmt={fmt}
+      />}
+      {vnpfTab === 'salaries' && <SalariesTab employees={employees} fmt={fmt} />}
     </>
   )
 }
+
+function VNPFContributions({ rows, totalSalary, totalEmployee, totalEmployer, totalContribution, monthLabel, emailStatus, setModal, setSelected, handleDelete, fmt }) {
+  return (
+    <div style={{ padding: 20 }}>
+      {emailStatus && emailStatus !== 'sending' && (
+        <div style={{ background: emailStatus.startsWith('error') ? '#FCEBEB' : '#EAF3DE', color: emailStatus.startsWith('error') ? '#791F1F' : '#27500A', border: '0.5px solid ' + (emailStatus.startsWith('error') ? '#F7C1C1' : '#C0DD97'), padding: '10px 14px', borderRadius: 8, fontSize: 13, marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <i className={`ti ${emailStatus.startsWith('error') ? 'ti-alert-circle' : 'ti-check'}`}></i>
+          {emailStatus.startsWith('error') ? emailStatus.replace('error: ', 'Failed: ') : emailStatus}
+        </div>
+      )}
+      <div style={{ background: '#EAF3DE', border: '0.5px solid #C0DD97', borderRadius: 8, padding: '10px 16px', marginBottom: 16, fontSize: 13, color: '#27500A', display: 'flex', alignItems: 'center', gap: 10 }}>
+        <i className="ti ti-building-bank" style={{ fontSize: 18 }}></i>
+        <span><strong>VNPF Period: {monthLabel}</strong> &nbsp;|&nbsp; Employee rate: 6% &nbsp;|&nbsp; Employer rate: 6% &nbsp;|&nbsp; Total payable: <strong>{fmt(totalContribution)}</strong></span>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12, marginBottom: 16 }}>
+        <StatCard label="Total gross salaries" value={fmt(totalSalary)} sub={`${rows.length} employees`} />
+        <StatCard label="Employee contributions (6%)" value={fmt(totalEmployee)} color="#8B6914" />
+        <StatCard label="Employer contributions (6%)" value={fmt(totalEmployer)} color="#8B6914" />
+        <StatCard label="Total payable to VNPF" value={fmt(totalContribution)} color="#2E7D2E" />
+      </div>
+      <Card style={{ padding: 0, overflow: 'hidden' }}>
+        <div style={{ padding: '12px 20px', borderBottom: '0.5px solid rgba(0,0,0,0.09)', fontWeight: 500, fontSize: 13 }}>Contribution Schedule — {monthLabel}</div>
+        {rows.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '48px 20px', color: '#666' }}>
+            <i className="ti ti-users-plus" style={{ fontSize: 36, display: 'block', marginBottom: 10 }}></i>
+            <p style={{ marginBottom: 14 }}>No employees added yet</p>
+            <button className="btn btn-primary" onClick={() => setModal('newEmployee')}>Add first employee</button>
+          </div>
+        ) : (
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+            <thead><tr style={{ background: '#E8D5A3' }}>
+              <Th>Name</Th><Th>Job Title</Th><Th>VNPF Number</Th>
+              <Th style={{ textAlign: 'right' }}>Gross Salary</Th>
+              <Th style={{ textAlign: 'right' }}>Employee 6%</Th>
+              <Th style={{ textAlign: 'right' }}>Employer 6%</Th>
+              <Th style={{ textAlign: 'right' }}>Total</Th>
+              <Th style={{ textAlign: 'center' }}>Actions</Th>
+            </tr></thead>
+            <tbody>
+              {rows.map(r => (
+                <tr key={r.id} style={{ borderBottom: '0.5px solid rgba(0,0,0,0.09)' }}>
+                  <Td><strong>{r.name}</strong></Td>
+                  <Td style={{ color: '#666' }}>{r.job_title || '—'}</Td>
+                  <Td style={{ color: '#666' }}>{r.vnpf_number || '—'}</Td>
+                  <Td style={{ textAlign: 'right' }}>{fmt(r.salary)}</Td>
+                  <Td style={{ textAlign: 'right' }}>{fmt(r.employee)}</Td>
+                  <Td style={{ textAlign: 'right' }}>{fmt(r.employer)}</Td>
+                  <Td style={{ textAlign: 'right', fontWeight: 500, color: '#2E7D2E' }}>{fmt(r.total)}</Td>
+                  <Td>
+                    <div style={{ display: 'flex', gap: 5, justifyContent: 'center' }}>
+                      <button className="btn btn-sm" onClick={() => { setSelected(r); setModal('editEmployee') }}><i className="ti ti-pencil"></i></button>
+                      <button className="btn btn-sm" style={{ borderColor: '#A32D2D', color: '#A32D2D' }} onClick={() => handleDelete(r.id)}><i className="ti ti-trash"></i></button>
+                    </div>
+                  </Td>
+                </tr>
+              ))}
+              <tr style={{ background: '#E8D5A3', fontWeight: 700 }}>
+                <td colSpan={3} style={{ padding: '9px 14px', fontSize: 13 }}>TOTAL</td>
+                <td style={{ padding: '9px 14px', textAlign: 'right', fontSize: 13 }}>{fmt(totalSalary)}</td>
+                <td style={{ padding: '9px 14px', textAlign: 'right', fontSize: 13 }}>{fmt(totalEmployee)}</td>
+                <td style={{ padding: '9px 14px', textAlign: 'right', fontSize: 13 }}>{fmt(totalEmployer)}</td>
+                <td style={{ padding: '9px 14px', textAlign: 'right', fontSize: 13, color: '#2E7D2E' }}>{fmt(totalContribution)}</td>
+                <td></td>
+              </tr>
+            </tbody>
+          </table>
+        )}
+      </Card>
+    </div>
+  )
+}
+
+function SalariesTab({ employees, fmt }) {
+  const nowD = new Date()
+  const MONTHS_LONG = ['January','February','March','April','May','June','July','August','September','October','November','December']
+  const monthOptions = Array.from({ length: 24 }, (_, i) => {
+    const d = new Date(nowD.getFullYear(), nowD.getMonth() - i, 1)
+    return { value: d.toISOString().slice(0, 7), label: MONTHS_LONG[d.getMonth()] + ' ' + d.getFullYear() }
+  })
+  const [salaryMonth, setSalaryMonth] = useState(nowD.toISOString().slice(0, 7))
+  const monthLabel = monthOptions.find(m => m.value === salaryMonth)?.label || salaryMonth
+  const activeEmployees = employees.filter(e => e.active !== false)
+  const [overrides, setOverrides] = useState({})
+  const [selectedEmp, setSelectedEmp] = useState(null)
+
+  const getOv = (id) => overrides[id] || { allowances: [], deductions: [], notes: '' }
+  const setOv = (id, val) => setOverrides(o => ({ ...o, [id]: { ...getOv(id), ...val } }))
+
+  const calcPay = (emp) => {
+    const gross = Number(emp.salary || 0)
+    const ov = getOv(emp.id)
+    const totalAllowances = (ov.allowances || []).reduce((s, a) => s + Number(a.amount || 0), 0)
+    const vnpfDeduction = Math.round(gross * 0.06)
+    const otherDeductions = (ov.deductions || []).reduce((s, d) => s + Number(d.amount || 0), 0)
+    const totalDeductions = vnpfDeduction + otherDeductions
+    const netPay = gross + totalAllowances - totalDeductions
+    return { gross, totalAllowances, vnpfDeduction, otherDeductions, totalDeductions, netPay }
+  }
+
+  const printPayslip = (emp) => {
+    const pay = calcPay(emp)
+    const ov = getOv(emp.id)
+    const w = window.open('', '_blank')
+    if (!w) { alert('Please allow popups to print payslips.'); return }
+    const issued = new Date().toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' })
+    const allowanceRows = (ov.allowances || []).map(a => `<div class='row'><span class='lbl'>${a.label || 'Allowance'}</span><span class='amt grn'>VT ${Number(a.amount||0).toLocaleString()}</span></div>`).join('')
+    const deductionRows = (ov.deductions || []).map(d => `<div class='row'><span class='lbl'>${d.label || 'Deduction'}</span><span class='amt red'>VT ${Number(d.amount||0).toLocaleString()}</span></div>`).join('')
+    const notesHtml = ov.notes ? `<div class='notes'><strong>Notes:</strong> ${ov.notes}</div>` : ''
+    w.document.write(`<!DOCTYPE html><html><head><title>Payslip - ${emp.name} - ${monthLabel}</title><style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,sans-serif;background:#f0ebe0;color:#222;font-size:13px}
+.page{max-width:680px;margin:20px auto;background:#fff;border-radius:4px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.15)}
+.hdr{background:linear-gradient(135deg,#1A0D06 0%,#3D2214 50%,#5C3D0A 100%);padding:24px 36px;display:flex;justify-content:space-between;align-items:flex-start}
+.hdr-r{text-align:right;color:#fff}
+.ps-title{font-size:10px;letter-spacing:3px;color:rgba(255,255,255,.6);text-transform:uppercase;margin-top:10px}
+.ps-period{font-size:18px;font-weight:700;color:#FFD700;margin-top:3px}
+.ps-date{font-size:11px;color:rgba(255,255,255,.7);margin-top:4px}
+.emp-bar{background:#3D2214;padding:12px 36px;display:flex;justify-content:space-between;align-items:center}
+.emp-name{color:#FFD700;font-weight:700;font-size:16px}
+.emp-det{color:rgba(255,255,255,.75);font-size:11px;margin-top:3px}
+.emp-r{text-align:right;color:rgba(255,255,255,.75);font-size:11px}
+.body{padding:24px 36px}
+.sec{font-size:10px;font-weight:800;color:#8B6914;text-transform:uppercase;letter-spacing:2px;border-bottom:2px solid #E8D5A3;padding-bottom:4px;margin:20px 0 10px}
+.row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:.5px solid #f0ebe0;font-size:13px}
+.row:last-child{border-bottom:none}
+.lbl{color:#555}
+.amt{font-weight:500}
+.grn{color:#2E7D2E}
+.red{color:#A32D2D}
+.bold{font-weight:700}
+.net-box{background:linear-gradient(135deg,#1A0D06,#3D2214);border-radius:8px;padding:16px 24px;margin:20px 0;display:flex;justify-content:space-between;align-items:center}
+.net-lbl{color:rgba(255,255,255,.8);font-size:13px;font-weight:600}
+.net-amt{color:#FFD700;font-size:26px;font-weight:900}
+.notes{background:#faf6ee;border-left:4px solid #8B6914;padding:10px 14px;border-radius:0 6px 6px 0;font-size:12px;color:#555;margin-top:12px}
+.sigs{display:flex;justify-content:space-between;margin-top:32px;gap:40px}
+.sig{flex:1;border-top:1px solid #ccc;padding-top:6px;font-size:11px;color:#888;text-align:center}
+.ftr{background:linear-gradient(135deg,#1A0D06,#5C3D0A);padding:14px 36px;display:flex;justify-content:space-between;color:rgba(255,255,255,.7);font-size:10px;line-height:1.9}
+.noprint{background:#333;color:#fff;padding:10px 20px;display:flex;justify-content:space-between;align-items:center;font-size:13px}
+.printbtn{background:#8B6914;color:#fff;border:none;padding:7px 18px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600}
+@media print{.noprint{display:none}body{background:#fff}.page{box-shadow:none;margin:0;max-width:100%}}
+</style></head><body>
+<div class='noprint'><span>Payslip — ${emp.name} — ${monthLabel}</span><button class='printbtn' onclick='window.print()'>Print / Save PDF</button></div>
+<div class='page'>
+  <div class='hdr'>
+    <div>
+      <img src='${MALAKESA_LOGO}' alt='Malakesa' style='width:200px;border-radius:6px;display:block'/>
+      <div class='ps-date' style='margin-top:8px'>Port Vila, Shefa Province, Vanuatu | TIN: 445579</div>
+    </div>
+    <div class='hdr-r'>
+      <div class='ps-title'>Pay Slip</div>
+      <div class='ps-period'>${monthLabel}</div>
+      <div class='ps-date'>Issued: ${issued}</div>
+    </div>
+  </div>
+  <div class='emp-bar'>
+    <div>
+      <div class='emp-name'>${emp.name}</div>
+      <div class='emp-det'>${emp.job_title || 'Employee'} | VNPF: ${emp.vnpf_number || 'N/A'}</div>
+    </div>
+    <div class='emp-r'>
+      <div>Pay Period: <strong style='color:#FFD700'>${monthLabel}</strong></div>
+      <div>Pay Date: ${issued}</div>
+    </div>
+  </div>
+  <div class='body'>
+    <div class='sec'>Earnings</div>
+    <div class='row'><span class='lbl'>Basic Salary</span><span class='amt grn'>VT ${Number(pay.gross).toLocaleString()}</span></div>
+    ${allowanceRows}
+    <div class='row bold'><span>Total Earnings</span><span class='amt grn'>VT ${Number(pay.gross + pay.totalAllowances).toLocaleString()}</span></div>
+    <div class='sec'>Deductions</div>
+    <div class='row'><span class='lbl'>VNPF Employee Contribution (6%)</span><span class='amt red'>VT ${Number(pay.vnpfDeduction).toLocaleString()}</span></div>
+    ${deductionRows}
+    <div class='row bold'><span>Total Deductions</span><span class='amt red'>VT ${Number(pay.totalDeductions).toLocaleString()}</span></div>
+    <div class='net-box'>
+      <div class='net-lbl'>NET PAY — ${monthLabel}</div>
+      <div class='net-amt'>VT ${Number(pay.netPay).toLocaleString()}</div>
+    </div>
+    ${notesHtml}
+    <div class='sigs'>
+      <div class='sig'>Employee Signature &amp; Date</div>
+      <div class='sig'>Prepared by &amp; Date</div>
+      <div class='sig'>Authorised by &amp; Date</div>
+    </div>
+  </div>
+  <div class='ftr'>
+    <div><strong style='color:#FFD700'>Malakesa Transfer &amp; Tour</strong><br>Port Vila, Shefa Province, Vanuatu<br>TIN: 445579 | PO Box 823</div>
+    <div style='text-align:right'>Tel: +678 22712 | Mob: +678 7798712<br>Email: accounts@malakesa.vu<br><span style='opacity:.6'>Computer generated payslip — No signature required</span></div>
+  </div>
+</div>
+<script>window.onload=()=>window.print()<\/script></body></html>`)
+    w.document.close()
+  }
+
+  const totalNetPay = activeEmployees.reduce((s, e) => s + calcPay(e).netPay, 0)
+  const totalGross = activeEmployees.reduce((s, e) => s + calcPay(e).gross, 0)
+  const totalDeductions = activeEmployees.reduce((s, e) => s + calcPay(e).totalDeductions, 0)
+
+  return (
+    <div style={{ padding: 20 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
+        <MonthYearPicker value={salaryMonth} onChange={setSalaryMonth} accentColor="#8B6914" />
+        <span style={{ fontSize: 13, color: '#666' }}>Pay period: <strong>{monthLabel}</strong></span>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12, marginBottom: 16 }}>
+        <StatCard label="Total Gross Salaries" value={fmt(totalGross)} sub={`${activeEmployees.length} employees`} />
+        <StatCard label="Total Deductions" value={fmt(totalDeductions)} color="#A32D2D" />
+        <StatCard label="Total Net Pay" value={fmt(totalNetPay)} color="#2E7D2E" />
+      </div>
+      {activeEmployees.length === 0 ? (
+        <Card><div style={{ textAlign: 'center', padding: '48px 20px', color: '#666' }}><i className="ti ti-users" style={{ fontSize: 36, display: 'block', marginBottom: 10 }}></i><p>No employees yet. Add employees in the VNPF Contributions tab.</p></div></Card>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {activeEmployees.map(emp => {
+            const pay = calcPay(emp)
+            const ov = getOv(emp.id)
+            const isOpen = selectedEmp === emp.id
+            return (
+              <Card key={emp.id} style={{ padding: 0, overflow: 'hidden' }}>
+                <div style={{ padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', background: isOpen ? '#faf6ee' : '#fff' }} onClick={() => setSelectedEmp(isOpen ? null : emp.id)}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'linear-gradient(135deg,#3D2214,#8B6914)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#FFD700', fontWeight: 700, fontSize: 14 }}>{emp.name?.charAt(0)}</div>
+                    <div>
+                      <div style={{ fontWeight: 600, fontSize: 14 }}>{emp.name}</div>
+                      <div style={{ fontSize: 12, color: '#666' }}>{emp.job_title || 'Employee'}{emp.vnpf_number ? ` | VNPF: ${emp.vnpf_number}` : ''}</div>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontSize: 12, color: '#666' }}>Gross: {fmt(pay.gross)}</div>
+                      <div style={{ fontSize: 12, color: '#A32D2D' }}>Deductions: -{fmt(pay.totalDeductions)}</div>
+                    </div>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: '#2E7D2E', minWidth: 100, textAlign: 'right' }}>Net: {fmt(pay.netPay)}</div>
+                    <button className="btn btn-sm" style={{ background: '#3B6D11', borderColor: '#2A5009', color: '#fff' }} onClick={e => { e.stopPropagation(); printPayslip(emp) }}><i className="ti ti-printer"></i> Payslip</button>
+                    <i className={`ti ${isOpen ? 'ti-chevron-up' : 'ti-chevron-down'}`} style={{ color: '#8B6914', fontSize: 16 }}></i>
+                  </div>
+                </div>
+                {isOpen && (
+                  <div style={{ padding: 16, borderTop: '0.5px solid rgba(0,0,0,0.09)', background: '#fafaf8' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+                      <div>
+                        <div style={{ fontWeight: 600, fontSize: 13, color: '#2E7D2E', marginBottom: 8 }}>+ Allowances / Extra Pay</div>
+                        {(ov.allowances || []).map((a, i) => (
+                          <div key={i} style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
+                            <input type="text" placeholder="e.g. Overtime" value={a.label} onChange={e => { const arr = [...(ov.allowances||[])]; arr[i] = { ...arr[i], label: e.target.value }; setOv(emp.id, { allowances: arr }) }} style={{ ...inputStyle, flex: 2, fontSize: 12 }} />
+                            <input type="number" placeholder="Amount" value={a.amount} onChange={e => { const arr = [...(ov.allowances||[])]; arr[i] = { ...arr[i], amount: e.target.value }; setOv(emp.id, { allowances: arr }) }} style={{ ...inputStyle, flex: 1, fontSize: 12 }} />
+                            <button className="btn btn-sm" style={{ color: '#A32D2D', borderColor: '#A32D2D', padding: '2px 6px' }} onClick={() => { const arr = (ov.allowances||[]).filter((_,j) => j !== i); setOv(emp.id, { allowances: arr }) }}><i className="ti ti-x"></i></button>
+                          </div>
+                        ))}
+                        <button className="btn btn-sm" onClick={() => setOv(emp.id, { allowances: [...(ov.allowances||[]), { label: '', amount: '' }] })} style={{ fontSize: 11, marginTop: 2 }}><i className="ti ti-plus"></i> Add Allowance</button>
+                      </div>
+                      <div>
+                        <div style={{ fontWeight: 600, fontSize: 13, color: '#A32D2D', marginBottom: 8 }}>– Other Deductions</div>
+                        <div style={{ display: 'flex', gap: 6, marginBottom: 6, alignItems: 'center' }}>
+                          <span style={{ fontSize: 12, color: '#555', flex: 2 }}>VNPF Employee 6%</span>
+                          <span style={{ fontSize: 12, fontWeight: 500, color: '#A32D2D', flex: 1, textAlign: 'right' }}>{fmt(pay.vnpfDeduction)}</span>
+                          <div style={{ width: 28 }}></div>
+                        </div>
+                        {(ov.deductions || []).map((d, i) => (
+                          <div key={i} style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
+                            <input type="text" placeholder="e.g. Loan repayment" value={d.label} onChange={e => { const arr = [...(ov.deductions||[])]; arr[i] = { ...arr[i], label: e.target.value }; setOv(emp.id, { deductions: arr }) }} style={{ ...inputStyle, flex: 2, fontSize: 12 }} />
+                            <input type="number" placeholder="Amount" value={d.amount} onChange={e => { const arr = [...(ov.deductions||[])]; arr[i] = { ...arr[i], amount: e.target.value }; setOv(emp.id, { deductions: arr }) }} style={{ ...inputStyle, flex: 1, fontSize: 12 }} />
+                            <button className="btn btn-sm" style={{ color: '#A32D2D', borderColor: '#A32D2D', padding: '2px 6px' }} onClick={() => { const arr = (ov.deductions||[]).filter((_,j) => j !== i); setOv(emp.id, { deductions: arr }) }}><i className="ti ti-x"></i></button>
+                          </div>
+                        ))}
+                        <button className="btn btn-sm" onClick={() => setOv(emp.id, { deductions: [...(ov.deductions||[]), { label: '', amount: '' }] })} style={{ fontSize: 11, marginTop: 2 }}><i className="ti ti-plus"></i> Add Deduction</button>
+                      </div>
+                    </div>
+                    <div style={{ marginTop: 14 }}>
+                      <label style={{ fontSize: 12, fontWeight: 500, color: '#555', display: 'block', marginBottom: 4 }}>Notes / Remarks</label>
+                      <input type="text" value={ov.notes} onChange={e => setOv(emp.id, { notes: e.target.value })} placeholder="e.g. Includes bonus for June" style={{ ...inputStyle, width: '100%', fontSize: 12 }} />
+                    </div>
+                    <div style={{ marginTop: 14, padding: '12px 16px', background: '#fff', borderRadius: 8, border: '0.5px solid #E8D5A3', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+                      <div style={{ fontSize: 13 }}><span style={{ color: '#666' }}>Gross: </span><strong>{fmt(pay.gross)}</strong></div>
+                      <div style={{ fontSize: 13 }}><span style={{ color: '#2E7D2E' }}>+ Allowances: </span><strong style={{ color: '#2E7D2E' }}>{fmt(pay.totalAllowances)}</strong></div>
+                      <div style={{ fontSize: 13 }}><span style={{ color: '#A32D2D' }}>– Deductions: </span><strong style={{ color: '#A32D2D' }}>{fmt(pay.totalDeductions)}</strong></div>
+                      <div style={{ fontSize: 15, fontWeight: 700 }}><span style={{ color: '#2E7D2E' }}>Net Pay: </span><strong style={{ color: '#2E7D2E' }}>{fmt(pay.netPay)}</strong></div>
+                    </div>
+                  </div>
+                )}
+              </Card>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
 
 function NewEmployeeModal({ employee, onClose, onSave }) {
   const isEdit = !!employee
