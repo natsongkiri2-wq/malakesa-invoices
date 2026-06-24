@@ -31,3 +31,10 @@ export async function POST(req) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json(data)
 }
+
+export async function DELETE(req) {
+  const { id } = await req.json()
+  const { error } = await supabase.from('salary_records').delete().eq('id', id)
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json({ success: true })
+}

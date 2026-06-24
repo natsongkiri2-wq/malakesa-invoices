@@ -73,7 +73,7 @@ export default function App() {
     { id: 'clients', label: 'Clients', icon: 'ti-users' },
     { id: 'purchases', label: 'Purchases', icon: 'ti-shopping-cart' },
     { id: 'suppliers', label: 'Suppliers', icon: 'ti-truck' },
-    { id: 'vnpf', label: 'VNPF', icon: 'ti-building-bank' },
+    { id: 'vnpf', label: 'Salaries & VNPF', icon: 'ti-building-bank' },
     { id: 'reports', label: 'Reports', icon: 'ti-chart-bar' },
   ]
 
@@ -2270,7 +2270,7 @@ function VNPF({ employees, salaryRecords, reload, setModal, setSelected }) {
 
   return (
     <>
-      <Topbar title="VNPF & Salaries">
+      <Topbar title="Salaries & VNPF">
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
           {vnpfTab === 'contributions' && <>
             <MonthYearPicker value={vnpfMonth} onChange={setVnpfMonth} accentColor="#8B6914" />
@@ -2288,7 +2288,8 @@ function VNPF({ employees, salaryRecords, reload, setModal, setSelected }) {
       </div>
       {vnpfTab === 'contributions' && <VNPFContributions
         rows={rows} totalSalary={totalSalary} totalEmployee={totalEmployee} totalEmployer={totalEmployer}
-        totalContribution={totalContribution} monthLabel={monthLabel}
+        totalContribution={totalContribution} monthLabel={monthLabel} vnpfMonth={vnpfMonth}
+        salaryRecords={salaryRecords}
         emailStatus={emailStatus} setModal={setModal} setSelected={setSelected}
         handleDelete={handleDelete} fmt={fmt}
       />}
@@ -2412,6 +2413,14 @@ function SalariesTab({ employees, salaryRecords, reload, fmt }) {
   const activeEmployees = employees.filter(e => e.active !== false)
   const [payRunModal, setPayRunModal] = useState(null) // emp object when open
 
+  const deletePayRun = async (id) => {
+    if (!confirm('Delete this pay run? This will also remove it from the VNPF schedule.')) return
+    const res = await fetch('/api/salary-records', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) })
+    if (res.ok) reload()
+    else alert('Failed to delete pay run')
+  }
+
+
   // Records for selected month
   const monthRecords = (salaryRecords || []).filter(r => r.month === salaryMonth)
 
@@ -2489,6 +2498,7 @@ function SalariesTab({ employees, salaryRecords, reload, fmt }) {
                           <Th style={{ fontSize: 11, textAlign: 'right' }}>Other Deductions</Th>
                           <Th style={{ fontSize: 11, textAlign: 'right' }}>Net Pay</Th>
                           <Th style={{ fontSize: 11 }}>Notes</Th>
+                          <Th style={{ fontSize: 11 }}></Th>
                         </tr>
                       </thead>
                       <tbody>
@@ -2504,6 +2514,9 @@ function SalariesTab({ employees, salaryRecords, reload, fmt }) {
                               <Td style={{ textAlign: 'right', fontSize: 12, color: '#A32D2D' }}>{recOtherDeductions > 0 ? fmt(recOtherDeductions) : '—'}</Td>
                               <Td style={{ textAlign: 'right', fontSize: 12, fontWeight: 600, color: '#2E7D2E' }}>{fmt(rec.net_pay)}</Td>
                               <Td style={{ fontSize: 11, color: '#888' }}>{rec.notes || '—'}</Td>
+                              <Td>
+                                <button className="btn btn-sm" style={{ color: '#A32D2D', borderColor: '#A32D2D', padding: '2px 8px', fontSize: 11 }} onClick={() => deletePayRun(rec.id)}><i className="ti ti-trash"></i></button>
+                              </Td>
                             </tr>
                           )
                         })}
@@ -2514,6 +2527,7 @@ function SalariesTab({ employees, salaryRecords, reload, fmt }) {
                           <td style={{ padding: '7px 14px', textAlign: 'right', color: '#A32D2D' }}>{fmt(sum.totalVnpf)}</td>
                           <td style={{ padding: '7px 14px', textAlign: 'right' }}></td>
                           <td style={{ padding: '7px 14px', textAlign: 'right', color: '#2E7D2E' }}>{fmt(sum.totalNet)}</td>
+                          <td></td>
                           <td></td>
                         </tr>
                       </tbody>
