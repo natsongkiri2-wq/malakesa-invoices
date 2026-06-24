@@ -2451,6 +2451,123 @@ function SalariesTab({ employees, salaryRecords, reload, fmt }) {
   const monthRecords = (salaryRecords || []).filter(r => r.month === salaryMonth)
 
   // Per-employee summary for this month
+  const printPayslip = (emp, rec) => {
+    // rec = specific pay run record (or null for summary of all this month)
+    const monthRecs = (salaryRecords || []).filter(r => r.month === salaryMonth && r.employee_id === emp.id)
+    const recs = rec ? [rec] : monthRecs
+    const totalGross = recs.reduce((s, r) => s + Number(r.gross || 0), 0)
+    const totalAllowances = recs.reduce((s, r) => s + (r.allowances || []).reduce((a, x) => a + Number(x.amount || 0), 0), 0)
+    const totalVnpf = recs.reduce((s, r) => s + Number(r.vnpf_employee || 0), 0)
+    const totalOtherDed = recs.reduce((s, r) => s + (r.deductions || []).reduce((a, d) => a + Number(d.amount || 0), 0), 0)
+    const totalNet = recs.reduce((s, r) => s + Number(r.net_pay || 0), 0)
+    const MONTHS_LONG2 = ['January','February','March','April','May','June','July','August','September','October','November','December']
+    const useMonth = rec ? rec.month : salaryMonth
+    const mParts = useMonth.split('-')
+    const mLabel = (MONTHS_LONG2[parseInt(mParts[1])-1] || '') + ' ' + mParts[0]
+    const issued = new Date().toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' })
+    const w = window.open('', '_blank')
+    if (!w) { alert('Please allow popups to print payslips.'); return }
+
+    const earningRows = [
+      `<div class='row'><span class='lbl'>Basic / Gross Salary</span><span class='amt grn'>VT ${Number(totalGross).toLocaleString()}</span></div>`,
+      ...recs.flatMap(r => (r.allowances||[]).filter(a=>a.label||a.amount).map(a => `<div class='row'><span class='lbl'>${a.label||'Allowance'}</span><span class='amt grn'>VT ${Number(a.amount||0).toLocaleString()}</span></div>`))
+    ].join('')
+
+    const deductionRows = [
+      `<div class='row'><span class='lbl'>VNPF Employee Contribution (6%)</span><span class='amt red'>VT ${Number(totalVnpf).toLocaleString()}</span></div>`,
+      ...recs.flatMap(r => (r.deductions||[]).filter(d=>d.label||d.amount).map(d => `<div class='row'><span class='lbl'>${d.label||'Deduction'}</span><span class='amt red'>VT ${Number(d.amount||0).toLocaleString()}</span></div>`))
+    ].join('')
+
+    const payRunsInfo = recs.length > 1
+      ? `<div style='font-size:11px;color:rgba(255,255,255,0.6);margin-top:4px'>${recs.length} pay runs accumulated</div>`
+      : rec?.pay_date ? `<div style='font-size:11px;color:rgba(255,255,255,0.6);margin-top:4px'>Pay date: ${rec.pay_date}</div>` : ''
+
+    const notesHtml = recs.filter(r=>r.notes).map(r=>`<div class='notes'><strong>Notes:</strong> ${r.notes}</div>`).join('')
+
+    w.document.write(`<!DOCTYPE html><html><head><title>Payslip - ${emp.name} - ${mLabel}</title><style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,sans-serif;background:#f0ebe0;color:#222;font-size:13px}
+.page{max-width:680px;margin:20px auto;background:#fff;border-radius:4px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.15)}
+.hdr{background:linear-gradient(135deg,#1A0D06 0%,#3D2214 50%,#5C3D0A 100%);padding:24px 36px;display:flex;justify-content:space-between;align-items:flex-start}
+.hdr-r{text-align:right;color:#fff}
+.ps-title{font-size:10px;letter-spacing:3px;color:rgba(255,255,255,.6);text-transform:uppercase;margin-top:10px}
+.ps-period{font-size:18px;font-weight:700;color:#FFD700;margin-top:3px}
+.ps-date{font-size:11px;color:rgba(255,255,255,.7);margin-top:4px}
+.emp-bar{background:#3D2214;padding:12px 36px;display:flex;justify-content:space-between;align-items:center}
+.emp-name{color:#FFD700;font-weight:700;font-size:16px}
+.emp-det{color:rgba(255,255,255,.75);font-size:11px;margin-top:3px}
+.emp-r{text-align:right;color:rgba(255,255,255,.75);font-size:11px}
+.body{padding:24px 36px}
+.sec{font-size:10px;font-weight:800;color:#8B6914;text-transform:uppercase;letter-spacing:2px;border-bottom:2px solid #E8D5A3;padding-bottom:4px;margin:20px 0 10px}
+.row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:.5px solid #f0ebe0;font-size:13px}
+.row:last-child{border-bottom:none}
+.lbl{color:#555}
+.amt{font-weight:500}
+.grn{color:#2E7D2E}
+.red{color:#A32D2D}
+.bold{font-weight:700}
+.net-box{background:linear-gradient(135deg,#1A0D06,#3D2214);border-radius:8px;padding:16px 24px;margin:20px 0;display:flex;justify-content:space-between;align-items:center}
+.net-lbl{color:rgba(255,255,255,.8);font-size:13px;font-weight:600}
+.net-amt{color:#FFD700;font-size:26px;font-weight:900}
+.notes{background:#faf6ee;border-left:4px solid #8B6914;padding:10px 14px;border-radius:0 6px 6px 0;font-size:12px;color:#555;margin-top:8px}
+.sigs{display:flex;justify-content:space-between;margin-top:32px;gap:40px}
+.sig{flex:1;border-top:1px solid #ccc;padding-top:6px;font-size:11px;color:#888;text-align:center}
+.ftr{background:linear-gradient(135deg,#1A0D06,#5C3D0A);padding:14px 36px;display:flex;justify-content:space-between;color:rgba(255,255,255,.7);font-size:10px;line-height:1.9}
+.noprint{background:#333;color:#fff;padding:10px 20px;display:flex;justify-content:space-between;align-items:center;font-size:13px}
+.printbtn{background:#8B6914;color:#fff;border:none;padding:7px 18px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600}
+@media print{.noprint{display:none}body{background:#fff}.page{box-shadow:none;margin:0;max-width:100%}}
+</style></head><body>
+<div class='noprint'><span>Payslip — ${emp.name} — ${mLabel}</span><button class='printbtn' onclick='window.print()'>Print / Save PDF</button></div>
+<div class='page'>
+  <div class='hdr'>
+    <div>
+      <img src='${MALAKESA_LOGO}' alt='Malakesa' style='width:200px;border-radius:6px;display:block'/>
+      <div class='ps-date' style='margin-top:8px'>Port Vila, Shefa Province, Vanuatu | TIN: 445579</div>
+    </div>
+    <div class='hdr-r'>
+      <div class='ps-title'>Pay Slip</div>
+      <div class='ps-period'>${mLabel}</div>
+      <div class='ps-date'>Issued: ${issued}</div>
+      ${payRunsInfo}
+    </div>
+  </div>
+  <div class='emp-bar'>
+    <div>
+      <div class='emp-name'>${emp.name}</div>
+      <div class='emp-det'>${emp.job_title || 'Employee'} | VNPF: ${emp.vnpf_number || 'N/A'}</div>
+    </div>
+    <div class='emp-r'>
+      <div>Pay Period: <strong style='color:#FFD700'>${mLabel}</strong></div>
+      <div>Pay Date: ${issued}</div>
+    </div>
+  </div>
+  <div class='body'>
+    <div class='sec'>Earnings</div>
+    ${earningRows}
+    <div class='row bold'><span>Total Earnings</span><span class='amt grn'>VT ${Number(totalGross + totalAllowances).toLocaleString()}</span></div>
+    <div class='sec'>Deductions</div>
+    ${deductionRows}
+    <div class='row bold'><span>Total Deductions</span><span class='amt red'>VT ${Number(totalVnpf + totalOtherDed).toLocaleString()}</span></div>
+    <div class='net-box'>
+      <div class='net-lbl'>NET PAY — ${mLabel}</div>
+      <div class='net-amt'>VT ${Number(totalNet).toLocaleString()}</div>
+    </div>
+    ${notesHtml}
+    <div class='sigs'>
+      <div class='sig'>Employee Signature &amp; Date</div>
+      <div class='sig'>Prepared by &amp; Date</div>
+      <div class='sig'>Authorised by &amp; Date</div>
+    </div>
+  </div>
+  <div class='ftr'>
+    <div><strong style='color:#FFD700'>Malakesa Transfer &amp; Tour</strong><br>Port Vila, Shefa Province, Vanuatu<br>TIN: 445579 | PO Box 823</div>
+    <div style='text-align:right'>Tel: +678 22712 | Mob: +678 7798712<br>Email: accounts@malakesa.vu<br><span style='opacity:.6'>Computer generated payslip</span></div>
+  </div>
+</div>
+<script>window.onload=()=>window.print()<\/script></body></html>`)
+    w.document.close()
+  }
+
   const empSummary = (id) => {
     const recs = monthRecords.filter(r => r.employee_id === id)
     const totalGross = recs.reduce((s, r) => s + Number(r.gross || 0), 0)
@@ -2505,6 +2622,11 @@ function SalariesTab({ employees, salaryRecords, reload, fmt }) {
                     ) : (
                       <div style={{ fontSize: 12, color: '#aaa', textAlign: 'right' }}>No pay runs<br/>for {monthLabel}</div>
                     )}
+                    {sum.runs > 0 && (
+                      <button className="btn btn-sm" style={{ background: '#3B6D11', borderColor: '#2A5009', color: '#fff', whiteSpace: 'nowrap' }} onClick={() => printPayslip(emp, null)}>
+                        <i className="ti ti-printer"></i> Print Payslip
+                      </button>
+                    )}
                     <button className="btn btn-primary" style={{ whiteSpace: 'nowrap' }} onClick={() => setPayRunModal(emp)}>
                       <i className="ti ti-plus"></i> New Pay Run
                     </button>
@@ -2541,7 +2663,10 @@ function SalariesTab({ employees, salaryRecords, reload, fmt }) {
                               <Td style={{ textAlign: 'right', fontSize: 12, fontWeight: 600, color: '#2E7D2E' }}>{fmt(rec.net_pay)}</Td>
                               <Td style={{ fontSize: 11, color: '#888' }}>{rec.notes || '—'}</Td>
                               <Td>
-                                <button className="btn btn-sm" style={{ color: '#A32D2D', borderColor: '#A32D2D', padding: '2px 8px', fontSize: 11 }} onClick={() => deletePayRun(rec.id)}><i className="ti ti-trash"></i></button>
+                                <div style={{ display: 'flex', gap: 4 }}>
+                                  <button className="btn btn-sm" style={{ background: '#3B6D11', borderColor: '#2A5009', color: '#fff', padding: '2px 8px', fontSize: 11 }} onClick={() => printPayslip(emp, rec)} title="Print this pay run"><i className="ti ti-printer"></i></button>
+                                  <button className="btn btn-sm" style={{ color: '#A32D2D', borderColor: '#A32D2D', padding: '2px 8px', fontSize: 11 }} onClick={() => deletePayRun(rec.id)} title="Delete this pay run"><i className="ti ti-trash"></i></button>
+                                </div>
                               </Td>
                             </tr>
                           )
