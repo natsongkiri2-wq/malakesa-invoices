@@ -39,6 +39,7 @@ export default function App() {
   const [suppliers, setSuppliers] = useState([])
   const [employees, setEmployees] = useState([])
   const [customCategories, setCustomCategories] = useState([])
+  const [salaryRecords, setSalaryRecords] = useState([])
   const [loading, setLoading] = useState(true)
   const [modal, setModal] = useState(null)
   const [selected, setSelected] = useState(null)
@@ -46,10 +47,10 @@ export default function App() {
   const reload = async () => {
     try {
       setLoading(true)
-      const [invRes, pmtRes, clRes, purRes, supRes, empRes, catRes] = await Promise.all([
-        fetch('/api/invoices'), fetch('/api/payments'), fetch('/api/clients'), fetch('/api/purchases'), fetch('/api/suppliers'), fetch('/api/employees'), fetch('/api/purchase-categories')
+      const [invRes, pmtRes, clRes, purRes, supRes, empRes, catRes, salRes] = await Promise.all([
+        fetch('/api/invoices'), fetch('/api/payments'), fetch('/api/clients'), fetch('/api/purchases'), fetch('/api/suppliers'), fetch('/api/employees'), fetch('/api/purchase-categories'), fetch('/api/salary-records')
       ])
-      const [invs, pmts, cls, purs, sups, emps, cats] = await Promise.all([invRes.json(), pmtRes.json(), clRes.json(), purRes.json(), supRes.json(), empRes.json(), catRes.json()])
+      const [invs, pmts, cls, purs, sups, emps, cats, sals] = await Promise.all([invRes.json(), pmtRes.json(), clRes.json(), purRes.json(), supRes.json(), empRes.json(), catRes.json(), salRes.json()])
       setInvoices(Array.isArray(invs) ? invs : [])
       setPayments(Array.isArray(pmts) ? pmts : [])
       setClients(Array.isArray(cls) ? cls : [])
@@ -57,6 +58,7 @@ export default function App() {
       setSuppliers(Array.isArray(sups) ? sups : [])
       setEmployees(Array.isArray(emps) ? emps : [])
       setCustomCategories(Array.isArray(cats) ? cats : [])
+      setSalaryRecords(Array.isArray(sals) ? sals : [])
     } catch(e) { console.error(e) }
     setLoading(false)
   }
@@ -113,7 +115,7 @@ export default function App() {
             {page === 'unpaid' && <Unpaid invoices={invoices} payments={payments} reload={reload} setModal={setModal} setSelected={setSelected} />}
             {page === 'purchases' && <Purchases purchases={purchases} suppliers={suppliers} customCategories={customCategories} reload={reload} setModal={setModal} />}
             {page === 'suppliers' && <Suppliers suppliers={suppliers} purchases={purchases} reload={reload} setModal={setModal} />}
-            {page === 'vnpf' && <VNPF employees={employees} reload={reload} setModal={setModal} setSelected={setSelected} />}
+            {page === 'vnpf' && <VNPF employees={employees} salaryRecords={salaryRecords} reload={reload} setModal={setModal} setSelected={setSelected} />}
             {page === 'reports' && <Reports invoices={invoices} payments={payments} purchases={purchases} />}
             {page === 'clients' && <Clients clients={clients} invoices={invoices} reload={reload} setModal={setModal} />}
           </>
@@ -2108,7 +2110,7 @@ function NewSupplierModal({ onClose, onSave }) {
 const VNPF_EMPLOYEE_RATE = 0.06
 const VNPF_EMPLOYER_RATE = 0.06
 
-function VNPF({ employees, reload, setModal, setSelected }) {
+function VNPF({ employees, salaryRecords, reload, setModal, setSelected }) {
   const [vnpfTab, setVnpfTab] = useState('contributions')
   const nowD = new Date()
   const MONTHS_LONG = ['January','February','March','April','May','June','July','August','September','October','November','December']
@@ -2290,12 +2292,40 @@ function VNPF({ employees, reload, setModal, setSelected }) {
         emailStatus={emailStatus} setModal={setModal} setSelected={setSelected}
         handleDelete={handleDelete} fmt={fmt}
       />}
-      {vnpfTab === 'salaries' && <SalariesTab employees={employees} fmt={fmt} />}
+      {vnpfTab === 'salaries' && <SalariesTab employees={employees} salaryRecords={salaryRecords} reload={reload} fmt={fmt} />}
     </>
   )
 }
 
-function VNPFContributions({ rows, totalSalary, totalEmployee, totalEmployer, totalContribution, monthLabel, emailStatus, setModal, setSelected, handleDelete, fmt }) {
+function VNPFContributions({ rows, totalSalary, totalEmployee, totalEmployer, totalContribution, monthLabel, vnpfMonth, salaryRecords, emailStatus, setModal, setSelected, handleDelete, fmt }) {
+  // Salary records for this month - accumulate processed pay runs
+  const monthRecords = (salaryRecords || []).filter(r => r.month === vnpfMonth)
+  const hasProcessed = monthRecords.length > 0
+
+  // Build per-employee processed totals for the month
+  const processedByEmp = {}
+  monthRecords.forEach(r => {
+    if (!processedByEmp[r.employee_id]) processedByEmp[r.employee_id] = { gross: 0, vnpf: 0, runs: 0 }
+    processedByEmp[r.employee_id].gross += Number(r.gross || 0)
+    processedByEmp[r.employee_id].vnpf += Number(r.vnpf_employee || 0)
+    processedByEmp[r.employee_id].runs += 1
+  })
+
+  // Use processed data if available, else fall back to employee base salary
+  const scheduleRows = rows.map(r => {
+    const proc = processedByEmp[r.id]
+    if (proc) {
+      const empVnpf = proc.vnpf
+      const emplVnpf = Math.round(proc.gross * 0.06)
+      return { ...r, gross: proc.gross, employee: empVnpf, employer: emplVnpf, total: empVnpf + emplVnpf, runs: proc.runs, processed: true }
+    }
+    return { ...r, runs: 0, processed: false }
+  })
+  const schedTotalSalary = scheduleRows.reduce((s, r) => s + Number(r.gross || 0), 0)
+  const schedTotalEmp = scheduleRows.reduce((s, r) => s + r.employee, 0)
+  const schedTotalEr = scheduleRows.reduce((s, r) => s + r.employer, 0)
+  const schedTotal = schedTotalEmp + schedTotalEr
+
   return (
     <div style={{ padding: 20 }}>
       {emailStatus && emailStatus !== 'sending' && (
@@ -2306,13 +2336,13 @@ function VNPFContributions({ rows, totalSalary, totalEmployee, totalEmployer, to
       )}
       <div style={{ background: '#EAF3DE', border: '0.5px solid #C0DD97', borderRadius: 8, padding: '10px 16px', marginBottom: 16, fontSize: 13, color: '#27500A', display: 'flex', alignItems: 'center', gap: 10 }}>
         <i className="ti ti-building-bank" style={{ fontSize: 18 }}></i>
-        <span><strong>VNPF Period: {monthLabel}</strong> &nbsp;|&nbsp; Employee rate: 6% &nbsp;|&nbsp; Employer rate: 6% &nbsp;|&nbsp; Total payable: <strong>{fmt(totalContribution)}</strong></span>
+        <span><strong>VNPF Period: {monthLabel}</strong> &nbsp;|&nbsp; Employee rate: 6% &nbsp;|&nbsp; Employer rate: 6% &nbsp;|&nbsp; Total payable: <strong>{fmt(hasProcessed ? schedTotal : totalContribution)}</strong> &nbsp;|&nbsp; {hasProcessed ? <span style={{color:'#27500A',fontWeight:600}}>{monthRecords.length} pay run(s) processed</span> : <span style={{color:'#8B6914'}}>No pay runs processed yet</span>}</span>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12, marginBottom: 16 }}>
-        <StatCard label="Total gross salaries" value={fmt(totalSalary)} sub={`${rows.length} employees`} />
-        <StatCard label="Employee contributions (6%)" value={fmt(totalEmployee)} color="#8B6914" />
-        <StatCard label="Employer contributions (6%)" value={fmt(totalEmployer)} color="#8B6914" />
-        <StatCard label="Total payable to VNPF" value={fmt(totalContribution)} color="#2E7D2E" />
+        <StatCard label="Total gross salaries" value={fmt(hasProcessed ? schedTotalSalary : totalSalary)} sub={hasProcessed ? `${monthRecords.length} pay run(s)` : `${rows.length} employees (estimate)`} />
+        <StatCard label="Employee contributions (6%)" value={fmt(hasProcessed ? schedTotalEmp : totalEmployee)} color="#8B6914" sub={hasProcessed ? 'From processed payroll' : 'Estimate'} />
+        <StatCard label="Employer contributions (6%)" value={fmt(hasProcessed ? schedTotalEr : totalEmployer)} color="#8B6914" sub={hasProcessed ? 'From processed payroll' : 'Estimate'} />
+        <StatCard label="Total payable to VNPF" value={fmt(hasProcessed ? schedTotal : totalContribution)} color="#2E7D2E" sub={hasProcessed ? 'Confirmed' : 'Estimate'} />
       </div>
       <Card style={{ padding: 0, overflow: 'hidden' }}>
         <div style={{ padding: '12px 20px', borderBottom: '0.5px solid rgba(0,0,0,0.09)', fontWeight: 500, fontSize: 13 }}>Contribution Schedule — {monthLabel}</div>
@@ -2326,6 +2356,7 @@ function VNPFContributions({ rows, totalSalary, totalEmployee, totalEmployer, to
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
             <thead><tr style={{ background: '#E8D5A3' }}>
               <Th>Name</Th><Th>Job Title</Th><Th>VNPF Number</Th>
+              <Th style={{ textAlign: 'center' }}>Pay Runs</Th>
               <Th style={{ textAlign: 'right' }}>Gross Salary</Th>
               <Th style={{ textAlign: 'right' }}>Employee 6%</Th>
               <Th style={{ textAlign: 'right' }}>Employer 6%</Th>
@@ -2333,12 +2364,15 @@ function VNPFContributions({ rows, totalSalary, totalEmployee, totalEmployer, to
               <Th style={{ textAlign: 'center' }}>Actions</Th>
             </tr></thead>
             <tbody>
-              {rows.map(r => (
-                <tr key={r.id} style={{ borderBottom: '0.5px solid rgba(0,0,0,0.09)' }}>
+              {scheduleRows.map(r => (
+                <tr key={r.id} style={{ borderBottom: '0.5px solid rgba(0,0,0,0.09)', background: r.processed ? '#f6fbf0' : '#fff' }}>
                   <Td><strong>{r.name}</strong></Td>
                   <Td style={{ color: '#666' }}>{r.job_title || '—'}</Td>
                   <Td style={{ color: '#666' }}>{r.vnpf_number || '—'}</Td>
-                  <Td style={{ textAlign: 'right' }}>{fmt(r.salary)}</Td>
+                  <Td style={{ textAlign: 'center' }}>
+                    {r.processed ? <span style={{ background: '#EAF3DE', color: '#27500A', borderRadius: 99, padding: '2px 10px', fontSize: 11, fontWeight: 600 }}>{r.runs} run{r.runs !== 1 ? 's' : ''}</span> : <span style={{ color: '#ccc', fontSize: 12 }}>none</span>}
+                  </Td>
+                  <Td style={{ textAlign: 'right' }}>{fmt(r.gross || r.salary)}</Td>
                   <Td style={{ textAlign: 'right' }}>{fmt(r.employee)}</Td>
                   <Td style={{ textAlign: 'right' }}>{fmt(r.employer)}</Td>
                   <Td style={{ textAlign: 'right', fontWeight: 500, color: '#2E7D2E' }}>{fmt(r.total)}</Td>
@@ -2351,11 +2385,11 @@ function VNPFContributions({ rows, totalSalary, totalEmployee, totalEmployer, to
                 </tr>
               ))}
               <tr style={{ background: '#E8D5A3', fontWeight: 700 }}>
-                <td colSpan={3} style={{ padding: '9px 14px', fontSize: 13 }}>TOTAL</td>
-                <td style={{ padding: '9px 14px', textAlign: 'right', fontSize: 13 }}>{fmt(totalSalary)}</td>
-                <td style={{ padding: '9px 14px', textAlign: 'right', fontSize: 13 }}>{fmt(totalEmployee)}</td>
-                <td style={{ padding: '9px 14px', textAlign: 'right', fontSize: 13 }}>{fmt(totalEmployer)}</td>
-                <td style={{ padding: '9px 14px', textAlign: 'right', fontSize: 13, color: '#2E7D2E' }}>{fmt(totalContribution)}</td>
+                <td colSpan={4} style={{ padding: '9px 14px', fontSize: 13 }}>TOTAL {hasProcessed ? '(from processed payroll)' : '(estimated)'}</td>
+                <td style={{ padding: '9px 14px', textAlign: 'right', fontSize: 13 }}>{fmt(hasProcessed ? schedTotalSalary : totalSalary)}</td>
+                <td style={{ padding: '9px 14px', textAlign: 'right', fontSize: 13 }}>{fmt(hasProcessed ? schedTotalEmp : totalEmployee)}</td>
+                <td style={{ padding: '9px 14px', textAlign: 'right', fontSize: 13 }}>{fmt(hasProcessed ? schedTotalEr : totalEmployer)}</td>
+                <td style={{ padding: '9px 14px', textAlign: 'right', fontSize: 13, color: '#2E7D2E' }}>{fmt(hasProcessed ? schedTotal : totalContribution)}</td>
                 <td></td>
               </tr>
             </tbody>
@@ -2366,7 +2400,7 @@ function VNPFContributions({ rows, totalSalary, totalEmployee, totalEmployer, to
   )
 }
 
-function SalariesTab({ employees, fmt }) {
+function SalariesTab({ employees, salaryRecords, reload, fmt }) {
   const nowD = new Date()
   const MONTHS_LONG = ['January','February','March','April','May','June','July','August','September','October','November','December']
   const monthOptions = Array.from({ length: 24 }, (_, i) => {
@@ -2381,6 +2415,38 @@ function SalariesTab({ employees, fmt }) {
 
   const getOv = (id) => overrides[id] || { allowances: [], deductions: [], notes: '' }
   const setOv = (id, val) => setOverrides(o => ({ ...o, [id]: { ...getOv(id), ...val } }))
+
+  // Which employees have been processed this month
+  const monthRecords = (salaryRecords || []).filter(r => r.month === salaryMonth)
+  const processedEmpIds = new Set(monthRecords.map(r => r.employee_id))
+  const runCountByEmp = {}
+  monthRecords.forEach(r => { runCountByEmp[r.employee_id] = (runCountByEmp[r.employee_id] || 0) + 1 })
+  const [processing, setProcessing] = useState({})
+
+  const processPay = async (emp) => {
+    const pay = calcPay(emp)
+    const ov = getOv(emp.id)
+    setProcessing(p => ({ ...p, [emp.id]: true }))
+    try {
+      const res = await fetch('/api/salary-records', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          employee_id: emp.id,
+          month: salaryMonth,
+          gross: pay.gross,
+          allowances: ov.allowances || [],
+          deductions: ov.deductions || [],
+          vnpf_employee: pay.vnpfDeduction,
+          net_pay: pay.netPay,
+          notes: ov.notes || ''
+        })
+      })
+      if (res.ok) { reload(); setOv(emp.id, { allowances: [], deductions: [], notes: '' }) }
+      else { alert('Failed to process pay. Please try again.') }
+    } catch(e) { alert('Error: ' + e.message) }
+    setProcessing(p => ({ ...p, [emp.id]: false }))
+  }
 
   const calcPay = (emp) => {
     const gross = Number(emp.salary || 0)
@@ -2526,7 +2592,9 @@ body{font-family:Arial,sans-serif;background:#f0ebe0;color:#222;font-size:13px}
                       <div style={{ fontSize: 12, color: '#A32D2D' }}>Deductions: -{fmt(pay.totalDeductions)}</div>
                     </div>
                     <div style={{ fontSize: 16, fontWeight: 700, color: '#2E7D2E', minWidth: 100, textAlign: 'right' }}>Net: {fmt(pay.netPay)}</div>
+                    {runCountByEmp[emp.id] && <span style={{ background: '#EAF3DE', color: '#27500A', borderRadius: 99, padding: '2px 10px', fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap' }}>\u2713 {runCountByEmp[emp.id]} run{runCountByEmp[emp.id] !== 1 ? 's' : ''} processed</span>}
                     <button className="btn btn-sm" style={{ background: '#3B6D11', borderColor: '#2A5009', color: '#fff' }} onClick={e => { e.stopPropagation(); printPayslip(emp) }}><i className="ti ti-printer"></i> Payslip</button>
+                    <button className="btn btn-sm" style={{ background: '#8B6914', borderColor: '#6B5010', color: '#fff', fontWeight: 600 }} onClick={e => { e.stopPropagation(); processPay(emp) }} disabled={processing[emp.id]}><i className="ti ti-check"></i> {processing[emp.id] ? 'Processing...' : 'Process Pay'}</button>
                     <i className={`ti ${isOpen ? 'ti-chevron-up' : 'ti-chevron-down'}`} style={{ color: '#8B6914', fontSize: 16 }}></i>
                   </div>
                 </div>
