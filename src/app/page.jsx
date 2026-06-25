@@ -515,8 +515,22 @@ function Payments({ payments, invoices, reload, setModal, setSelected }) {
     .footer { background: linear-gradient(135deg, #1A0D06, #5C3D0A); padding: 14px 32px; text-align: center; color: rgba(255,255,255,0.7); font-size: 10px; line-height: 1.9; }
     .noprint { background: #333; color: #fff; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; }
     .printbtn { background: #8B6914; color: #fff; border: none; padding: 7px 18px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; }
-    @media print { .noprint { display: none; } body { background: #fff; } .page { box-shadow: none; margin: 0; max-width: 100%; } }
+    .rpt-hdr { display: none; }
+    @page { margin: 12mm 10mm 16mm 10mm; size: A4; }
+    @media print {
+      .noprint { display: none; }
+      body { background: #fff; }
+      .page { box-shadow: none; margin: 0; max-width: 100%; border-radius: 0; }
+      .header { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .rpt-hdr { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #8B6914; padding-bottom: 5px; }
+      .rpt-hdr { position: fixed; top: 0; left: 0; right: 0; background: #fff; z-index: 999; padding: 5px 32px; }
+      .page { padding-top: 36px; }
+    }
   </style></head><body>
+  <div class="rpt-hdr">
+    <span style="font-size:11px;font-weight:700;color:#3D2214">Malakesa Transfer &amp; Tour &nbsp;—&nbsp; Payment Receipt &nbsp;—&nbsp; ${receiptNum}</span>
+    <span style="font-size:10px;color:#888">Page <span class="pgnum"></span></span>
+  </div>
   <div class="noprint"><span>${receiptNum}</span><button class="printbtn" onclick="window.print()">Print / Save PDF</button></div>
   <div class="page">
     <div class="header">
@@ -2181,8 +2195,39 @@ function VNPF({ employees, salaryRecords, reload, setModal, setSelected }) {
       .footer-r{text-align:right;color:#FFD700;font-size:10px;line-height:1.9}
       .noprint{background:#333;color:#fff;padding:10px 20px;display:flex;justify-content:space-between;align-items:center;font-size:13px}
       .printbtn{background:#8B6914;color:#fff;border:none;padding:7px 18px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600}
-      @media print{.noprint{display:none}body{background:#fff}.page{box-shadow:none;margin:0}}
+      thead{display:table-header-group}
+      .rpt-hdr{display:none}
+      @page{margin:18mm 14mm 22mm 14mm;size:A4}
+      @page{counter-increment:page;}
+      body{counter-reset:page}
+      .pgnum,.pgnum2{font-size:10px;color:#888}
+      .pgnum::after,.pgnum2::after{content:counter(page)}
+      @media print{
+        .noprint{display:none}
+        body{background:#fff}
+        .page{box-shadow:none;margin:0;border-radius:0}
+        .header{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+        .footer{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+        th{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+        .summary-row{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+        .rpt-hdr{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #8B6914;padding-bottom:6px}
+        .rpt-hdr{position:fixed;top:0;left:0;right:0;background:#fff;z-index:999;padding:6px 40px}
+        .page{padding-top:42px}
+        .rpt-footer{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #E8D5A3;padding:4px 40px;display:flex;justify-content:space-between;font-size:10px;color:#888;z-index:999}
+        .page-body{padding-bottom:28px}
+      }
     </style></head><body>
+    <div class="rpt-hdr">
+      <div style="display:flex;align-items:center;gap:12px">
+        <span style="font-size:12px;font-weight:700;color:#3D2214">Malakesa Transfer &amp; Tour</span>
+        <span style="font-size:11px;color:#8B6914;font-weight:600">VNPF Contribution Schedule — ${monthLabel}</span>
+      </div>
+      <span style="font-size:10px;color:#888">TIN: 445579 &nbsp;|&nbsp; Page <span class="pgnum"></span></span>
+    </div>
+    <div class="rpt-footer">
+      <span>VNPF Schedule — ${monthLabel} &nbsp;|&nbsp; Malakesa Transfer &amp; Tour &nbsp;|&nbsp; TIN: 445579</span>
+      <span>Page <span class="pgnum2"></span> &nbsp;|&nbsp; Computer generated — verify before filing</span>
+    </div>
     <div class="noprint"><span>VNPF Contribution Schedule — ${monthLabel}</span><button class="printbtn" onclick="window.print()">🖨️ Print / Save PDF</button></div>
     <div class="page">
       <div class="header">
@@ -2240,7 +2285,15 @@ function VNPF({ employees, salaryRecords, reload, setModal, setSelected }) {
         </div>
       </div>
     </div>
-    <script>window.onload=()=>window.print()<\/script></body></html>`
+    <script>
+    window.onload=()=>{
+      // Show page number in fixed headers using CSS counter
+      document.querySelectorAll('.pgnum,.pgnum2').forEach(el=>{
+        el.style.cssText='display:inline'
+      })
+      window.print()
+    }
+    <\/script></body></html>`
 
   const printSchedule = () => {
     const w = window.open('', '_blank')
@@ -2515,8 +2568,25 @@ body{font-family:Arial,sans-serif;background:#f0ebe0;color:#222;font-size:13px}
 .ftr{background:linear-gradient(135deg,#1A0D06,#5C3D0A);padding:14px 36px;display:flex;justify-content:space-between;color:rgba(255,255,255,.7);font-size:10px;line-height:1.9}
 .noprint{background:#333;color:#fff;padding:10px 20px;display:flex;justify-content:space-between;align-items:center;font-size:13px}
 .printbtn{background:#8B6914;color:#fff;border:none;padding:7px 18px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600}
-@media print{.noprint{display:none}body{background:#fff}.page{box-shadow:none;margin:0;max-width:100%}}
+.rpt-hdr{display:none}
+@page{margin:16mm 14mm 20mm 14mm;size:A4}
+@media print{
+.noprint{display:none}
+body{background:#fff}
+.page{box-shadow:none;margin:0;max-width:100%;border-radius:0}
+.hdr{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.emp-bar{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.net-box{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.ftr{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.rpt-hdr{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #8B6914;padding-bottom:5px}
+.rpt-hdr{position:fixed;top:0;left:0;right:0;background:#fff;z-index:999;padding:5px 36px}
+.page{padding-top:36px}
+}
 </style></head><body>
+<div class='rpt-hdr'>
+  <span style='font-size:11px;font-weight:700;color:#3D2214'>Malakesa Transfer &amp; Tour &nbsp;—&nbsp; Payslip &nbsp;—&nbsp; ${emp.name} &nbsp;—&nbsp; ${mLabel}</span>
+  <span style='font-size:10px;color:#888'>Page <span class='pgnum'></span></span>
+</div>
 <div class='noprint'><span>Payslip — ${emp.name} — ${mLabel}</span><button class='printbtn' onclick='window.print()'>Print / Save PDF</button></div>
 <div class='page'>
   <div class='hdr'>
@@ -3097,8 +3167,25 @@ function previewInvoice(inv) {
     .footer-r { text-align: right; color: #FFD700; font-size: 11px; line-height: 1.9; }
     .noprint { background: #333; color: #fff; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; }
     .printbtn { background: #8B6914; color: #fff; border: none; padding: 7px 18px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; }
-    @media print { .noprint { display: none; } body { background: #fff; } .page { box-shadow: none; margin: 0; } }
+    .rpt-hdr { display: none; }
+    @page { margin: 18mm 15mm 22mm 15mm; size: A4; }
+    @media print {
+      .noprint { display: none; }
+      body { background: #fff; }
+      .page { box-shadow: none; margin: 0; border-radius: 0; }
+      .header { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      thead { display: table-header-group; }
+      .pgnum::after { content: counter(page); }
+      body { counter-reset: page; }
+      .rpt-hdr { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #8B6914; padding-bottom: 6px; }
+      .rpt-hdr { position: fixed; top: 0; left: 0; right: 0; background: #fff; z-index: 999; padding: 6px 40px; }
+      .page { padding-top: 40px; }
+    }
   </style></head><body>
+  <div class="rpt-hdr">
+    <span style="font-size:11px;font-weight:700;color:#3D2214">Malakesa Transfer &amp; Tour &nbsp;—&nbsp; DRAFT PREVIEW</span>
+    <span style="font-size:10px;color:#888">Page <span class="pgnum"></span></span>
+  </div>
   <div class="noprint">
     <span>⚠️ DRAFT PREVIEW — Invoice not saved yet</span>
     <button class="printbtn" onclick="window.print()">🖨️ Print / Save PDF</button>
@@ -3327,8 +3414,26 @@ function ViewInvoiceModal({ invoice, payments, onClose, onPay }) {
     .footer-r { text-align: right; color: #FFD700; font-size: 11px; line-height: 1.9; }
     .noprint { background: #333; color: #fff; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; }
     .printbtn { background: #8B6914; color: #fff; border: none; padding: 7px 18px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; }
-    @media print { .noprint { display: none; } body { background: #fff; } .page { box-shadow: none; margin: 0; } }
+    .rpt-hdr { display: none; }
+    @page { margin: 18mm 15mm 22mm 15mm; size: A4; }
+    @media print {
+      .noprint { display: none; }
+      body { background: #fff; }
+      .page { box-shadow: none; margin: 0; border-radius: 0; }
+      .header { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      thead { display: table-header-group; }
+      .pgnum::after { content: counter(page); }
+      body { counter-reset: page; }
+      .rpt-hdr { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #8B6914; padding-bottom: 6px; margin-bottom: 4px; }
+      .rpt-hdr { position: fixed; top: 0; left: 0; right: 0; background: #fff; z-index: 999; padding: 6px 40px; }
+      .page { padding-top: 40px; }
+      .page .header { margin-top: 0; }
+    }
   </style></head><body>
+  <div class="rpt-hdr">
+    <span style="font-size:11px;font-weight:700;color:#3D2214">Malakesa Transfer &amp; Tour &nbsp;—&nbsp; Invoice ${invoice.number} &nbsp;—&nbsp; ${invoice.client_name || ''}</span>
+    <span style="font-size:10px;color:#888">Page <span class="pgnum"></span></span>
+  </div>
   <div class="noprint">
     <span>Invoice ${invoice.number}</span>
     <button class="printbtn" onclick="window.print()">🖨️ Print / Save PDF</button>
@@ -3421,8 +3526,22 @@ function ViewInvoiceModal({ invoice, payments, onClose, onPay }) {
     .footer { background: linear-gradient(135deg, #1A0D06, #5C3D0A); padding: 14px 32px; text-align: center; color: rgba(255,255,255,0.7); font-size: 10px; line-height: 1.9; }
     .noprint { background: #333; color: #fff; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; }
     .printbtn { background: #8B6914; color: #fff; border: none; padding: 7px 18px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; }
-    @media print { .noprint { display: none; } body { background: #fff; } .page { box-shadow: none; margin: 0; max-width: 100%; } }
+    .rpt-hdr { display: none; }
+    @page { margin: 12mm 10mm 16mm 10mm; size: A4; }
+    @media print {
+      .noprint { display: none; }
+      body { background: #fff; }
+      .page { box-shadow: none; margin: 0; max-width: 100%; border-radius: 0; }
+      .header { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .rpt-hdr { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #8B6914; padding-bottom: 5px; }
+      .rpt-hdr { position: fixed; top: 0; left: 0; right: 0; background: #fff; z-index: 999; padding: 5px 32px; }
+      .page { padding-top: 36px; }
+    }
   </style></head><body>
+  <div class="rpt-hdr">
+    <span style="font-size:11px;font-weight:700;color:#3D2214">Malakesa Transfer &amp; Tour &nbsp;—&nbsp; Payment Receipt &nbsp;—&nbsp; ${receiptNum}</span>
+    <span style="font-size:10px;color:#888">Page <span class="pgnum"></span></span>
+  </div>
   <div class="noprint"><span>${receiptNum}</span><button class="printbtn" onclick="window.print()">Print / Save PDF</button></div>
   <div class="page">
     <div class="header">
