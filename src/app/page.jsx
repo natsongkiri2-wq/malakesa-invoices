@@ -291,6 +291,39 @@ function Dashboard({ invoices, payments, purchases, loading, setPage, setModal }
   const thisMonthPurchases = purchasesList.filter(p => p.date?.startsWith(new Date().toISOString().slice(0,7))).reduce((s, p) => s + Number(p.amount || 0), 0)
   const recentPurchases = [...purchasesList].sort((a,b) => b.date > a.date ? 1 : -1).slice(0, 6)
 
+  // Trend calculations: this month vs last month
+  const now2 = new Date()
+  const thisMonth = now2.toISOString().slice(0, 7)
+  const lastMonthD = new Date(now2.getFullYear(), now2.getMonth() - 1, 1)
+  const lastMonth = lastMonthD.toISOString().slice(0, 7)
+  const invThisMonth = invoices.filter(i => i.date?.startsWith(thisMonth)).reduce((s, i) => s + Number(i.total), 0)
+  const invLastMonth = invoices.filter(i => i.date?.startsWith(lastMonth)).reduce((s, i) => s + Number(i.total), 0)
+  const pmtThisMonth = payments.filter(p => p.date?.startsWith(thisMonth)).reduce((s, p) => s + Number(p.amount), 0)
+  const pmtLastMonth = payments.filter(p => p.date?.startsWith(lastMonth)).reduce((s, p) => s + Number(p.amount), 0)
+  const purThisMonth = purchasesList.filter(p => p.date?.startsWith(thisMonth)).reduce((s, p) => s + Number(p.amount || 0), 0)
+  const purLastMonth = purchasesList.filter(p => p.date?.startsWith(lastMonth)).reduce((s, p) => s + Number(p.amount || 0), 0)
+  const calcTrend = (cur, prev) => {
+    if (prev === 0 && cur === 0) return null
+    if (prev === 0) return { pct: 100, dir: 'up' }
+    const pct = Math.round(((cur - prev) / prev) * 100)
+    return { pct: Math.abs(pct), dir: pct >= 0 ? 'up' : 'down' }
+  }
+  const trendInvoiced = calcTrend(invThisMonth, invLastMonth)
+  const trendCollected = calcTrend(pmtThisMonth, pmtLastMonth)
+  const trendPurchases = calcTrend(purThisMonth, purLastMonth)
+  const Trend = ({ t, goodDir = 'up' }) => {
+    if (!t) return null
+    const isGood = t.dir === goodDir
+    const color = isGood ? '#3B6D11' : '#A32D2D'
+    const bg = isGood ? '#EAF3DE' : '#FCEBEB'
+    const arrow = t.dir === 'up' ? '▲' : '▼'
+    return (
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, background: bg, color, borderRadius: 99, padding: '2px 8px', fontSize: 11, fontWeight: 600 }}>
+        <span style={{ fontSize: 9 }}>{arrow}</span> {t.pct}% vs last month
+      </span>
+    )
+  }
+
   const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
   const now = new Date()
   const monthData = Array.from({ length: 6 }, (_, i) => {
@@ -321,11 +354,65 @@ function Dashboard({ invoices, payments, purchases, loading, setPage, setModal }
         {loading ? <div style={{ textAlign: 'center', padding: 40, color: '#666' }}>Loading...</div> : (
           <>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: 12, marginBottom: 16 }}>
-              <StatCard label="Total Invoiced" value={fmt(totalInvoiced)} sub={`${invoices.length} invoices`} />
-              <StatCard label="Collected" value={fmt(totalCollected)} color="#3B6D11" />
-              <StatCard label="Outstanding" value={fmt(outstanding)} color="#D85A30" />
-              <StatCard label="Overdue" value={overdueCount} color="#A32D2D" sub="need follow-up" />
-              <StatCard label="Purchases" value={fmt(totalPurchases)} color="#8B6914" sub={`${fmt(thisMonthPurchases)} this month`} />
+
+              {/* Total Invoiced */}
+              <div style={{ background: '#fff', borderRadius: 10, padding: '14px 16px', border: '0.5px solid rgba(0,0,0,0.08)', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <div style={{ fontSize: 11, color: '#888', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Total Invoiced</div>
+                <div style={{ fontSize: 20, fontWeight: 700, color: '#1a1a1a', lineHeight: 1.1 }}>{fmt(totalInvoiced)}</div>
+                <div style={{ fontSize: 11, color: '#888' }}>{invoices.length} invoice{invoices.length !== 1 ? 's' : ''} total</div>
+                <Trend t={trendInvoiced} goodDir="up" />
+                <button className="btn btn-sm" style={{ marginTop: 4, fontSize: 11, background: '#3D2214', color: '#FFD700', borderColor: '#3D2214', fontWeight: 600 }} onClick={() => setModal('newInvoice')}>
+                  <i className="ti ti-plus"></i> New Invoice
+                </button>
+              </div>
+
+              {/* Collected */}
+              <div style={{ background: '#fff', borderRadius: 10, padding: '14px 16px', border: '0.5px solid rgba(0,0,0,0.08)', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <div style={{ fontSize: 11, color: '#888', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Collected</div>
+                <div style={{ fontSize: 20, fontWeight: 700, color: '#3B6D11', lineHeight: 1.1 }}>{fmt(totalCollected)}</div>
+                <div style={{ fontSize: 11, color: '#888' }}>{fmt(pmtThisMonth)} this month</div>
+                <Trend t={trendCollected} goodDir="up" />
+                <button className="btn btn-sm" style={{ marginTop: 4, fontSize: 11 }} onClick={() => setPage('payments')}>
+                  <i className="ti ti-cash-register"></i> View payments
+                </button>
+              </div>
+
+              {/* Outstanding */}
+              <div style={{ background: '#fff', borderRadius: 10, padding: '14px 16px', border: '0.5px solid rgba(0,0,0,0.08)', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <div style={{ fontSize: 11, color: '#888', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Outstanding</div>
+                <div style={{ fontSize: 20, fontWeight: 700, color: '#D85A30', lineHeight: 1.1 }}>{fmt(outstanding)}</div>
+                <div style={{ fontSize: 11, color: '#888' }}>unpaid balance</div>
+                <div style={{ height: 22 }}></div>
+                <button className="btn btn-sm" style={{ marginTop: 4, fontSize: 11 }} onClick={() => setPage('unpaid')}>
+                  <i className="ti ti-alert-triangle"></i> View unpaid
+                </button>
+              </div>
+
+              {/* Overdue */}
+              <div style={{ background: overdueCount > 0 ? '#FFF5F5' : '#fff', borderRadius: 10, padding: '14px 16px', border: overdueCount > 0 ? '0.5px solid #F7C1C1' : '0.5px solid rgba(0,0,0,0.08)', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <div style={{ fontSize: 11, color: '#888', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Overdue</div>
+                <div style={{ fontSize: 20, fontWeight: 700, color: '#A32D2D', lineHeight: 1.1 }}>{overdueCount}</div>
+                <div style={{ fontSize: 11, color: '#888' }}>invoice{overdueCount !== 1 ? 's' : ''} need follow-up</div>
+                {overdueCount > 0 && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, background: '#FCEBEB', color: '#A32D2D', borderRadius: 99, padding: '2px 8px', fontSize: 11, fontWeight: 600 }}>
+                  <span style={{ fontSize: 9 }}>⚠</span> Action needed
+                </span>}
+                {overdueCount === 0 && <div style={{ height: 22 }}></div>}
+                <button className="btn btn-sm" style={{ marginTop: 4, fontSize: 11, ...(overdueCount > 0 ? { background: '#A32D2D', color: '#fff', borderColor: '#A32D2D', fontWeight: 600 } : {}) }} onClick={() => setPage('unpaid')}>
+                  <i className="ti ti-send"></i> {overdueCount > 0 ? 'Follow up now' : 'View invoices'}
+                </button>
+              </div>
+
+              {/* Purchases */}
+              <div style={{ background: '#fff', borderRadius: 10, padding: '14px 16px', border: '0.5px solid rgba(0,0,0,0.08)', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <div style={{ fontSize: 11, color: '#888', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Purchases</div>
+                <div style={{ fontSize: 20, fontWeight: 700, color: '#8B6914', lineHeight: 1.1 }}>{fmt(totalPurchases)}</div>
+                <div style={{ fontSize: 11, color: '#888' }}>{fmt(purThisMonth)} this month</div>
+                <Trend t={trendPurchases} goodDir="down" />
+                <button className="btn btn-sm" style={{ marginTop: 4, fontSize: 11 }} onClick={() => setModal('newPurchase')}>
+                  <i className="ti ti-plus"></i> New Purchase
+                </button>
+              </div>
+
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
