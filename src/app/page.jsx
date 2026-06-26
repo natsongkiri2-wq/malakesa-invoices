@@ -746,17 +746,43 @@ function Payments({ payments, invoices, reload, setModal, setSelected }) {
           </Card>
         )}
         <Card style={{ padding: 0, overflow: 'hidden' }}>
-          <div style={{ padding: '12px 20px', borderBottom: '0.5px solid rgba(0,0,0,0.09)', fontWeight: 500, fontSize: 13 }}>Payment history</div>
+          <div style={{ padding: '12px 20px', borderBottom: '0.5px solid rgba(0,0,0,0.09)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontWeight: 500, fontSize: 13 }}>Payment history</span>
+            <div style={{ display: 'flex', gap: 16, fontSize: 12 }}>
+              <span style={{ color: '#666' }}>Total collected: <strong style={{ color: '#3B6D11' }}>{fmt(payments.reduce((s, p) => s + Number(p.amount), 0))}</strong></span>
+              <span style={{ color: '#666' }}>Payments: <strong>{payments.length}</strong></span>
+              <span style={{ color: '#666' }}>Fully paid invoices: <strong style={{ color: '#3B6D11' }}>{invoices.filter(i => getBalance(i, payments) <= 0 && payments.some(p => p.invoice_id === i.id)).length}</strong></span>
+              <span style={{ color: '#666' }}>Still owing: <strong style={{ color: '#D85A30' }}>{invoices.filter(i => getBalance(i, payments) > 0 && payments.some(p => p.invoice_id === i.id)).length} invoice{invoices.filter(i => getBalance(i, payments) > 0 && payments.some(p => p.invoice_id === i.id)).length !== 1 ? 's' : ''}</strong></span>
+            </div>
+          </div>
           {payments.length === 0 ? <Empty icon="ti-cash-off" msg="No payments recorded yet" /> : (
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-              <thead><tr style={{ background: '#E8D5A3' }}><Th>Receipt #</Th><Th>Date</Th><Th>Invoice #</Th><Th>Client</Th><Th>Method</Th><Th>Amount</Th><Th>Note</Th><Th>Actions</Th></tr></thead>
+              <thead><tr style={{ background: '#E8D5A3' }}><Th>Receipt #</Th><Th>Date</Th><Th>Invoice #</Th><Th>Client</Th><Th>Method</Th><Th>Amount</Th><Th>Inv. Total</Th><Th>Balance After</Th><Th>Note</Th><Th>Actions</Th></tr></thead>
               <tbody>{[...payments].reverse().map(p => {
                 const inv = getInv(p.invoice_id)
+                // Calculate balance remaining after this payment
+                const invTotal = Number(inv?.total || 0)
+                const allPaymentsForInv = payments.filter(x => x.invoice_id === p.invoice_id)
+                const totalPaidForInv = allPaymentsForInv.reduce((s, x) => s + Number(x.amount || 0), 0)
+                const balanceAfterAll = invTotal - totalPaidForInv
+                const isPaidOff = balanceAfterAll <= 0
                 return (
                   <tr key={p.id} style={{ borderBottom: '0.5px solid rgba(0,0,0,0.09)' }}>
                     <Td style={{ color: '#8B6914', fontWeight: 500 }}>{p.receipt_number || '—'}</Td><Td>{fmtDate(p.date)}</Td><Td><strong>{inv?.number || '—'}</strong></Td><Td>{inv?.client_name || '—'}</Td>
                     <Td><span style={{ background: '#E8D5A3', padding: '2px 8px', borderRadius: 99, fontSize: 11 }}>{p.method || 'Cash'}</span></Td>
                     <Td style={{ color: '#3B6D11', fontWeight: 500 }}>{fmt(p.amount)}</Td>
+                    <Td style={{ color: '#666', fontSize: 12 }}>{inv?.total ? fmt(inv.total) : '—'}</Td>
+                    <Td>
+                      {!inv?.total ? <span style={{ color: '#ccc' }}>—</span> : isPaidOff ? (
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#EAF3DE', color: '#3B6D11', borderRadius: 99, padding: '2px 10px', fontSize: 11, fontWeight: 600 }}>
+                          \u2713 Fully paid
+                        </span>
+                      ) : (
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#FEF3EB', color: '#D85A30', borderRadius: 99, padding: '2px 10px', fontSize: 11, fontWeight: 600 }}>
+                          {fmt(balanceAfterAll)} owing
+                        </span>
+                      )}
+                    </Td>
                     <Td style={{ color: '#666' }}>{p.note || ''}</Td>
                     <Td>
                       <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
