@@ -854,18 +854,32 @@ function Unpaid({ invoices, payments, reload, setModal, setSelected }) {
     const w = window.open('', '_blank')
     const title = 'Unpaid Invoices Report' + (filterClient ? ' — ' + filterClient : '') + (filterMonth ? ' — ' + filterMonth : '')
     w.document.write(`<!DOCTYPE html><html><head><title>${title}</title>
-    <style>body{font-family:Arial,sans-serif;margin:40px;color:#222;font-size:13px}
+    <style>body{font-family:Arial,sans-serif;color:#222;font-size:13px}
     h1{font-size:20px;font-weight:bold;color:#8B6914;margin-bottom:4px}
     .sub{color:#888;font-size:12px;margin-bottom:24px}
     table{width:100%;border-collapse:collapse;margin-top:16px}
-    th{background:#f5f5f5;padding:8px 12px;text-align:left;font-size:11px;color:#666;text-transform:uppercase;letter-spacing:0.4px}
+    thead{display:table-header-group}
+    th{background:#f5f5f5;padding:8px 12px;text-align:left;font-size:11px;color:#666;text-transform:uppercase;letter-spacing:0.4px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
     td{padding:9px 12px;border-bottom:1px solid #eee;font-size:13px}
     .overdue{color:#A32D2D;font-weight:500}
     .total{margin-top:20px;text-align:right;font-size:15px;font-weight:bold}
     .badge{display:inline-block;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:500}
     .unpaid{background:#FAECE7;color:#712B13}.overdue-b{background:#FCEBEB;color:#791F1F}.partial{background:#FAEEDA;color:#633806}
+    .rpt-hdr{display:none}
+    @page{margin:20mm 15mm 22mm 15mm;size:A4}
+    @media print{
+      .rpt-hdr{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #8B6914;padding:6px 0 6px 0}
+      .rpt-hdr{position:fixed;top:0;left:0;right:0;background:#fff;z-index:999;padding:6px 40px}
+      body{margin:0;padding-top:44px}
+      .report-body{padding:0 40px 40px}
+    }
     </style></head><body>
-    <div style="display:flex;justify-content:space-between">
+    <div class="rpt-hdr">
+      <span style="font-size:12px;font-weight:700;color:#3D2214">Malakesa Transfer &amp; Tour &nbsp;—&nbsp; Unpaid Invoices Report</span>
+      <span style="font-size:10px;color:#888">Generated ${new Date().toLocaleDateString('en-GB', {day:'2-digit',month:'short',year:'numeric'})}</span>
+    </div>
+    <div class="report-body">
+    <div style="display:flex;justify-content:space-between;margin-top:20px">
       <div><h1>Malakesa Transfer &amp; Tour</h1><div class="sub">Unpaid Invoices Report — Generated ${new Date().toLocaleDateString('en-GB', {day:'2-digit',month:'short',year:'numeric'})}</div></div>
       <div style="text-align:right;font-size:12px;color:#888">${filterClient ? 'Client: ' + filterClient + '<br>' : ''}${filterMonth ? 'Month: ' + filterMonth : ''}</div>
     </div>
@@ -875,6 +889,7 @@ function Unpaid({ invoices, payments, reload, setModal, setSelected }) {
       return '<tr><td><strong>' + inv.number + '</strong></td><td>' + inv.client_name + '</td><td class="' + (st==='overdue'?'overdue':'') + '">' + fmtDate(inv.due_date) + '</td><td>VT ' + Number(inv.total).toLocaleString() + '</td><td style="font-weight:500">VT ' + Number(bal).toLocaleString() + '</td><td><span class="badge ' + (st==='overdue'?'overdue-b':st) + '">' + st + '</span></td></tr>'
     }).join('')}</tbody></table>
     <div class="total">Total outstanding: VT ${Number(totalOut).toLocaleString()}</div>
+    </div>
     <script>window.onload=()=>window.print()<\/script></body></html>`)
     w.document.close()
   }
@@ -1069,8 +1084,32 @@ function Reports({ invoices, payments, purchases }) {
       .footer-r{text-align:right;color:#FFD700;font-size:10px;line-height:1.9}
       .noprint{background:#333;color:#fff;padding:10px 20px;display:flex;justify-content:space-between;align-items:center;font-size:13px}
       .printbtn{background:#8B6914;color:#fff;border:none;padding:7px 18px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600}
-      @media print{.noprint{display:none}body{background:#fff}.page{box-shadow:none;margin:0}}
+      thead{display:table-header-group}
+      .rpt-hdr{display:none}
+      .summary-row{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+      .header{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+      .footer{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+      .vat-box{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+      th{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+      @page{margin:18mm 14mm 22mm 14mm;size:A4}
+      @media print{
+        .noprint{display:none}
+        body{background:#fff}
+        .page{box-shadow:none;margin:0;border-radius:0}
+        .rpt-hdr{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #8B6914;padding:6px 40px}
+        .rpt-hdr{position:fixed;top:0;left:0;right:0;background:#fff;z-index:999}
+        .page{padding-top:42px}
+        .rpt-footer-bar{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #E8D5A3;padding:4px 40px;display:flex;justify-content:space-between;font-size:10px;color:#888;z-index:999}
+      }
     </style></head><body>
+    <div class="rpt-hdr">
+      <span style="font-size:12px;font-weight:700;color:#3D2214">Malakesa Transfer &amp; Tour &nbsp;—&nbsp; VAT Return &nbsp;—&nbsp; ${vatMonthLabel}</span>
+      <span style="font-size:10px;color:#888">TIN: 445579 &nbsp;|&nbsp; Generated ${new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}</span>
+    </div>
+    <div class="rpt-footer-bar">
+      <span>VAT Return — ${vatMonthLabel} &nbsp;|&nbsp; Malakesa Transfer &amp; Tour &nbsp;|&nbsp; TIN: 445579</span>
+      <span>Computer generated — verify before filing</span>
+    </div>
     <div class="noprint"><span>VAT Return — ${vatMonthLabel}</span><button class="printbtn" onclick="window.print()">🖨️ Print / Save PDF</button></div>
     <div class="page">
       <div class="header">
@@ -1254,8 +1293,31 @@ function Reports({ invoices, payments, purchases }) {
       .footer-r{text-align:right;color:#FFD700;font-size:10px;line-height:1.9}
       .noprint{background:#333;color:#fff;padding:10px 20px;display:flex;justify-content:space-between;align-items:center;font-size:13px}
       .printbtn{background:#8B6914;color:#fff;border:none;padding:7px 18px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600}
-      @media print{.noprint{display:none}body{background:#fff}.page{box-shadow:none;margin:0}}
+      thead{display:table-header-group}
+      .rpt-hdr{display:none}
+      .summary-row{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+      .header{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+      .footer{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+      th{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+      @page{margin:18mm 14mm 22mm 14mm;size:A4}
+      @media print{
+        .noprint{display:none}
+        body{background:#fff}
+        .page{box-shadow:none;margin:0;border-radius:0}
+        .rpt-hdr{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #8B6914;padding:6px 40px}
+        .rpt-hdr{position:fixed;top:0;left:0;right:0;background:#fff;z-index:999}
+        .page{padding-top:42px}
+        .rpt-footer-bar{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #E8D5A3;padding:4px 40px;display:flex;justify-content:space-between;font-size:10px;color:#888;z-index:999}
+      }
     </style></head><body>
+    <div class="rpt-hdr">
+      <span style="font-size:12px;font-weight:700;color:#3D2214">Malakesa Transfer &amp; Tour &nbsp;—&nbsp; Purchases by Supplier &nbsp;—&nbsp; ${supplierPeriodLabel}</span>
+      <span style="font-size:10px;color:#888">Generated ${new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}</span>
+    </div>
+    <div class="rpt-footer-bar">
+      <span>Purchases by Supplier — ${supplierPeriodLabel} &nbsp;|&nbsp; Malakesa Transfer &amp; Tour</span>
+      <span>Computer generated — confidential</span>
+    </div>
     <div class="noprint"><span>Purchases by Supplier — ${supplierPeriodLabel}</span><button class="printbtn" onclick="window.print()">🖨️ Print / Save PDF</button></div>
     <div class="page">
       <div class="header">
@@ -1319,23 +1381,42 @@ function Reports({ invoices, payments, purchases }) {
     const title = 'Revenue Report' + (filterClient ? ' — ' + filterClient : '') + ' — ' + periodLabel
     w.document.write(`<!DOCTYPE html><html><head><title>${title}</title>
     <style>
-      body{font-family:Arial,sans-serif;margin:40px;color:#222;font-size:13px}
+      body{font-family:Arial,sans-serif;color:#222;font-size:13px}
       h1{font-size:22px;font-weight:bold;color:#8B6914;margin-bottom:2px}
       .sub{color:#888;font-size:12px;margin-bottom:28px}
       .stats{display:flex;gap:20px;margin-bottom:28px;flex-wrap:wrap}
-      .stat{background:#f5f5f5;border-radius:8px;padding:12px 18px;min-width:140px}
+      .stat{background:#f5f5f5;border-radius:8px;padding:12px 18px;min-width:140px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
       .stat-label{font-size:11px;color:#666;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.4px}
       .stat-value{font-size:18px;font-weight:bold}
       h2{font-size:14px;font-weight:bold;margin:24px 0 8px;color:#333;border-bottom:1px solid #eee;padding-bottom:4px}
       table{width:100%;border-collapse:collapse;margin-bottom:24px;font-size:13px}
-      th{background:#f5f5f5;padding:8px 12px;text-align:left;font-size:11px;color:#666;text-transform:uppercase;letter-spacing:0.3px}
+      thead{display:table-header-group}
+      th{background:#f5f5f5;padding:8px 12px;text-align:left;font-size:11px;color:#666;text-transform:uppercase;letter-spacing:0.3px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
       td{padding:9px 12px;border-bottom:1px solid #eee}
       .right{text-align:right}
       .green{color:#3B6D11;font-weight:500}
       .red{color:#A32D2D}
       .footer{margin-top:30px;padding-top:16px;border-top:1px solid #eee;font-size:11px;color:#999}
+      .rpt-hdr{display:none}
+      @page{margin:20mm 15mm 22mm 15mm;size:A4}
+      @media print{
+        .rpt-hdr{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #8B6914;padding:6px 40px}
+        .rpt-hdr{position:fixed;top:0;left:0;right:0;background:#fff;z-index:999}
+        body{padding-top:44px}
+        .report-body{padding:0 0 40px}
+        .rpt-footer-bar{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #E8D5A3;padding:4px 40px;display:flex;justify-content:space-between;font-size:10px;color:#888;z-index:999}
+      }
     </style></head><body>
-    <h1>Malakesa Transfer &amp; Tour</h1>
+    <div class="rpt-hdr">
+      <span style="font-size:12px;font-weight:700;color:#3D2214">Malakesa Transfer &amp; Tour &nbsp;—&nbsp; Revenue Report &nbsp;—&nbsp; ${periodLabel}</span>
+      <span style="font-size:10px;color:#888">Generated ${new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}</span>
+    </div>
+    <div class="rpt-footer-bar">
+      <span>Revenue Report — ${periodLabel} &nbsp;|&nbsp; Malakesa Transfer &amp; Tour</span>
+      <span>Computer generated — confidential</span>
+    </div>
+    <div class="report-body" style="padding:0 40px">
+    <h1 style="margin-top:20px">Malakesa Transfer &amp; Tour</h1>
     <div class="sub">Revenue Report &nbsp;|&nbsp; ${periodLabel}${filterClient ? ' &nbsp;|&nbsp; Client: ' + filterClient : ''} &nbsp;|&nbsp; Generated ${new Date().toLocaleDateString('en-GB', {day:'2-digit',month:'long',year:'numeric'})}</div>
     <div class="stats">
       <div class="stat"><div class="stat-label">Total Invoiced</div><div class="stat-value">VT ${Number(totalInv).toLocaleString()}</div></div>
