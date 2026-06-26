@@ -478,6 +478,18 @@ function Invoices({ invoices, payments, reload, setModal, setSelected }) {
   const [filterStatus, setFilterStatus] = useState('')
   const [filterMonth, setFilterMonth] = useState('')
   const [search, setSearch] = useState('')
+  const searchRef = useRef(null)
+  useEffect(() => {
+    const handler = (e) => {
+      if (e.key === '/' && document.activeElement?.tagName !== 'INPUT' && document.activeElement?.tagName !== 'TEXTAREA') {
+        e.preventDefault()
+        searchRef.current?.focus()
+      }
+      if (e.key === 'Escape') searchRef.current?.blur()
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [])
 
   const allClients = [...new Set(invoices.map(i => i.client_name))].sort()
   const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
@@ -488,7 +500,16 @@ function Invoices({ invoices, payments, reload, setModal, setSelected }) {
   }).reverse()
 
   let filtered = [...invoices].reverse()
-  if (search) filtered = filtered.filter(i => i.number?.toLowerCase().includes(search.toLowerCase()) || i.client_name?.toLowerCase().includes(search.toLowerCase()))
+  const q = search.toLowerCase().trim()
+  if (q) filtered = filtered.filter(i =>
+    i.number?.toLowerCase().includes(q) ||
+    i.client_name?.toLowerCase().includes(q) ||
+    String(i.total || '').includes(q) ||
+    (i.date || '').includes(q) ||
+    (i.due_date || '').includes(q) ||
+    (i.notes || '').toLowerCase().includes(q) ||
+    getStatus(i, payments).includes(q)
+  )
   if (filterClient) filtered = filtered.filter(i => i.client_name === filterClient)
   if (filterStatus) filtered = filtered.filter(i => getStatus(i, payments) === filterStatus)
   if (filterMonth) filtered = filtered.filter(i => i.date?.startsWith(filterMonth))
@@ -513,7 +534,20 @@ function Invoices({ invoices, payments, reload, setModal, setSelected }) {
       </Topbar>
       <div style={{ padding: 20 }}>
         <div style={{ background: '#fff', border: '0.5px solid rgba(139,105,20,0.2)', borderRadius: 12, padding: '12px 16px', marginBottom: 16, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-          <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search invoice # or client..." style={{ ...selectStyle, background: '#fff', color: '#1a1a1a', minWidth: 200 }} />
+          <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+            <i className="ti ti-search" style={{ position: 'absolute', left: 10, color: '#8B6914', fontSize: 15, pointerEvents: 'none' }}></i>
+            <input
+              type="text"
+              ref={searchRef}
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Search invoice #, client, amount, date, status... (press / to focus)"
+              style={{ ...selectStyle, background: '#fff', color: '#1a1a1a', minWidth: 260, paddingLeft: 32, paddingRight: search ? 32 : 10 }}
+            />
+            {search && (
+              <button onClick={() => setSearch('')} style={{ position: 'absolute', right: 8, background: 'none', border: 'none', cursor: 'pointer', color: '#aaa', fontSize: 16, lineHeight: 1, padding: 0 }}>&times;</button>
+            )}
+          </div>
           <select value={filterClient} onChange={e => setFilterClient(e.target.value)} style={selectStyle}>
             <option value="">All clients</option>
             {allClients.map(c => <option key={c} value={c}>{c}</option>)}
@@ -535,7 +569,7 @@ function Invoices({ invoices, payments, reload, setModal, setSelected }) {
           {filtered.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '48px 20px', color: '#666' }}>
               <i className="ti ti-file-search" style={{ fontSize: 36, display: 'block', marginBottom: 10 }}></i>
-              <p>{hasFilters ? 'No invoices match your filters.' : 'No invoices yet.'}</p>
+              <p>{search ? `No invoices found for "${search}"` : hasFilters ? 'No invoices match your filters.' : 'No invoices yet.'}</p>
               {hasFilters && <button className="btn btn-sm" onClick={clearFilters} style={{ marginTop: 10 }}>Clear filters</button>}
             </div>
           ) : (
@@ -547,8 +581,8 @@ function Invoices({ invoices, payments, reload, setModal, setSelected }) {
                 const st = getStatus(inv, payments); const bal = getBalance(inv, payments)
                 return (
                   <tr key={inv.id} style={{ borderBottom: '0.5px solid rgba(0,0,0,0.09)' }}>
-                    <Td><strong>{inv.number}</strong></Td>
-                    <Td>{inv.client_name}</Td>
+                    <Td><strong style={{ background: q && inv.number?.toLowerCase().includes(q) ? '#FFF3CD' : 'transparent', borderRadius: 3, padding: q && inv.number?.toLowerCase().includes(q) ? '0 3px' : 0 }}>{inv.number}</strong></Td>
+                    <Td style={{ background: q && inv.client_name?.toLowerCase().includes(q) ? '#FFF3CD' : 'transparent', borderRadius: 3 }}>{inv.client_name}</Td>
                     <Td>{fmtDate(inv.date)}</Td>
                     <Td style={st === 'overdue' ? { color: '#A32D2D', fontWeight: 500 } : {}}>{fmtDate(inv.due_date)}</Td>
                     <Td>{fmt(inv.total)}</Td>
@@ -848,8 +882,8 @@ function Unpaid({ invoices, payments, reload, setModal, setSelected }) {
                 const st = getStatus(inv, payments)
                 return (
                   <tr key={inv.id} style={{ borderBottom: '0.5px solid rgba(0,0,0,0.09)' }}>
-                    <Td><strong>{inv.number}</strong></Td>
-                    <Td>{inv.client_name}</Td>
+                    <Td><strong style={{ background: q && inv.number?.toLowerCase().includes(q) ? '#FFF3CD' : 'transparent', borderRadius: 3, padding: q && inv.number?.toLowerCase().includes(q) ? '0 3px' : 0 }}>{inv.number}</strong></Td>
+                    <Td style={{ background: q && inv.client_name?.toLowerCase().includes(q) ? '#FFF3CD' : 'transparent', borderRadius: 3 }}>{inv.client_name}</Td>
                     <Td style={st === 'overdue' ? { color: '#A32D2D', fontWeight: 500 } : {}}>{fmtDate(inv.due_date)}</Td>
                     <Td style={{ fontWeight: 500 }}>{fmt(getBalance(inv, payments))}</Td>
                     <Td><Badge status={st} /></Td>
