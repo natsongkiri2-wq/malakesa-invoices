@@ -1448,6 +1448,93 @@ function Reports({ invoices, payments, purchases }) {
     outline: active ? 'none' : '1px solid #8B6914'
   })
 
+  // Export helpers
+  const downloadCSV = (filename, rows) => {
+    const esc = v => { const s = String(v == null ? '' : v); return s.includes(',') || s.includes('"') || s.includes('\n') ? '"' + s.replace(/"/g, '""') + '"' : s }
+    const csv = rows.map(r => r.map(esc).join(',')).join('\n')
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a'); a.href = url; a.download = filename; a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  const exportRevenueExcel = () => {
+    const rows = [
+      ['Malakesa Transfer and Tour - Revenue Report'],
+      ['Period:', periodLabel],
+      ['Generated:', new Date().toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' })],
+      [],
+      ['SUMMARY'],
+      ['Total Invoiced', totalInv],
+      ['Total Collected', totalCol],
+      ['Outstanding', outstanding],
+      ['VAT Output', totalVat],
+      [],
+      ['REVENUE BY CLIENT'],
+      ['Client', 'Invoices', 'Total (VT)', 'Collected (VT)', 'Outstanding (VT)'],
+      ...clientRows.map(r => [r.name, r.count, r.total, r.collected, r.outstanding]),
+      [],
+      ['REVENUE BY SERVICE'],
+      ['Service / Description', 'Qty', 'Revenue (VT)'],
+      ...serviceRows.map(r => [r.desc, r.qty, r.revenue]),
+      [],
+      ['ALL INVOICES'],
+      ['Invoice #', 'Date', 'Client', 'Subtotal (VT)', 'VAT (VT)', 'Total (VT)', 'Balance (VT)', 'Status'],
+      ...fi.map(i => [i.number, i.date, i.client_name, i.subtotal || 0, i.tax || 0, i.total, getBalance(i, payments), getStatus(i, payments)]),
+    ]
+    downloadCSV('Malakesa_Revenue_' + periodLabel.replace(/\s/g, '_') + '.csv', rows)
+  }
+
+  const exportVatExcel = () => {
+    const rows = [
+      ['Malakesa Transfer and Tour - VAT Return'],
+      ['Period:', vatMonthLabel],
+      ['TIN:', '445579'],
+      ['Generated:', new Date().toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' })],
+      [],
+      ['OUTPUT TAX (Sales)'],
+      ['Invoice #', 'Date', 'Client', 'Subtotal (VT)', 'VAT 15% (VT)', 'Total (VT)', 'Rate'],
+      ...vatInvoices.map(i => [i.number, i.date, i.client_name, i.subtotal || 0, i.tax || 0, i.total, Number(i.tax) > 0 ? '15%' : 'Zero-rated']),
+      [],
+      ['OUTPUT TAX SUMMARY'],
+      ['Standard rated sales', vatTotalSubtotal],
+      ['Output VAT (15%)', vatTotalTax],
+      ['Zero-rated sales', vatZeroRated.reduce((s, i) => s + Number(i.total), 0)],
+      [],
+      ['INPUT TAX (Purchases)'],
+      ['Date', 'Supplier', 'Description', 'Ex-VAT (VT)', 'Input VAT (VT)', 'Total (VT)'],
+      ...vatPurchases.map(p => [p.date, p.supplier, p.description || '', p.amount_ex_vat || 0, p.vat || 0, p.amount]),
+      [],
+      ['INPUT TAX SUMMARY'],
+      ['Total purchases', vatPurchasesTotal],
+      ['Input VAT (claimable)', vatInputTax],
+      [],
+      ['NET VAT PAYABLE'],
+      ['Output VAT', vatTotalTax],
+      ['Less: Input VAT', vatInputTax],
+      ['Net VAT payable', Math.max(0, vatTotalTax - vatInputTax)],
+    ]
+    downloadCSV('Malakesa_VAT_' + vatMonthLabel.replace(/\s/g, '_') + '.csv', rows)
+  }
+
+  const exportSupplierExcel = () => {
+    const rows = [
+      ['Malakesa Transfer and Tour - Purchases by Supplier'],
+      ['Period:', supplierPeriodLabel],
+      ['Generated:', new Date().toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' })],
+      [],
+      ['SUPPLIER SUMMARY'],
+      ['Supplier', 'Purchases', 'Ex-VAT (VT)', 'Input VAT (VT)', 'Total Spend (VT)'],
+      ...supplierRows.map(r => [r.name, r.count, r.exvat, r.vat, r.total]),
+      [],
+      ['ALL PURCHASES'],
+      ['Date', 'Supplier', 'Description', 'Category', 'Ex-VAT (VT)', 'VAT (VT)', 'Total (VT)', 'Ref'],
+      ...fPurchases.map(p => [p.date, p.supplier, p.description || '', p.category || 'Other', p.amount_ex_vat || 0, p.vat || 0, p.amount, p.ref || '']),
+    ]
+    downloadCSV('Malakesa_Purchases_' + supplierPeriodLabel.replace(/\s/g, '_') + '.csv', rows)
+  }
+
+
   return (
     <>
       <Topbar title="Reports">
@@ -1474,11 +1561,17 @@ function Reports({ invoices, payments, purchases }) {
             {period === 'specific' && (
               <MonthYearPicker value={revenueMonth} onChange={setRevenueMonth} accentColor="#8B6914" />
             )}
-            <button className="btn btn-sm" style={{ background: "#8B6914", borderColor: "#6B5010", color: "#fff", fontWeight: 500, marginLeft: 'auto' }} onClick={printReport}><i className="ti ti-printer"></i> Print Report</button>
+            <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
+              <button className="btn btn-sm" style={{ background: '#1D6F42', borderColor: '#155233', color: '#fff', fontWeight: 500 }} onClick={exportRevenueExcel}><i className="ti ti-file-spreadsheet"></i> Excel</button>
+              <button className="btn btn-sm" style={{ background: '#8B6914', borderColor: '#6B5010', color: '#fff', fontWeight: 500 }} onClick={printReport}><i className="ti ti-printer"></i> PDF</button>
+            </div>
           </>}
           {tab === 'vat' && <>
             <MonthYearPicker value={vatMonth} onChange={setVatMonth} accentColor="#8B6914" />
-            <button className="btn btn-sm" style={{ background: "#2E7D2E", borderColor: "#1A4D1A", color: "#fff", fontWeight: 500, marginLeft: 'auto' }} onClick={printVatReturn}><i className="ti ti-printer"></i> Print VAT Return</button>
+            <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
+              <button className="btn btn-sm" style={{ background: '#1D6F42', borderColor: '#155233', color: '#fff', fontWeight: 500 }} onClick={exportVatExcel}><i className="ti ti-file-spreadsheet"></i> Excel</button>
+              <button className="btn btn-sm" style={{ background: '#2E7D2E', borderColor: '#1A4D1A', color: '#fff', fontWeight: 500 }} onClick={printVatReturn}><i className="ti ti-printer"></i> PDF</button>
+            </div>
           </>}
           {tab === 'suppliers' && <>
             <select value={supplierPeriod} onChange={e => setSupplierPeriod(e.target.value)} style={{ padding: '6px 10px', borderRadius: 8, border: '0.5px solid #8B6914', fontSize: 13, fontFamily: 'inherit', background: '#8B6914', color: '#fff', fontWeight: 500, cursor: 'pointer' }}>
@@ -1496,7 +1589,10 @@ function Reports({ invoices, payments, purchases }) {
               <option value="count">Sort: Most purchases</option>
               <option value="name">Sort: Name (A-Z)</option>
             </select>
-            <button className="btn btn-sm" style={{ background: "#8B6914", borderColor: "#6B5010", color: "#fff", fontWeight: 500, marginLeft: 'auto' }} onClick={printSupplierReport}><i className="ti ti-printer"></i> Print Report</button>
+            <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
+              <button className="btn btn-sm" style={{ background: '#1D6F42', borderColor: '#155233', color: '#fff', fontWeight: 500 }} onClick={exportSupplierExcel}><i className="ti ti-file-spreadsheet"></i> Excel</button>
+              <button className="btn btn-sm" style={{ background: '#8B6914', borderColor: '#6B5010', color: '#fff', fontWeight: 500 }} onClick={printSupplierReport}><i className="ti ti-printer"></i> PDF</button>
+            </div>
           </>}
         </div>
       </div>
