@@ -958,88 +958,6 @@ function Payments({ payments, invoices, reload, setModal, setSelected }) {
           )}
         </Card>
       </div>
-
-      {/* Export Modal */}
-      {showExport && (() => {
-        const revenueColumns = [
-          { key: 'number', label: 'Invoice #' }, { key: 'date', label: 'Issue Date' },
-          { key: 'client_name', label: 'Client' }, { key: 'subtotal', label: 'Subtotal (VT)' },
-          { key: 'tax', label: 'VAT (VT)' }, { key: 'total', label: 'Total (VT)' },
-          { key: 'balance', label: 'Balance (VT)' }, { key: 'status', label: 'Status' },
-        ]
-        const vatColumns = [
-          { key: 'number', label: 'Invoice #' }, { key: 'date', label: 'Date' },
-          { key: 'client_name', label: 'Client' }, { key: 'subtotal', label: 'Subtotal (VT)' },
-          { key: 'tax', label: 'VAT 15% (VT)' }, { key: 'total', label: 'Total (VT)' },
-          { key: 'rate', label: 'VAT Rate' },
-        ]
-        const supplierColumns = [
-          { key: 'date', label: 'Date' }, { key: 'supplier', label: 'Supplier' },
-          { key: 'description', label: 'Description' }, { key: 'category', label: 'Category' },
-          { key: 'amount_ex_vat', label: 'Ex-VAT (VT)' }, { key: 'vat', label: 'Input VAT (VT)' },
-          { key: 'amount', label: 'Total (VT)' }, { key: 'ref', label: 'Reference' },
-        ]
-        const configs = {
-          revenue: {
-            title: `Revenue Report — ${periodLabel}`, columns: revenueColumns,
-            onExport: (fmt, sel) => {
-              if (fmt === 'pdf') { printReport(); return }
-              const cols = revenueColumns.filter(c => sel.has(c.key))
-              const dlRows = [
-                ['Malakesa Transfer and Tour - Revenue Report'],
-                ['Period:', periodLabel, 'Total Invoiced:', totalInv, 'Collected:', totalCol, 'Outstanding:', outstanding],
-                [], cols.map(c => c.label),
-                ...fi.map(inv => cols.map(c => {
-                  if (c.key === 'balance') return getBalance(inv, payments)
-                  if (c.key === 'status') return getStatus(inv, payments)
-                  return inv[c.key] ?? ''
-                }))
-              ]
-              downloadCSV('Malakesa_Revenue_' + periodLabel.replace(/\s/g,'_') + '.csv', dlRows)
-            }
-          },
-          vat: {
-            title: `VAT Return — ${vatMonthLabel}`, columns: vatColumns,
-            onExport: (fmt, sel) => {
-              if (fmt === 'pdf') { printVatReturn(); return }
-              const cols = vatColumns.filter(c => sel.has(c.key))
-              const dlRows = [
-                ['Malakesa Transfer and Tour - VAT Return'],
-                ['Period:', vatMonthLabel, 'TIN:', '445579', 'Net VAT Payable:', Math.max(0, vatTotalTax - vatInputTax)],
-                [], ['OUTPUT TAX - INVOICES'], cols.map(c => c.label),
-                ...vatInvoices.map(inv => cols.map(c => {
-                  if (c.key === 'rate') return Number(inv.tax) > 0 ? '15%' : 'Zero-rated'
-                  return inv[c.key] ?? ''
-                })),
-                [], ['INPUT TAX - PURCHASES'],
-                ['Date','Supplier','Description','Ex-VAT','Input VAT','Total'],
-                ...vatPurchases.map(p => [p.date,p.supplier,p.description||'',p.amount_ex_vat||0,p.vat||0,p.amount])
-              ]
-              downloadCSV('Malakesa_VAT_' + vatMonthLabel.replace(/\s/g,'_') + '.csv', dlRows)
-            }
-          },
-          suppliers: {
-            title: `Purchases by Supplier — ${supplierPeriodLabel}`, columns: supplierColumns,
-            onExport: (fmt, sel) => {
-              if (fmt === 'pdf') { printSupplierReport(); return }
-              const cols = supplierColumns.filter(c => sel.has(c.key))
-              const dlRows = [
-                ['Malakesa Transfer and Tour - Purchases by Supplier'],
-                ['Period:', supplierPeriodLabel, 'Suppliers:', supplierRows.length, 'Total spend:', supplierRows.reduce((s,r)=>s+r.total,0)],
-                [], ['SUPPLIER SUMMARY'],
-                ['Supplier','Purchases','Ex-VAT (VT)','Input VAT (VT)','Total (VT)'],
-                ...supplierRows.map(r => [r.name,r.count,r.exvat,r.vat,r.total]),
-                [], ['ALL PURCHASES'], cols.map(c => c.label),
-                ...fPurchases.map(p => cols.map(c => p[c.key] ?? ''))
-              ]
-              downloadCSV('Malakesa_Purchases_' + supplierPeriodLabel.replace(/\s/g,'_') + '.csv', dlRows)
-            }
-          },
-        }
-        const cfg = configs[showExport]
-        if (!cfg) return null
-        return <ExportModal title={cfg.title} columns={cfg.columns} onExport={cfg.onExport} onClose={() => setShowExport(false)} />
-      })()}
     </>
   )
 }
@@ -2127,6 +2045,88 @@ function Reports({ invoices, payments, purchases }) {
         </>}
 
       </div>
+
+      {/* Reports Export Modal */}
+      {showExport && (() => {
+        const revenueColumns = [
+          { key: 'number', label: 'Invoice #' }, { key: 'date', label: 'Issue Date' },
+          { key: 'client_name', label: 'Client' }, { key: 'subtotal', label: 'Subtotal (VT)' },
+          { key: 'tax', label: 'VAT (VT)' }, { key: 'total', label: 'Total (VT)' },
+          { key: 'balance', label: 'Balance (VT)' }, { key: 'status', label: 'Status' },
+        ]
+        const vatColumns = [
+          { key: 'number', label: 'Invoice #' }, { key: 'date', label: 'Date' },
+          { key: 'client_name', label: 'Client' }, { key: 'subtotal', label: 'Subtotal (VT)' },
+          { key: 'tax', label: 'VAT 15% (VT)' }, { key: 'total', label: 'Total (VT)' },
+          { key: 'rate', label: 'VAT Rate' },
+        ]
+        const supplierColumns = [
+          { key: 'date', label: 'Date' }, { key: 'supplier', label: 'Supplier' },
+          { key: 'description', label: 'Description' }, { key: 'category', label: 'Category' },
+          { key: 'amount_ex_vat', label: 'Ex-VAT (VT)' }, { key: 'vat', label: 'Input VAT (VT)' },
+          { key: 'amount', label: 'Total (VT)' }, { key: 'ref', label: 'Reference' },
+        ]
+        const configs = {
+          revenue: {
+            title: `Revenue Report — ${periodLabel}`, columns: revenueColumns,
+            onExport: (fmt, sel) => {
+              if (fmt === 'pdf') { printReport(); return }
+              const cols = revenueColumns.filter(c => sel.has(c.key))
+              const dlRows = [
+                ['Malakesa Transfer and Tour - Revenue Report'],
+                ['Period:', periodLabel, 'Total Invoiced:', totalInv, 'Collected:', totalCol, 'Outstanding:', outstanding],
+                [], cols.map(c => c.label),
+                ...fi.map(inv => cols.map(c => {
+                  if (c.key === 'balance') return getBalance(inv, payments)
+                  if (c.key === 'status') return getStatus(inv, payments)
+                  return inv[c.key] ?? ''
+                }))
+              ]
+              downloadCSV('Malakesa_Revenue_' + periodLabel.replace(/\s/g,'_') + '.csv', dlRows)
+            }
+          },
+          vat: {
+            title: `VAT Return — ${vatMonthLabel}`, columns: vatColumns,
+            onExport: (fmt, sel) => {
+              if (fmt === 'pdf') { printVatReturn(); return }
+              const cols = vatColumns.filter(c => sel.has(c.key))
+              const dlRows = [
+                ['Malakesa Transfer and Tour - VAT Return'],
+                ['Period:', vatMonthLabel, 'TIN:', '445579', 'Net VAT Payable:', Math.max(0, vatTotalTax - vatInputTax)],
+                [], ['OUTPUT TAX - INVOICES'], cols.map(c => c.label),
+                ...vatInvoices.map(inv => cols.map(c => {
+                  if (c.key === 'rate') return Number(inv.tax) > 0 ? '15%' : 'Zero-rated'
+                  return inv[c.key] ?? ''
+                })),
+                [], ['INPUT TAX - PURCHASES'],
+                ['Date','Supplier','Description','Ex-VAT','Input VAT','Total'],
+                ...vatPurchases.map(p => [p.date,p.supplier,p.description||'',p.amount_ex_vat||0,p.vat||0,p.amount])
+              ]
+              downloadCSV('Malakesa_VAT_' + vatMonthLabel.replace(/\s/g,'_') + '.csv', dlRows)
+            }
+          },
+          suppliers: {
+            title: `Purchases by Supplier — ${supplierPeriodLabel}`, columns: supplierColumns,
+            onExport: (fmt, sel) => {
+              if (fmt === 'pdf') { printSupplierReport(); return }
+              const cols = supplierColumns.filter(c => sel.has(c.key))
+              const dlRows = [
+                ['Malakesa Transfer and Tour - Purchases by Supplier'],
+                ['Period:', supplierPeriodLabel, 'Suppliers:', supplierRows.length, 'Total spend:', supplierRows.reduce((s,r)=>s+r.total,0)],
+                [], ['SUPPLIER SUMMARY'],
+                ['Supplier','Purchases','Ex-VAT (VT)','Input VAT (VT)','Total (VT)'],
+                ...supplierRows.map(r => [r.name,r.count,r.exvat,r.vat,r.total]),
+                [], ['ALL PURCHASES'], cols.map(c => c.label),
+                ...fPurchases.map(p => cols.map(c => p[c.key] ?? ''))
+              ]
+              downloadCSV('Malakesa_Purchases_' + supplierPeriodLabel.replace(/\s/g,'_') + '.csv', dlRows)
+            }
+          },
+        }
+        const cfg = configs[showExport]
+        if (!cfg) return null
+        return <ExportModal title={cfg.title} columns={cfg.columns} onExport={cfg.onExport} onClose={() => setShowExport(false)} />
+      })()}
     </>
   )
 }
