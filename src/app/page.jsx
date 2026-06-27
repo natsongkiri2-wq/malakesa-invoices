@@ -567,6 +567,8 @@ function Invoices({ invoices, payments, reload, setModal, setSelected }) {
   const [filterStatus, setFilterStatus] = useState('')
   const [filterMonth, setFilterMonth] = useState('')
   const [search, setSearch] = useState('')
+  const [sending, setSending] = useState(null)
+  const [notice, setNotice] = useState('')
   const searchRef = useRef(null)
   useEffect(() => {
     const handler = (e) => {
@@ -608,6 +610,29 @@ function Invoices({ invoices, payments, reload, setModal, setSelected }) {
 
   const clearFilters = () => { setFilterClient(''); setFilterStatus(''); setFilterMonth(''); setSearch('') }
   const hasFilters = filterClient || filterStatus || filterMonth || search
+
+  const sendReminder = async (inv) => {
+    setSending(inv.id)
+    try {
+      const res = await fetch('/api/send-reminder', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ invoiceId: inv.id }) })
+      if (res.ok) { setNotice('Reminder sent to ' + inv.client_name); setTimeout(() => setNotice(''), 4000); setSending(null); return }
+    } catch(e) {}
+    const bal = getBalance(inv, payments)
+    const subject = encodeURIComponent('Payment Reminder — ' + inv.number)
+    const body = encodeURIComponent('Dear ' + inv.client_name + ',\n\nThis is a friendly reminder that invoice ' + inv.number + ' for VT ' + Number(inv.total).toLocaleString() + ' has an outstanding balance of VT ' + Number(bal).toLocaleString() + ', which was due on ' + fmtDate(inv.due_date) + '.\n\nPlease arrange payment at your earliest convenience.\n\nThank you,\nMalakesa Transfer and Tour\nTel: +678 22712 | accounts@malakesa.vu')
+    window.open('mailto:' + (inv.client_email || '') + '?subject=' + subject + '&body=' + body, '_blank')
+    setNotice('Email app opened for ' + inv.client_name)
+    setTimeout(() => setNotice(''), 4000)
+    setSending(null)
+  }
+
+  const sendAllOverdueReminders = async () => {
+    const overdue = filtered.filter(i => getStatus(i, payments) === 'overdue')
+    const withEmail = overdue.filter(i => i.client_email)
+    if (withEmail.length === 0) { alert('No email addresses on overdue invoices. Add client emails in the Clients page.'); return }
+    if (!confirm('Send payment reminders to ' + withEmail.length + ' client(s) with overdue invoices?')) return
+    for (const inv of withEmail) { await sendReminder(inv) }
+  }
 
   const handleDelete = async (id) => {
     if (!confirm('Delete this invoice?')) return
@@ -735,6 +760,26 @@ function Invoices({ invoices, payments, reload, setModal, setSelected }) {
             {filtered.length} invoice{filtered.length !== 1 ? 's' : ''} &nbsp;|&nbsp; {fmt(totalFiltered)} invoiced &nbsp;|&nbsp; <span style={{ color: totalBalance > 0 ? '#D85A30' : '#3B6D11' }}>{fmt(totalBalance)} outstanding</span>
           </div>
         </div>
+        {/* Notice bar */}
+        {notice && (
+          <div style={{ background: '#EAF3DE', border: '0.5px solid #C0DD97', borderRadius: 8, padding: '10px 14px', marginBottom: 12, fontSize: 13, color: '#27500A', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <i className="ti ti-check"></i> {notice}
+          </div>
+        )}
+
+        {/* Overdue reminder bar */}
+        {filterStatus === 'overdue' && filtered.length > 0 && (
+          <div style={{ background: '#FCEBEB', border: '0.5px solid #F7C1C1', borderRadius: 8, padding: '10px 16px', marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+            <div style={{ fontSize: 13, color: '#791F1F' }}>
+              <i className="ti ti-alert-circle" style={{ marginRight: 6 }}></i>
+              <strong>{filtered.length}</strong> overdue invoice{filtered.length !== 1 ? 's' : ''} &nbsp;|&nbsp; <strong style={{ color: '#A32D2D' }}>{fmt(filtered.reduce((s,i) => s+getBalance(i,payments), 0))}</strong> total outstanding
+            </div>
+            <button className="btn btn-sm" style={{ background: '#A32D2D', borderColor: '#7A1A1A', color: '#fff', fontWeight: 600 }} onClick={sendAllOverdueReminders}>
+              <i className="ti ti-mail"></i> Email All Overdue Clients
+            </button>
+          </div>
+        )}
+
         <Card style={{ padding: 0, overflow: 'hidden' }}>
           {filtered.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '48px 20px', color: '#666' }}>
@@ -761,6 +806,7 @@ function Invoices({ invoices, payments, reload, setModal, setSelected }) {
                     <Td><div style={{ display: 'flex', gap: 5 }}>
                       <button className="btn btn-sm" onClick={() => { setSelected(inv); setModal('viewInvoice') }} title="View"><i className="ti ti-eye"></i></button>
                       {bal > 0 && <button className="btn btn-sm" style={{ borderColor: '#3B6D11', color: '#3B6D11' }} onClick={() => { setSelected(inv); setModal('payment') }} title="Record payment"><i className="ti ti-cash"></i></button>}
+                      {(st === 'overdue' || st === 'unpaid') && <button className="btn btn-sm" style={{ borderColor: '#8B6914', color: '#8B6914' }} onClick={() => sendReminder(inv)} disabled={sending === inv.id} title="Send reminder email"><i className="ti ti-mail"></i> {sending === inv.id ? '...' : 'Remind'}</button>}
                       <button className="btn btn-sm" style={{ borderColor: '#A32D2D', color: '#A32D2D' }} onClick={() => handleDelete(inv.id)} title="Delete"><i className="ti ti-trash"></i></button>
                     </div></Td>
                   </tr>
