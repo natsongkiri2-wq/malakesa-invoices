@@ -15,6 +15,16 @@ const getBalance = (inv, payments) => {
   return Math.max(0, Number(inv.total) - paid)
 }
 
+// Shared CSV/Excel download utility
+const downloadCSV = (filename, rows) => {
+  const esc = v => { const s = String(v == null ? '' : v); return s.includes(',') || s.includes('"') || s.includes('\n') ? '"' + s.replace(/"/g, '""') + '"' : s }
+  const csv = rows.map(r => r.map(esc).join(',')).join('\n')
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a'); a.href = url; a.download = filename; a.click()
+  URL.revokeObjectURL(url)
+}
+
 const getStatus = (inv, payments) => {
   const paid = (payments || []).filter(p => p.invoice_id === inv.id).reduce((s, p) => s + Number(p.amount), 0)
   if (paid >= Number(inv.total) && Number(inv.total) > 0) return 'paid'
@@ -473,6 +483,87 @@ function Dashboard({ invoices, payments, purchases, loading, setPage, setModal }
 }
 
 // ── Invoices ──────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════
+// ExportModal - reusable export dialog with column selection
+// ═══════════════════════════════════════════════════════════
+function ExportModal({ title, columns, onExport, onClose }) {
+  const [selected, setSelected] = useState(new Set(columns.map(c => c.key)))
+  const [format, setFormat] = useState('excel')
+  const toggle = (key) => setSelected(s => { const n = new Set(s); n.has(key) ? n.delete(key) : n.add(key); return n })
+  const toggleAll = () => setSelected(selected.size === columns.length ? new Set() : new Set(columns.map(c => c.key)))
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+      <div style={{ background: '#fff', borderRadius: 12, width: '100%', maxWidth: 480, boxShadow: '0 8px 40px rgba(0,0,0,0.25)', overflow: 'hidden' }}>
+        {/* Header */}
+        <div style={{ background: 'linear-gradient(135deg,#1A0D06,#3D2214,#5C3D0A)', padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: 10, letterSpacing: 2, textTransform: 'uppercase' }}>Export</div>
+            <div style={{ color: '#FFD700', fontSize: 16, fontWeight: 700, marginTop: 2 }}>{title}</div>
+          </div>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#fff', fontSize: 22, cursor: 'pointer', opacity: 0.7 }}>&times;</button>
+        </div>
+
+        <div style={{ padding: 20 }}>
+          {/* Format selector */}
+          <div style={{ marginBottom: 18 }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: '#555', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Export format</div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              {[
+                { key: 'excel', label: 'Excel / CSV', icon: 'ti-file-spreadsheet', color: '#1D6F42' },
+                { key: 'pdf', label: 'PDF', icon: 'ti-file-type-pdf', color: '#A32D2D' },
+              ].map(f => (
+                <button key={f.key} onClick={() => setFormat(f.key)} style={{ flex: 1, padding: '10px 14px', borderRadius: 8, border: format === f.key ? `2px solid ${f.color}` : '1.5px solid #e0e0e0', background: format === f.key ? f.color + '10' : '#fff', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                  <i className={`ti ${f.icon}`} style={{ fontSize: 22, color: format === f.key ? f.color : '#aaa' }}></i>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: format === f.key ? f.color : '#888' }}>{f.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Column selector — only for Excel */}
+          {format === 'excel' && (
+            <div style={{ marginBottom: 18 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: '#555', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Select columns</div>
+                <button onClick={toggleAll} style={{ fontSize: 11, color: '#8B6914', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>
+                  {selected.size === columns.length ? 'Deselect all' : 'Select all'}
+                </button>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+                {columns.map(col => (
+                  <label key={col.key} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', borderRadius: 7, border: selected.has(col.key) ? '1.5px solid #8B6914' : '1.5px solid #e0e0e0', background: selected.has(col.key) ? '#faf6ee' : '#fafafa', cursor: 'pointer', fontSize: 12 }}>
+                    <input type="checkbox" checked={selected.has(col.key)} onChange={() => toggle(col.key)} style={{ accentColor: '#8B6914' }} />
+                    <span style={{ fontWeight: selected.has(col.key) ? 600 : 400, color: selected.has(col.key) ? '#3D2214' : '#777' }}>{col.label}</span>
+                  </label>
+                ))}
+              </div>
+              <div style={{ fontSize: 11, color: '#aaa', marginTop: 8 }}>{selected.size} of {columns.length} columns selected</div>
+            </div>
+          )}
+
+          {format === 'pdf' && (
+            <div style={{ background: '#faf6ee', border: '0.5px solid #E8D5A3', borderRadius: 8, padding: '10px 14px', fontSize: 12, color: '#666', marginBottom: 18 }}>
+              <i className="ti ti-info-circle" style={{ color: '#8B6914', marginRight: 6 }}></i>
+              Opens a print-ready PDF preview. In the print dialog, choose <strong>"Save as PDF"</strong> as the printer destination.
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div style={{ padding: '12px 20px', borderTop: '0.5px solid rgba(0,0,0,0.09)', display: 'flex', justifyContent: 'flex-end', gap: 8, background: '#fafaf8' }}>
+          <button className="btn" onClick={onClose}>Cancel</button>
+          <button className="btn btn-primary" disabled={format === 'excel' && selected.size === 0} onClick={() => { onExport(format, selected); onClose() }}>
+            <i className={`ti ${format === 'excel' ? 'ti-download' : 'ti-printer'}`}></i>
+            {format === 'excel' ? ' Download Excel' : ' Open PDF'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+
 function Invoices({ invoices, payments, reload, setModal, setSelected }) {
   const [filterClient, setFilterClient] = useState('')
   const [filterStatus, setFilterStatus] = useState('')
@@ -527,9 +618,76 @@ function Invoices({ invoices, payments, reload, setModal, setSelected }) {
 
   const selectStyle = { padding: '6px 10px', borderRadius: 8, border: '0.5px solid #8B6914', fontSize: 13, fontFamily: 'inherit', background: '#8B6914', color: '#fff', fontWeight: 500, cursor: 'pointer' }
 
+  // Export
+  const [showExport, setShowExport] = useState(false)
+  const invoiceColumns = [
+    { key: 'number', label: 'Invoice #' },
+    { key: 'date', label: 'Issue Date' },
+    { key: 'due_date', label: 'Due Date' },
+    { key: 'client_name', label: 'Client' },
+    { key: 'subtotal', label: 'Subtotal (VT)' },
+    { key: 'tax', label: 'VAT (VT)' },
+    { key: 'total', label: 'Total (VT)' },
+    { key: 'balance', label: 'Balance (VT)' },
+    { key: 'status', label: 'Status' },
+    { key: 'notes', label: 'Notes' },
+  ]
+  const handleInvoiceExport = (format, selected) => {
+    if (format === 'pdf') {
+      const w = window.open('', '_blank')
+      if (!w) { alert('Please allow popups.'); return }
+      const now = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+      const filterDesc = [filterClient && `Client: ${filterClient}`, filterStatus && `Status: ${filterStatus}`, filterMonth && `Month: ${filterMonth}`, search && `Search: ${search}`].filter(Boolean).join(' | ') || 'All invoices'
+      const rows = filtered.map(inv => {
+        const st = getStatus(inv, payments); const bal = getBalance(inv, payments)
+        const stColor = st === 'paid' ? '#3B6D11' : st === 'overdue' ? '#A32D2D' : '#D85A30'
+        return `<tr><td>${inv.number}</td><td>${fmtDate(inv.date)}</td><td>${inv.client_name}</td><td style='text-align:right'>${fmt(inv.subtotal||0)}</td><td style='text-align:right'>${fmt(inv.tax||0)}</td><td style='text-align:right;font-weight:600'>${fmt(inv.total)}</td><td style='text-align:right;color:${bal>0?'#D85A30':'#3B6D11'}'>${fmt(bal)}</td><td><span style='background:${stColor}20;color:${stColor};padding:2px 8px;border-radius:99px;font-size:11px;font-weight:600'>${st}</span></td></tr>`
+      }).join('')
+      w.document.write(`<!DOCTYPE html><html><head><title>Invoices Export</title><style>
+        body{font-family:Arial,sans-serif;color:#222;font-size:13px;margin:0}
+        .rpt-hdr{display:none} @page{margin:18mm 14mm 20mm 14mm;size:A4}
+        table{width:100%;border-collapse:collapse;font-size:12px}
+        thead{display:table-header-group} th{background:#E8D5A3;padding:8px 10px;text-align:left;font-size:11px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+        td{padding:8px 10px;border-bottom:0.5px solid #eee} h1{color:#8B6914;font-size:18px;margin:0 0 4px} .sub{color:#888;font-size:12px;margin-bottom:20px}
+        .noprint{background:#333;color:#fff;padding:10px 20px;display:flex;justify-content:space-between;align-items:center}
+        .printbtn{background:#8B6914;color:#fff;border:none;padding:7px 18px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600}
+        @media print{.noprint{display:none}.rpt-hdr{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #8B6914;padding:6px 40px;position:fixed;top:0;left:0;right:0;background:#fff;z-index:999} body{padding-top:42px}}
+      </style></head><body>
+      <div class='rpt-hdr'><span style='font-size:12px;font-weight:700;color:#3D2214'>Malakesa Transfer &amp; Tour — Invoices Export — ${filterDesc}</span><span style='font-size:10px;color:#888'>${now}</span></div>
+      <div class='noprint'><span>Invoices Export — ${filterDesc}</span><button class='printbtn' onclick='window.print()'>🖨️ Print / Save PDF</button></div>
+      <div style='padding:20px 40px'><h1>Malakesa Transfer &amp; Tour</h1><div class='sub'>Invoices Export &nbsp;|&nbsp; ${filterDesc} &nbsp;|&nbsp; ${now}<br>${filtered.length} invoice(s) &nbsp;|&nbsp; Total: VT ${Number(totalFiltered).toLocaleString()} &nbsp;|&nbsp; Outstanding: VT ${Number(totalBalance).toLocaleString()}</div>
+      <table><thead><tr><th>Invoice #</th><th>Issue Date</th><th>Client</th><th style='text-align:right'>Subtotal</th><th style='text-align:right'>VAT</th><th style='text-align:right'>Total</th><th style='text-align:right'>Balance</th><th>Status</th></tr></thead><tbody>${rows}</tbody>
+      <tr style='background:#E8D5A3;font-weight:700'><td colspan='5' style='padding:9px 10px'>TOTAL (${filtered.length} invoices)</td><td style='padding:9px 10px;text-align:right'>VT ${Number(totalFiltered).toLocaleString()}</td><td style='padding:9px 10px;text-align:right'>VT ${Number(totalBalance).toLocaleString()} owing</td><td></td></tr>
+      </table></div><script>window.onload=()=>window.print()<\/script></body></html>`)
+      w.document.close()
+      return
+    }
+    // Excel/CSV export
+    const cols = invoiceColumns.filter(c => selected.has(c.key))
+    const header = ['Malakesa Transfer and Tour - Invoice Export']
+    const filterDesc = [filterClient && `Client: ${filterClient}`, filterStatus && `Status: ${filterStatus}`, filterMonth && `Month: ${filterMonth}`].filter(Boolean).join(' | ') || 'All'
+    const rows = [
+      header,
+      ['Filters:', filterDesc],
+      ['Generated:', new Date().toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' })],
+      ['Total invoices:', filtered.length],
+      [],
+      cols.map(c => c.label),
+      ...filtered.map(inv => cols.map(c => {
+        if (c.key === 'balance') return getBalance(inv, payments)
+        if (c.key === 'status') return getStatus(inv, payments)
+        if (c.key === 'date' || c.key === 'due_date') return inv[c.key] || ''
+        return inv[c.key] ?? ''
+      }))
+    ]
+    const filterTag = filterDesc.replace(/[^a-zA-Z0-9]/g, '_').slice(0, 30)
+    downloadCSV(`Malakesa_Invoices_${filterTag}.csv`, rows)
+  }
+
   return (
     <>
       <Topbar title="Invoices">
+        <button className="btn btn-sm" style={{ background: '#1D6F42', borderColor: '#155233', color: '#fff', fontWeight: 500 }} onClick={() => setShowExport(true)}><i className="ti ti-download"></i> Export</button>
         <button className="btn btn-primary" onClick={() => setModal('newInvoice')}><i className="ti ti-plus"></i> New Invoice</button>
       </Topbar>
       <div style={{ padding: 20 }}>
@@ -600,6 +758,7 @@ function Invoices({ invoices, payments, reload, setModal, setSelected }) {
           )}
         </Card>
       </div>
+      {showExport && <ExportModal title="Invoices" columns={invoiceColumns} onExport={handleInvoiceExport} onClose={() => setShowExport(false)} />}
     </>
   )
 }
@@ -799,6 +958,88 @@ function Payments({ payments, invoices, reload, setModal, setSelected }) {
           )}
         </Card>
       </div>
+
+      {/* Export Modal */}
+      {showExport && (() => {
+        const revenueColumns = [
+          { key: 'number', label: 'Invoice #' }, { key: 'date', label: 'Issue Date' },
+          { key: 'client_name', label: 'Client' }, { key: 'subtotal', label: 'Subtotal (VT)' },
+          { key: 'tax', label: 'VAT (VT)' }, { key: 'total', label: 'Total (VT)' },
+          { key: 'balance', label: 'Balance (VT)' }, { key: 'status', label: 'Status' },
+        ]
+        const vatColumns = [
+          { key: 'number', label: 'Invoice #' }, { key: 'date', label: 'Date' },
+          { key: 'client_name', label: 'Client' }, { key: 'subtotal', label: 'Subtotal (VT)' },
+          { key: 'tax', label: 'VAT 15% (VT)' }, { key: 'total', label: 'Total (VT)' },
+          { key: 'rate', label: 'VAT Rate' },
+        ]
+        const supplierColumns = [
+          { key: 'date', label: 'Date' }, { key: 'supplier', label: 'Supplier' },
+          { key: 'description', label: 'Description' }, { key: 'category', label: 'Category' },
+          { key: 'amount_ex_vat', label: 'Ex-VAT (VT)' }, { key: 'vat', label: 'Input VAT (VT)' },
+          { key: 'amount', label: 'Total (VT)' }, { key: 'ref', label: 'Reference' },
+        ]
+        const configs = {
+          revenue: {
+            title: `Revenue Report — ${periodLabel}`, columns: revenueColumns,
+            onExport: (fmt, sel) => {
+              if (fmt === 'pdf') { printReport(); return }
+              const cols = revenueColumns.filter(c => sel.has(c.key))
+              const dlRows = [
+                ['Malakesa Transfer and Tour - Revenue Report'],
+                ['Period:', periodLabel, 'Total Invoiced:', totalInv, 'Collected:', totalCol, 'Outstanding:', outstanding],
+                [], cols.map(c => c.label),
+                ...fi.map(inv => cols.map(c => {
+                  if (c.key === 'balance') return getBalance(inv, payments)
+                  if (c.key === 'status') return getStatus(inv, payments)
+                  return inv[c.key] ?? ''
+                }))
+              ]
+              downloadCSV('Malakesa_Revenue_' + periodLabel.replace(/\s/g,'_') + '.csv', dlRows)
+            }
+          },
+          vat: {
+            title: `VAT Return — ${vatMonthLabel}`, columns: vatColumns,
+            onExport: (fmt, sel) => {
+              if (fmt === 'pdf') { printVatReturn(); return }
+              const cols = vatColumns.filter(c => sel.has(c.key))
+              const dlRows = [
+                ['Malakesa Transfer and Tour - VAT Return'],
+                ['Period:', vatMonthLabel, 'TIN:', '445579', 'Net VAT Payable:', Math.max(0, vatTotalTax - vatInputTax)],
+                [], ['OUTPUT TAX - INVOICES'], cols.map(c => c.label),
+                ...vatInvoices.map(inv => cols.map(c => {
+                  if (c.key === 'rate') return Number(inv.tax) > 0 ? '15%' : 'Zero-rated'
+                  return inv[c.key] ?? ''
+                })),
+                [], ['INPUT TAX - PURCHASES'],
+                ['Date','Supplier','Description','Ex-VAT','Input VAT','Total'],
+                ...vatPurchases.map(p => [p.date,p.supplier,p.description||'',p.amount_ex_vat||0,p.vat||0,p.amount])
+              ]
+              downloadCSV('Malakesa_VAT_' + vatMonthLabel.replace(/\s/g,'_') + '.csv', dlRows)
+            }
+          },
+          suppliers: {
+            title: `Purchases by Supplier — ${supplierPeriodLabel}`, columns: supplierColumns,
+            onExport: (fmt, sel) => {
+              if (fmt === 'pdf') { printSupplierReport(); return }
+              const cols = supplierColumns.filter(c => sel.has(c.key))
+              const dlRows = [
+                ['Malakesa Transfer and Tour - Purchases by Supplier'],
+                ['Period:', supplierPeriodLabel, 'Suppliers:', supplierRows.length, 'Total spend:', supplierRows.reduce((s,r)=>s+r.total,0)],
+                [], ['SUPPLIER SUMMARY'],
+                ['Supplier','Purchases','Ex-VAT (VT)','Input VAT (VT)','Total (VT)'],
+                ...supplierRows.map(r => [r.name,r.count,r.exvat,r.vat,r.total]),
+                [], ['ALL PURCHASES'], cols.map(c => c.label),
+                ...fPurchases.map(p => cols.map(c => p[c.key] ?? ''))
+              ]
+              downloadCSV('Malakesa_Purchases_' + supplierPeriodLabel.replace(/\s/g,'_') + '.csv', dlRows)
+            }
+          },
+        }
+        const cfg = configs[showExport]
+        if (!cfg) return null
+        return <ExportModal title={cfg.title} columns={cfg.columns} onExport={cfg.onExport} onClose={() => setShowExport(false)} />
+      })()}
     </>
   )
 }
@@ -947,6 +1188,7 @@ function Unpaid({ invoices, payments, reload, setModal, setSelected }) {
 // ── Reports ───────────────────────────────────────────────
 function Reports({ invoices, payments, purchases }) {
   const [tab, setTab] = useState('revenue') // 'revenue' | 'vat' | 'suppliers'
+  const [showExport, setShowExport] = useState(false)
   const [period, setPeriod] = useState('all')
   const [revenueMonth, setRevenueMonth] = useState(new Date().toISOString().slice(0, 7))
   const [filterClient, setFilterClient] = useState('')
@@ -1561,17 +1803,11 @@ function Reports({ invoices, payments, purchases }) {
             {period === 'specific' && (
               <MonthYearPicker value={revenueMonth} onChange={setRevenueMonth} accentColor="#8B6914" />
             )}
-            <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
-              <button className="btn btn-sm" style={{ background: '#1D6F42', borderColor: '#155233', color: '#fff', fontWeight: 500 }} onClick={exportRevenueExcel}><i className="ti ti-file-spreadsheet"></i> Excel</button>
-              <button className="btn btn-sm" style={{ background: '#8B6914', borderColor: '#6B5010', color: '#fff', fontWeight: 500 }} onClick={printReport}><i className="ti ti-printer"></i> PDF</button>
-            </div>
+            <button className="btn btn-sm" style={{ marginLeft: 'auto', background: '#1D6F42', borderColor: '#155233', color: '#fff', fontWeight: 500 }} onClick={() => setShowExport('revenue')}><i className="ti ti-download"></i> Export</button>
           </>}
           {tab === 'vat' && <>
             <MonthYearPicker value={vatMonth} onChange={setVatMonth} accentColor="#8B6914" />
-            <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
-              <button className="btn btn-sm" style={{ background: '#1D6F42', borderColor: '#155233', color: '#fff', fontWeight: 500 }} onClick={exportVatExcel}><i className="ti ti-file-spreadsheet"></i> Excel</button>
-              <button className="btn btn-sm" style={{ background: '#2E7D2E', borderColor: '#1A4D1A', color: '#fff', fontWeight: 500 }} onClick={printVatReturn}><i className="ti ti-printer"></i> PDF</button>
-            </div>
+            <button className="btn btn-sm" style={{ marginLeft: 'auto', background: '#1D6F42', borderColor: '#155233', color: '#fff', fontWeight: 500 }} onClick={() => setShowExport('vat')}><i className="ti ti-download"></i> Export</button>
           </>}
           {tab === 'suppliers' && <>
             <select value={supplierPeriod} onChange={e => setSupplierPeriod(e.target.value)} style={{ padding: '6px 10px', borderRadius: 8, border: '0.5px solid #8B6914', fontSize: 13, fontFamily: 'inherit', background: '#8B6914', color: '#fff', fontWeight: 500, cursor: 'pointer' }}>
@@ -1589,10 +1825,7 @@ function Reports({ invoices, payments, purchases }) {
               <option value="count">Sort: Most purchases</option>
               <option value="name">Sort: Name (A-Z)</option>
             </select>
-            <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
-              <button className="btn btn-sm" style={{ background: '#1D6F42', borderColor: '#155233', color: '#fff', fontWeight: 500 }} onClick={exportSupplierExcel}><i className="ti ti-file-spreadsheet"></i> Excel</button>
-              <button className="btn btn-sm" style={{ background: '#8B6914', borderColor: '#6B5010', color: '#fff', fontWeight: 500 }} onClick={printSupplierReport}><i className="ti ti-printer"></i> PDF</button>
-            </div>
+            <button className="btn btn-sm" style={{ background: '#1D6F42', borderColor: '#155233', color: '#fff', fontWeight: 500, marginLeft: 'auto' }} onClick={() => setShowExport('suppliers')}><i className="ti ti-download"></i> Export</button>
           </>}
         </div>
       </div>
@@ -1934,10 +2167,67 @@ function Purchases({ purchases, suppliers, customCategories, reload, setModal })
 
   const selectStyle = { padding: '6px 10px', borderRadius: 8, border: '0.5px solid #8B6914', fontSize: 13, fontFamily: 'inherit', background: '#8B6914', color: '#fff', fontWeight: 500, cursor: 'pointer' }
 
+  // Export
+  const [showExport, setShowExport] = useState(false)
+  const purchaseColumns = [
+    { key: 'date', label: 'Date' },
+    { key: 'supplier', label: 'Supplier' },
+    { key: 'description', label: 'Description' },
+    { key: 'category', label: 'Category' },
+    { key: 'amount_ex_vat', label: 'Ex-VAT (VT)' },
+    { key: 'vat', label: 'VAT (VT)' },
+    { key: 'amount', label: 'Total (VT)' },
+    { key: 'ref', label: 'Ref / PO #' },
+  ]
+  const handlePurchaseExport = (format, selected) => {
+    const filterDesc = [filterCategory && `Category: ${filterCategory}`, filterMonth && `Month: ${filterMonth}`, search && `Search: ${search}`].filter(Boolean).join(' | ') || 'All purchases'
+    if (format === 'pdf') {
+      const w = window.open('', '_blank')
+      if (!w) { alert('Please allow popups.'); return }
+      const now = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+      const rows = filtered.map(p =>
+        `<tr><td>${fmtDate(p.date)}</td><td><strong>${p.supplier}</strong></td><td style='color:#555'>${p.description||'—'}</td><td><span style='background:#E8D5A320;padding:2px 7px;border-radius:99px;font-size:11px'>${p.category||'Other'}</span></td><td style='text-align:right'>${fmt(p.amount_ex_vat||0)}</td><td style='text-align:right;color:#2E7D2E'>${Number(p.vat)>0?fmt(p.vat):'Nil'}</td><td style='text-align:right;font-weight:600'>${fmt(p.amount)}</td><td style='color:#999;font-size:12px'>${p.ref||'—'}</td></tr>`
+      ).join('')
+      w.document.write(`<!DOCTYPE html><html><head><title>Purchases Export</title><style>
+        body{font-family:Arial,sans-serif;color:#222;font-size:12px;margin:0}
+        .rpt-hdr{display:none} @page{margin:15mm 10mm 18mm 10mm;size:A4 landscape}
+        table{width:100%;border-collapse:collapse} thead{display:table-header-group}
+        th{background:#E8D5A3;padding:7px 8px;text-align:left;font-size:10px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+        td{padding:7px 8px;border-bottom:0.5px solid #eee;font-size:11px}
+        h1{color:#8B6914;font-size:18px;margin:0 0 4px} .sub{color:#888;font-size:12px;margin-bottom:20px}
+        .noprint{background:#333;color:#fff;padding:10px 20px;display:flex;justify-content:space-between;align-items:center}
+        .printbtn{background:#8B6914;color:#fff;border:none;padding:7px 18px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600}
+        @media print{.noprint{display:none}.rpt-hdr{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #8B6914;padding:6px 30px;position:fixed;top:0;left:0;right:0;background:#fff;z-index:999} body{padding-top:42px}}
+      </style></head><body>
+      <div class='rpt-hdr'><span style='font-size:12px;font-weight:700;color:#3D2214'>Malakesa Transfer &amp; Tour — Purchases — ${filterDesc}</span><span style='font-size:10px;color:#888'>${now}</span></div>
+      <div class='noprint'><span>Purchases Export — ${filterDesc}</span><button class='printbtn' onclick='window.print()'>🖨️ Print / Save PDF</button></div>
+      <div style='padding:20px 30px'><h1>Malakesa Transfer &amp; Tour</h1>
+      <div class='sub'>Purchases Export &nbsp;|&nbsp; ${filterDesc} &nbsp;|&nbsp; ${now}<br>${filtered.length} purchase(s) &nbsp;|&nbsp; Total: VT ${Number(totalAmount).toLocaleString()} &nbsp;|&nbsp; Input VAT: VT ${Number(totalVat).toLocaleString()}</div>
+      <table><thead><tr><th>Date</th><th>Supplier</th><th>Description</th><th>Category</th><th style='text-align:right'>Ex-VAT</th><th style='text-align:right'>VAT</th><th style='text-align:right'>Total</th><th>Ref</th></tr></thead><tbody>${rows}</tbody>
+      <tr style='background:#E8D5A3;font-weight:700'><td colspan='4' style='padding:8px'>TOTAL (${filtered.length})</td><td style='padding:8px;text-align:right'>VT ${Number(totalExVat).toLocaleString()}</td><td style='padding:8px;text-align:right;color:#2E7D2E'>VT ${Number(totalVat).toLocaleString()}</td><td style='padding:8px;text-align:right'>VT ${Number(totalAmount).toLocaleString()}</td><td></td></tr>
+      </table></div><script>window.onload=()=>window.print()<\/script></body></html>`)
+      w.document.close()
+      return
+    }
+    const cols = purchaseColumns.filter(c => selected.has(c.key))
+    const rows = [
+      ['Malakesa Transfer and Tour - Purchases Export'],
+      ['Filters:', filterDesc],
+      ['Generated:', new Date().toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' })],
+      [],
+      cols.map(c => c.label),
+      ...filtered.map(p => cols.map(c => p[c.key] ?? '')),
+      [],
+      ['TOTALS', '', '', '', totalExVat, totalVat, totalAmount, ''],
+    ]
+    downloadCSV(`Malakesa_Purchases_${(filterDesc).replace(/[^a-zA-Z0-9]/g,'_').slice(0,30)}.csv`, rows)
+  }
+
   return (
     <>
       <Topbar title="Purchases">
         <div style={{ display: 'flex', gap: 8 }}>
+          <button className="btn btn-sm" style={{ background: '#1D6F42', borderColor: '#155233', color: '#fff', fontWeight: 500 }} onClick={() => setShowExport(true)}><i className="ti ti-download"></i> Export</button>
           <button className="btn" style={{ background: '#fff', borderColor: 'rgba(139,105,20,0.4)', color: '#8B6914', fontWeight: 500 }} onClick={() => setModal('manageCategories')}><i className="ti ti-category-plus"></i> Manage Categories</button>
           <button className="btn btn-primary" onClick={() => setModal('newPurchase')}><i className="ti ti-plus"></i> Add Purchase</button>
         </div>
@@ -2071,6 +2361,7 @@ function Purchases({ purchases, suppliers, customCategories, reload, setModal })
           )}
         </Card>
       </div>
+      {showExport && <ExportModal title="Purchases" columns={purchaseColumns} onExport={handlePurchaseExport} onClose={() => setShowExport(false)} />}
     </>
   )
 }
