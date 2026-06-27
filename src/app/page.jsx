@@ -739,8 +739,8 @@ function Invoices({ invoices, payments, reload, setModal, setSelected }) {
                 const st = getStatus(inv, payments); const bal = getBalance(inv, payments)
                 return (
                   <tr key={inv.id} style={{ borderBottom: '0.5px solid rgba(0,0,0,0.09)' }}>
-                    <Td><strong style={{ background: q && inv.number?.toLowerCase().includes(q) ? '#FFF3CD' : 'transparent', borderRadius: 3, padding: q && inv.number?.toLowerCase().includes(q) ? '0 3px' : 0 }}>{inv.number}</strong></Td>
-                    <Td style={{ background: q && inv.client_name?.toLowerCase().includes(q) ? '#FFF3CD' : 'transparent', borderRadius: 3 }}>{inv.client_name}</Td>
+                    <Td><strong>{inv.number}</strong></Td>
+                    <Td>{inv.client_name}</Td>
                     <Td>{fmtDate(inv.date)}</Td>
                     <Td style={st === 'overdue' ? { color: '#A32D2D', fontWeight: 500 } : {}}>{fmtDate(inv.due_date)}</Td>
                     <Td>{fmt(inv.total)}</Td>
@@ -1082,8 +1082,8 @@ function Unpaid({ invoices, payments, reload, setModal, setSelected }) {
                 const st = getStatus(inv, payments)
                 return (
                   <tr key={inv.id} style={{ borderBottom: '0.5px solid rgba(0,0,0,0.09)' }}>
-                    <Td><strong style={{ background: q && inv.number?.toLowerCase().includes(q) ? '#FFF3CD' : 'transparent', borderRadius: 3, padding: q && inv.number?.toLowerCase().includes(q) ? '0 3px' : 0 }}>{inv.number}</strong></Td>
-                    <Td style={{ background: q && inv.client_name?.toLowerCase().includes(q) ? '#FFF3CD' : 'transparent', borderRadius: 3 }}>{inv.client_name}</Td>
+                    <Td><strong>{inv.number}</strong></Td>
+                    <Td>{inv.client_name}</Td>
                     <Td style={st === 'overdue' ? { color: '#A32D2D', fontWeight: 500 } : {}}>{fmtDate(inv.due_date)}</Td>
                     <Td style={{ fontWeight: 500 }}>{fmt(getBalance(inv, payments))}</Td>
                     <Td><Badge status={st} /></Td>
