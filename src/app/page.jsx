@@ -1853,6 +1853,67 @@ function Purchases({ purchases, suppliers, customCategories, reload, setModal })
           <StatCard label="Input VAT (claimable)" value={fmt(totalVat)} color="#2E7D2E" />
         </div>
 
+        {/* Budget Tracker */}
+        {(() => {
+          const now3 = new Date()
+          const thisMonthStr = now3.toISOString().slice(0, 7)
+          const thisQStart = new Date(now3.getFullYear(), Math.floor(now3.getMonth() / 3) * 3, 1)
+          const thisYearStr = String(now3.getFullYear())
+          const catsWithBudget = (customCategories || []).filter(c => c.budget && Number(c.budget) > 0)
+          if (catsWithBudget.length === 0) return null
+          const getSpend = (catName, period) => purchases.filter(p => {
+            if ((p.category || 'Other') !== catName || !p.date) return false
+            if (period === 'monthly') return p.date.startsWith(thisMonthStr)
+            if (period === 'quarterly') return new Date(p.date + 'T00:00:00') >= thisQStart
+            if (period === 'yearly') return p.date.startsWith(thisYearStr)
+            return false
+          }).reduce((s, p) => s + Number(p.amount || 0), 0)
+          return (
+            <Card style={{ padding: 0, overflow: 'hidden', marginBottom: 16 }}>
+              <div style={{ padding: '12px 20px', borderBottom: '0.5px solid rgba(0,0,0,0.09)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ fontWeight: 600, fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <i className="ti ti-chart-bar" style={{ color: '#8B6914' }}></i> Budget Tracker
+                </div>
+                <button className="btn btn-sm" style={{ fontSize: 11 }} onClick={() => setModal('manageCategories')}>Edit budgets</button>
+              </div>
+              <div style={{ padding: '16px 20px', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 20 }}>
+                {catsWithBudget.map(cat => {
+                  const period = cat.budget_period || 'monthly'
+                  const budget = Number(cat.budget)
+                  const spent = getSpend(cat.name, period)
+                  const pct = Math.min(100, budget > 0 ? Math.round((spent / budget) * 100) : 0)
+                  const remaining = budget - spent
+                  const isOver = spent > budget
+                  const isWarn = pct >= 80 && !isOver
+                  const barColor = isOver ? '#A32D2D' : isWarn ? '#D85A30' : '#3B6D11'
+                  const periodLabel = { monthly: 'This month', quarterly: 'This quarter', yearly: 'This year' }[period] || 'This month'
+                  return (
+                    <div key={cat.id}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4 }}>
+                        <span style={{ fontSize: 13, fontWeight: 600, color: '#3D2214' }}>{cat.name}</span>
+                        <span style={{ fontSize: 11, color: '#888' }}>{periodLabel}</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 6 }}>
+                        <span style={{ color: barColor, fontWeight: 600 }}>{fmt(spent)} spent</span>
+                        <span style={{ color: '#999' }}>of {fmt(budget)}</span>
+                      </div>
+                      <div style={{ height: 10, background: '#f0ebe0', borderRadius: 99, overflow: 'hidden', marginBottom: 6 }}>
+                        <div style={{ height: '100%', width: pct + '%', background: isOver ? 'linear-gradient(90deg,#A32D2D,#D85A30)' : isWarn ? '#D85A30' : 'linear-gradient(90deg,#3B6D11,#5A9A1A)', borderRadius: 99, transition: 'width 0.4s ease' }}></div>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
+                        <span style={{ color: barColor, fontWeight: 500 }}>
+                          {isOver ? `⚠️ Over by ${fmt(Math.abs(remaining))}` : isWarn ? `⚡ ${fmt(remaining)} left` : `✓ ${fmt(remaining)} remaining`}
+                        </span>
+                        <span style={{ color: '#aaa', fontWeight: 500 }}>{pct}%</span>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </Card>
+          )
+        })()}
+
         {/* Filter bar */}
         <div style={{ background: '#fff', border: '0.5px solid rgba(139,105,20,0.2)', borderRadius: 12, padding: '12px 16px', marginBottom: 16, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
           <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search supplier or description..." style={{ ...selectStyle, background: '#fff', color: '#1a1a1a', minWidth: 220 }} />
@@ -2140,6 +2201,16 @@ function ManageCategoriesModal({ customCategories, onClose, onSave }) {
     setList(l => l.filter(c => c.id !== id))
   }
 
+  const handleUpdateBudget = async (id, budget, budget_period) => {
+    const budgetVal = budget === '' || budget === null ? null : Number(budget)
+    await fetch('/api/purchase-categories/' + id, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ budget: budgetVal, budget_period: budget_period || 'monthly' })
+    })
+    setList(l => l.map(c => c.id === id ? { ...c, budget: budgetVal, budget_period: budget_period || 'monthly' } : c))
+  }
+
   return (
     <Modal title="Manage Purchase Categories" onClose={() => { onSave(); onClose() }}>
       {error && <Alert type="danger">{error}</Alert>}
@@ -2158,11 +2229,23 @@ function ManageCategoriesModal({ customCategories, onClose, onSave }) {
         {list.length === 0 ? (
           <div style={{ fontSize: 13, color: '#999', fontStyle: 'italic' }}>No custom categories yet — add one below.</div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {list.map(c => (
-              <div key={c.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f5f0e8', padding: '6px 10px', borderRadius: 8 }}>
-                <span style={{ fontSize: 13, color: '#3D2214', fontWeight: 500 }}>{c.name}</span>
-                <button className="btn btn-sm" style={{ borderColor: '#A32D2D', color: '#A32D2D', padding: '2px 8px' }} onClick={() => handleDelete(c.id)}><i className="ti ti-trash"></i></button>
+              <div key={c.id} style={{ background: '#f5f0e8', padding: '10px 12px', borderRadius: 8, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: 13, color: '#3D2214', fontWeight: 600 }}>{c.name}</span>
+                  <button className="btn btn-sm" style={{ borderColor: '#A32D2D', color: '#A32D2D', padding: '2px 8px' }} onClick={() => handleDelete(c.id)}><i className="ti ti-trash"></i></button>
+                </div>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <label style={{ fontSize: 11, color: '#666', whiteSpace: 'nowrap' }}>Budget (VT):</label>
+                  <input type="number" placeholder="No budget" defaultValue={c.budget || ''} onBlur={e => handleUpdateBudget(c.id, e.target.value, c.budget_period || 'monthly')} style={{ ...inputStyle, width: 120, fontSize: 12 }} />
+                  <select defaultValue={c.budget_period || 'monthly'} onChange={e => handleUpdateBudget(c.id, c.budget, e.target.value)} style={{ ...inputStyle, fontSize: 12, padding: '4px 8px' }}>
+                    <option value="monthly">per month</option>
+                    <option value="quarterly">per quarter</option>
+                    <option value="yearly">per year</option>
+                  </select>
+                  {c.budget && <span style={{ fontSize: 11, color: '#8B6914', fontWeight: 500 }}>Budget: {fmt(c.budget)}/{(c.budget_period||'monthly').slice(0,2)}</span>}
+                </div>
               </div>
             ))}
           </div>
