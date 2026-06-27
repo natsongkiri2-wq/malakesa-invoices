@@ -79,7 +79,6 @@ export default function App() {
     { id: 'dashboard', label: 'Dashboard', icon: 'ti-layout-dashboard' },
     { id: 'invoices', label: 'Invoices', icon: 'ti-file-invoice' },
     { id: 'payments', label: 'Payments Received', icon: 'ti-cash-register' },
-    { id: 'unpaid', label: 'Unpaid Invoices', icon: 'ti-alert-triangle' },
     { id: 'clients', label: 'Clients', icon: 'ti-users' },
     { id: 'purchases', label: 'Purchases', icon: 'ti-shopping-cart' },
     { id: 'suppliers', label: 'Suppliers', icon: 'ti-truck' },
@@ -122,7 +121,6 @@ export default function App() {
             {page === 'dashboard' && <Dashboard invoices={invoices} payments={payments} purchases={purchases} loading={loading} setPage={setPage} setModal={setModal} />}
             {page === 'invoices' && <Invoices invoices={invoices} payments={payments} reload={reload} setModal={setModal} setSelected={setSelected} />}
             {page === 'payments' && <Payments payments={payments} invoices={invoices} reload={reload} setModal={setModal} setSelected={setSelected} />}
-            {page === 'unpaid' && <Unpaid invoices={invoices} payments={payments} reload={reload} setModal={setModal} setSelected={setSelected} />}
             {page === 'purchases' && <Purchases purchases={purchases} suppliers={suppliers} customCategories={customCategories} reload={reload} setModal={setModal} />}
             {page === 'suppliers' && <Suppliers suppliers={suppliers} purchases={purchases} reload={reload} setModal={setModal} />}
             {page === 'vnpf' && <VNPF employees={employees} salaryRecords={salaryRecords} reload={reload} setModal={setModal} setSelected={setSelected} />}
@@ -393,7 +391,7 @@ function Dashboard({ invoices, payments, purchases, loading, setPage, setModal }
                 <div style={{ fontSize: 20, fontWeight: 700, color: '#D85A30', lineHeight: 1.1 }}>{fmt(outstanding)}</div>
                 <div style={{ fontSize: 11, color: '#888' }}>unpaid balance</div>
                 <div style={{ height: 22 }}></div>
-                <button className="btn btn-sm" style={{ marginTop: 4, fontSize: 11 }} onClick={() => setPage('unpaid')}>
+                <button className="btn btn-sm" style={{ marginTop: 4, fontSize: 11 }} onClick={() => setPage('invoices')}>
                   <i className="ti ti-alert-triangle"></i> View unpaid
                 </button>
               </div>
@@ -407,7 +405,7 @@ function Dashboard({ invoices, payments, purchases, loading, setPage, setModal }
                   <span style={{ fontSize: 9 }}>⚠</span> Action needed
                 </span>}
                 {overdueCount === 0 && <div style={{ height: 22 }}></div>}
-                <button className="btn btn-sm" style={{ marginTop: 4, fontSize: 11, ...(overdueCount > 0 ? { background: '#A32D2D', color: '#fff', borderColor: '#A32D2D', fontWeight: 600 } : {}) }} onClick={() => setPage('unpaid')}>
+                <button className="btn btn-sm" style={{ marginTop: 4, fontSize: 11, ...(overdueCount > 0 ? { background: '#A32D2D', color: '#fff', borderColor: '#A32D2D', fontWeight: 600 } : {}) }} onClick={() => setPage('invoices')}>
                   <i className="ti ti-send"></i> {overdueCount > 0 ? 'Follow up now' : 'View invoices'}
                 </button>
               </div>
@@ -690,6 +688,27 @@ function Invoices({ invoices, payments, reload, setModal, setSelected }) {
         <button className="btn btn-sm" style={{ background: '#1D6F42', borderColor: '#155233', color: '#fff', fontWeight: 500 }} onClick={() => setShowExport(true)}><i className="ti ti-download"></i> Export</button>
         <button className="btn btn-primary" onClick={() => setModal('newInvoice')}><i className="ti ti-plus"></i> New Invoice</button>
       </Topbar>
+
+      {/* Status tab bar */}
+      <div style={{ borderBottom: '0.5px solid rgba(0,0,0,0.1)', display: 'flex', paddingLeft: 20, background: '#fff', overflowX: 'auto' }}>
+        {[
+          { key: '', label: 'All Invoices', count: invoices.length },
+          { key: 'unpaid', label: 'Unpaid', count: invoices.filter(i => getStatus(i,payments)==='unpaid').length },
+          { key: 'overdue', label: 'Overdue', count: invoices.filter(i => getStatus(i,payments)==='overdue').length },
+          { key: 'partial', label: 'Partial', count: invoices.filter(i => getStatus(i,payments)==='partial').length },
+          { key: 'paid', label: 'Paid', count: invoices.filter(i => getStatus(i,payments)==='paid').length },
+        ].map(tab => {
+          const isActive = filterStatus === tab.key
+          const badgeColor = tab.key === 'overdue' ? '#A32D2D' : tab.key === 'unpaid' ? '#D85A30' : tab.key === 'partial' ? '#8B6914' : tab.key === 'paid' ? '#3B6D11' : '#666'
+          return (
+            <button key={tab.key} onClick={() => setFilterStatus(tab.key)} style={{ padding: '10px 16px', border: 'none', borderBottom: isActive ? '2.5px solid #8B6914' : '2.5px solid transparent', background: 'none', fontWeight: isActive ? 700 : 400, color: isActive ? '#8B6914' : '#555', cursor: 'pointer', fontSize: 13, whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 6 }}>
+              {tab.label}
+              {tab.count > 0 && <span style={{ background: isActive ? '#8B6914' : (tab.key === 'overdue' ? '#FCEBEB' : tab.key === 'unpaid' ? '#FEF3EB' : '#f0f0f0'), color: isActive ? '#fff' : badgeColor, borderRadius: 99, padding: '1px 7px', fontSize: 11, fontWeight: 600 }}>{tab.count}</span>}
+            </button>
+          )
+        })}
+      </div>
+
       <div style={{ padding: 20 }}>
         <div style={{ background: '#fff', border: '0.5px solid rgba(139,105,20,0.2)', borderRadius: 12, padding: '12px 16px', marginBottom: 16, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
           <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
@@ -709,13 +728,6 @@ function Invoices({ invoices, payments, reload, setModal, setSelected }) {
           <select value={filterClient} onChange={e => setFilterClient(e.target.value)} style={selectStyle}>
             <option value="">All clients</option>
             {allClients.map(c => <option key={c} value={c}>{c}</option>)}
-          </select>
-          <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} style={selectStyle}>
-            <option value="">All statuses</option>
-            <option value="unpaid">Unpaid</option>
-            <option value="paid">Paid</option>
-            <option value="overdue">Overdue</option>
-            <option value="partial">Partial</option>
           </select>
           <MonthYearPicker value={filterMonth} onChange={setFilterMonth} accentColor="#8B6914" allowClear clearLabel="All months" />
           {hasFilters && <button className="btn btn-sm" onClick={clearFilters} style={{ color: '#A32D2D', borderColor: '#A32D2D' }}><i className="ti ti-x"></i> Clear</button>}
@@ -3037,7 +3049,7 @@ function VNPF({ employees, salaryRecords, reload, setModal, setSelected }) {
             <MonthYearPicker value={vnpfMonth} onChange={setVnpfMonth} accentColor="#8B6914" />
             <button className="btn btn-sm" style={{ background: '#2E7D2E', borderColor: '#1A4D1A', color: '#fff', fontWeight: 500 }} onClick={printSchedule}><i className="ti ti-printer"></i> Print Schedule</button>
             <button className="btn btn-sm" style={{ background: '#8B6914', borderColor: '#6B5010', color: '#fff', fontWeight: 500 }} onClick={emailSchedule} disabled={emailStatus === 'sending' || rows.length === 0}>
-              <i className="ti ti-mail"></i> {emailStatus === 'sending' ? 'Sending...' : 'Email to VNPF'}
+              <i className="ti ti-mail"></i> {emailStatus === 'sending' ? 'Sending...' : 'Email VNPF Schedule'}
             </button>
           </>}
           <button className="btn btn-primary" onClick={() => setModal('newEmployee')}><i className="ti ti-plus"></i> Add Employee</button>
@@ -3353,7 +3365,7 @@ body{background:#fff}
     <div style={{ padding: 20 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
         <MonthYearPicker value={salaryMonth} onChange={setSalaryMonth} accentColor="#8B6914" />
-        <span style={{ fontSize: 13, color: '#666' }}>Showing pay runs for: <strong>{monthLabel}</strong></span>
+        <span style={{ fontSize: 13, color: '#666' }}>Pay period: <strong>{monthLabel}</strong></span>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12, marginBottom: 16 }}>
