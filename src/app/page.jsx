@@ -628,10 +628,66 @@ function Invoices({ invoices, payments, reload, setModal, setSelected }) {
 
   const sendAllOverdueReminders = async () => {
     const overdue = filtered.filter(i => getStatus(i, payments) === 'overdue')
-    const withEmail = overdue.filter(i => i.client_email)
-    if (withEmail.length === 0) { alert('No email addresses on overdue invoices. Add client emails in the Clients page.'); return }
-    if (!confirm('Send payment reminders to ' + withEmail.length + ' client(s) with overdue invoices?')) return
-    for (const inv of withEmail) { await sendReminder(inv) }
+    if (overdue.length === 0) { alert('No overdue invoices found.'); return }
+
+    // Group by client - one email per client listing ALL their overdue invoices
+    const byClient = {}
+    overdue.forEach(inv => {
+      const key = inv.client_name || 'Unknown'
+      if (!byClient[key]) byClient[key] = { email: inv.client_email || '', invoices: [] }
+      byClient[key].invoices.push(inv)
+    })
+
+    const clients = Object.entries(byClient)
+    const withEmail = clients.filter(([,c]) => c.email)
+    const noEmail = clients.filter(([,c]) => !c.email).map(([name]) => name)
+
+    if (withEmail.length === 0) {
+      alert('No email addresses found.\nMissing: ' + noEmail.join(', ') + '\nAdd client emails in the Clients page.')
+      return
+    }
+
+    let msg = 'Send ONE grouped reminder email per client?\n\n'
+    withEmail.forEach(([name, c]) => {
+      const total = c.invoices.reduce((s, i) => s + getBalance(i, payments), 0)
+      msg += '- ' + name + ': ' + c.invoices.length + ' invoice(s), VT ' + Number(total).toLocaleString() + ' outstanding\n'
+    })
+    if (noEmail.length > 0) msg += '\nSkipped (no email): ' + noEmail.join(', ')
+    if (!confirm(msg)) return
+
+    for (const [clientName, c] of withEmail) {
+      setSending(clientName)
+      const totalOwed = c.invoices.reduce((s, i) => s + getBalance(i, payments), 0)
+      const invoiceLines = c.invoices.map(inv => {
+        const bal = getBalance(inv, payments)
+        return '  - Invoice ' + inv.number + ': VT ' + Number(bal).toLocaleString() + ' (due ' + fmtDate(inv.due_date) + ')'
+      }).join('\n')
+
+      let sent = false
+      try {
+        const res = await fetch('/api/send-reminder', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ invoiceIds: c.invoices.map(i => i.id), grouped: true })
+        })
+        if (res.ok) sent = true
+      } catch(e) {}
+
+      if (!sent) {
+        const subject = encodeURIComponent('Payment Reminder — Outstanding Invoices')
+        const bodyText = 'Dear ' + clientName + ',\n\n' +
+          'This is a friendly reminder that the following invoices are overdue:\n\n' +
+          invoiceLines + '\n\n' +
+          'Total outstanding: VT ' + Number(totalOwed).toLocaleString() + '\n\n' +
+          'Please arrange payment at your earliest convenience.\n\n' +
+          'Thank you,\nMalakesa Transfer and Tour\nTel: +678 22712 | accounts@malakesa.vu'
+        window.open('mailto:' + c.email + '?subject=' + subject + '&body=' + encodeURIComponent(bodyText), '_blank')
+      }
+
+      setNotice('Reminder sent to ' + clientName + ' (' + c.invoices.length + ' invoice' + (c.invoices.length !== 1 ? 's' : '') + ')')
+      setTimeout(() => setNotice(''), 5000)
+    }
+    setSending(null)
   }
 
   const handleDelete = async (id) => {
