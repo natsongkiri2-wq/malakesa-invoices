@@ -83,6 +83,7 @@ export default function App() {
     { id: 'purchases', label: 'Purchases', icon: 'ti-shopping-cart' },
     { id: 'suppliers', label: 'Suppliers', icon: 'ti-truck' },
     { id: 'vnpf', label: 'Salaries & VNPF', icon: 'ti-building-bank' },
+    { id: 'vat', label: 'VAT Return', icon: 'ti-receipt-tax' },
     { id: 'reports', label: 'Reports', icon: 'ti-chart-bar' },
   ]
 
@@ -125,6 +126,7 @@ export default function App() {
             {page === 'suppliers' && <Suppliers suppliers={suppliers} purchases={purchases} reload={reload} setModal={setModal} />}
             {page === 'vnpf' && <VNPF employees={employees} salaryRecords={salaryRecords} reload={reload} setModal={setModal} setSelected={setSelected} />}
             {page === 'reports' && <Reports invoices={invoices} payments={payments} purchases={purchases} />}
+            {page === 'vat' && <VatPage invoices={invoices} payments={payments} purchases={purchases} />}
             {page === 'clients' && <Clients clients={clients} invoices={invoices} reload={reload} setModal={setModal} />}
           </>
         )}
@@ -1219,7 +1221,7 @@ function Unpaid({ invoices, payments, reload, setModal, setSelected }) {
 
 // ── Reports ───────────────────────────────────────────────
 function Reports({ invoices, payments, purchases }) {
-  const [tab, setTab] = useState('revenue') // 'revenue' | 'vat' | 'suppliers'
+  const [tab, setTab] = useState('revenue') // 'revenue' | 'suppliers'
   const [showExport, setShowExport] = useState(false)
   const [period, setPeriod] = useState('all')
   const [revenueMonth, setRevenueMonth] = useState(new Date().toISOString().slice(0, 7))
@@ -1814,7 +1816,6 @@ function Reports({ invoices, payments, purchases }) {
       <Topbar title="Reports">
         <div style={{ display: 'flex', gap: 6, background: '#f5f0e8', borderRadius: 10, padding: 4 }}>
           <button style={tabStyle(tab === 'revenue')} onClick={() => setTab('revenue')}><i className="ti ti-chart-bar" style={{ marginRight: 5 }}></i>Revenue</button>
-          <button style={tabStyle(tab === 'vat')} onClick={() => setTab('vat')}><i className="ti ti-receipt-tax" style={{ marginRight: 5 }}></i>VAT Return</button>
           <button style={tabStyle(tab === 'suppliers')} onClick={() => setTab('suppliers')}><i className="ti ti-truck" style={{ marginRight: 5 }}></i>By Supplier</button>
         </div>
       </Topbar>
@@ -1836,10 +1837,6 @@ function Reports({ invoices, payments, purchases }) {
               <MonthYearPicker value={revenueMonth} onChange={setRevenueMonth} accentColor="#8B6914" />
             )}
             <button className="btn btn-sm" style={{ marginLeft: 'auto', background: '#1D6F42', borderColor: '#155233', color: '#fff', fontWeight: 500 }} onClick={() => setShowExport('revenue')}><i className="ti ti-download"></i> Export</button>
-          </>}
-          {tab === 'vat' && <>
-            <MonthYearPicker value={vatMonth} onChange={setVatMonth} accentColor="#8B6914" />
-            <button className="btn btn-sm" style={{ marginLeft: 'auto', background: '#1D6F42', borderColor: '#155233', color: '#fff', fontWeight: 500 }} onClick={() => setShowExport('vat')}><i className="ti ti-download"></i> Export</button>
           </>}
           {tab === 'suppliers' && <>
             <select value={supplierPeriod} onChange={e => setSupplierPeriod(e.target.value)} style={{ padding: '6px 10px', borderRadius: 8, border: '0.5px solid #8B6914', fontSize: 13, fontFamily: 'inherit', background: '#8B6914', color: '#fff', fontWeight: 500, cursor: 'pointer' }}>
@@ -1938,165 +1935,7 @@ function Reports({ invoices, payments, purchases }) {
           </Card>
         </>}
 
-        {/* ── VAT Return Tab ── */}
-        {tab === 'vat' && <>
-          {/* Summary stat cards */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12, marginBottom: 16 }}>
-            <StatCard label="Output VAT (sales)" value={fmt(vatTotalTax)} color="#2E7D2E" />
-            <StatCard label="Input VAT (purchases)" value={fmt(vatInputTax)} color="#1A4D1A" />
-            <StatCard label="Net VAT payable" value={fmt(vatNetPayable)} color="#D85A30" sub="output − input" />
-            <StatCard label="Total invoiced" value={fmt(vatTotalInv)} sub={`${vatInvoices.length} invoice${vatInvoices.length !== 1 ? 's' : ''}`} />
-          </div>
-
-          {/* VAT info banner */}
-          {(salaryRecords || []).length > 0 && (() => {
-        const allMonths = [...new Set((salaryRecords||[]).map(r => r.month))].sort().reverse()
-        const monthsNotCurrent = allMonths.filter(m => m !== vnpfMonth)
-        return monthsNotCurrent.length > 0 ? (
-          <div style={{ background: '#FFF8E1', border: '0.5px solid #FFD700', borderRadius: 8, padding: '8px 14px', marginBottom: 12, fontSize: 12, color: '#8B6914', display: 'flex', alignItems: 'center', gap: 8 }}>
-            <i className="ti ti-info-circle"></i>
-            <span>Pay runs also exist for: {monthsNotCurrent.join(', ')}. Use the month picker above to view those schedules.</span>
-          </div>
-        ) : null
-      })()}
-      <div style={{ background: '#EAF3DE', border: '0.5px solid #C0DD97', borderRadius: 8, padding: '10px 16px', marginBottom: 16, fontSize: 13, color: '#27500A', display: 'flex', alignItems: 'center', gap: 10 }}>
-            <i className="ti ti-receipt-tax" style={{ fontSize: 18 }}></i>
-            <span><strong>VAT Period: {vatMonthLabel}</strong> &nbsp;|&nbsp; TIN: 445579 &nbsp;|&nbsp; Rate: 15% &nbsp;|&nbsp; Output VAT to declare: <strong>{fmt(vatTotalTax)}</strong></span>
-          </div>
-
-          {vatInvoices.length === 0 ? (
-            <Card><div style={{ textAlign: 'center', padding: '32px 20px', color: '#666' }}><i className="ti ti-receipt-off" style={{ fontSize: 36, display: 'block', marginBottom: 10 }}></i><p>No invoices for {vatMonthLabel}</p></div></Card>
-          ) : <>
-            {/* Standard rated */}
-            <Card style={{ padding: 0, overflow: 'hidden', marginBottom: 16 }}>
-              <div style={{ padding: '12px 20px', borderBottom: '0.5px solid rgba(0,0,0,0.09)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <strong style={{ fontSize: 14 }}>Standard-Rated Invoices (15% VAT)</strong>
-                <span style={{ fontSize: 12, color: '#2E7D2E', fontWeight: 600 }}>{vatStandard.length} invoice{vatStandard.length !== 1 ? 's' : ''} &nbsp;|&nbsp; VAT: {fmt(vatStandard.reduce((s,i) => s + Number(i.tax||0), 0))}</span>
-              </div>
-              {vatStandard.length === 0 ? (
-                <div style={{ padding: '20px', color: '#999', fontSize: 13, textAlign: 'center' }}>No standard-rated invoices this month</div>
-              ) : (
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-                  <thead><tr style={{ background: '#E8D5A3' }}>
-                    <Th>Invoice #</Th><Th>Date</Th><Th>Client</Th>
-                    <Th style={{ textAlign: 'right' }}>Subtotal (ex-VAT)</Th>
-                    <Th style={{ textAlign: 'right' }}>VAT 15%</Th>
-                    <Th style={{ textAlign: 'right' }}>Total</Th>
-                  </tr></thead>
-                  <tbody>
-                    {vatStandard.map(inv => (
-                      <tr key={inv.id} style={{ borderBottom: '0.5px solid rgba(0,0,0,0.09)' }}>
-                        <Td><strong>{inv.number}</strong></Td>
-                        <Td>{fmtDate(inv.date)}</Td>
-                        <Td>{inv.client_name}</Td>
-                        <Td style={{ textAlign: 'right' }}>{fmt(inv.subtotal || 0)}</Td>
-                        <Td style={{ textAlign: 'right', color: '#2E7D2E', fontWeight: 500 }}>{fmt(inv.tax || 0)}</Td>
-                        <Td style={{ textAlign: 'right', fontWeight: 500 }}>{fmt(inv.total)}</Td>
-                      </tr>
-                    ))}
-                    <tr style={{ background: '#E8D5A3', fontWeight: 700 }}>
-                      <td colSpan={3} style={{ padding: '9px 14px', fontSize: 13 }}>SUBTOTAL</td>
-                      <td style={{ padding: '9px 14px', textAlign: 'right', fontSize: 13 }}>{fmt(vatStandard.reduce((s,i) => s + Number(i.subtotal||0), 0))}</td>
-                      <td style={{ padding: '9px 14px', textAlign: 'right', fontSize: 13, color: '#2E7D2E' }}>{fmt(vatStandard.reduce((s,i) => s + Number(i.tax||0), 0))}</td>
-                      <td style={{ padding: '9px 14px', textAlign: 'right', fontSize: 13 }}>{fmt(vatStandard.reduce((s,i) => s + Number(i.total), 0))}</td>
-                    </tr>
-                  </tbody>
-                </table>
-              )}
-            </Card>
-
-            {/* Zero rated */}
-            <Card style={{ padding: 0, overflow: 'hidden', marginBottom: 16 }}>
-              <div style={{ padding: '12px 20px', borderBottom: '0.5px solid rgba(0,0,0,0.09)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <strong style={{ fontSize: 14 }}>Zero-Rated Invoices (0% VAT)</strong>
-                <span style={{ fontSize: 12, color: '#666', fontWeight: 600 }}>{vatZeroRated.length} invoice{vatZeroRated.length !== 1 ? 's' : ''} &nbsp;|&nbsp; VAT: Nil</span>
-              </div>
-              {vatZeroRated.length === 0 ? (
-                <div style={{ padding: '20px', color: '#999', fontSize: 13, textAlign: 'center' }}>No zero-rated invoices this month</div>
-              ) : (
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-                  <thead><tr style={{ background: '#E8D5A3' }}>
-                    <Th>Invoice #</Th><Th>Date</Th><Th>Client</Th>
-                    <Th style={{ textAlign: 'right' }}>Amount</Th>
-                    <Th style={{ textAlign: 'right' }}>VAT</Th>
-                  </tr></thead>
-                  <tbody>
-                    {vatZeroRated.map(inv => (
-                      <tr key={inv.id} style={{ borderBottom: '0.5px solid rgba(0,0,0,0.09)' }}>
-                        <Td><strong>{inv.number}</strong></Td>
-                        <Td>{fmtDate(inv.date)}</Td>
-                        <Td>{inv.client_name}</Td>
-                        <Td style={{ textAlign: 'right', fontWeight: 500 }}>{fmt(inv.total)}</Td>
-                        <Td style={{ textAlign: 'right', color: '#999', fontStyle: 'italic' }}>Nil</Td>
-                      </tr>
-                    ))}
-                    <tr style={{ background: '#E8D5A3', fontWeight: 700 }}>
-                      <td colSpan={3} style={{ padding: '9px 14px', fontSize: 13 }}>SUBTOTAL</td>
-                      <td style={{ padding: '9px 14px', textAlign: 'right', fontSize: 13 }}>{fmt(vatZeroRated.reduce((s,i) => s + Number(i.total), 0))}</td>
-                      <td style={{ padding: '9px 14px', textAlign: 'right', fontSize: 13, color: '#999', fontStyle: 'italic' }}>Nil</td>
-                    </tr>
-                  </tbody>
-                </table>
-              )}
-            </Card>
-
-            {/* VAT summary box */}
-            <Card>
-              <div style={{ fontWeight: 500, marginBottom: 14, fontSize: 14 }}>VAT Return Summary — {vatMonthLabel}</div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                <div>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: '#8B6914', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 6 }}>Output (Sales)</div>
-                  {[
-                    ['Total Sales (inc. VAT)', fmt(vatTotalInv), '#1a1a1a'],
-                    ['Taxable Sales (ex-VAT)', fmt(vatTotalSubtotal), '#8B6914'],
-                    ['Zero-Rated Sales', fmt(vatZeroRated.reduce((s,i) => s + Number(i.total), 0)), '#666'],
-                    ['VAT Output Tax (Box 1)', fmt(vatTotalTax), '#2E7D2E'],
-                  ].map(([label, value, color]) => (
-                    <div key={label} style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0', borderBottom: '0.5px solid rgba(0,0,0,0.09)', fontSize: 13 }}>
-                      <span style={{ color: '#666' }}>{label}</span>
-                      <span style={{ fontWeight: label.includes('Box') ? 700 : 500, color }}>{value}</span>
-                    </div>
-                  ))}
-                  <div style={{ fontSize: 11, fontWeight: 700, color: '#1A4D1A', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '12px 0 6px' }}>Input (Purchases)</div>
-                  {[
-                    ['Total Purchases (inc. VAT)', fmt(vatPurchasesTotal), '#1a1a1a'],
-                    ['Purchases (ex-VAT)', fmt(vatPurchasesExVat), '#666'],
-                    ['VAT Input Tax (Box 2)', fmt(vatInputTax), '#1A4D1A'],
-                  ].map(([label, value, color]) => (
-                    <div key={label} style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0', borderBottom: '0.5px solid rgba(0,0,0,0.09)', fontSize: 13 }}>
-                      <span style={{ color: '#666' }}>{label}</span>
-                      <span style={{ fontWeight: label.includes('Box') ? 700 : 500, color }}>{value}</span>
-                    </div>
-                  ))}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', fontSize: 15, fontWeight: 700, color: '#D85A30', borderTop: '2px solid #D85A30', marginTop: 4 }}>
-                    <span>NET VAT PAYABLE</span><span>{fmt(vatNetPayable)}</span>
-                  </div>
-                  <div style={{ fontSize: 11, color: '#999', marginTop: 2 }}>Box 1 (VT {Number(vatTotalTax).toLocaleString()}) − Box 2 (VT {Number(vatInputTax).toLocaleString()})</div>
-                </div>
-                <div style={{ background: '#f9f6f0', borderRadius: 8, padding: '14px 16px', fontSize: 12, color: '#555', lineHeight: 1.9 }}>
-                  <div style={{ fontWeight: 600, color: '#3D2214', marginBottom: 8 }}>📋 Filing Summary</div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '0.5px solid rgba(0,0,0,0.09)', paddingBottom: 6, marginBottom: 6 }}>
-                    <span>Box 1 — Output Tax</span><strong style={{ color: '#2E7D2E' }}>{fmt(vatTotalTax)}</strong>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '0.5px solid rgba(0,0,0,0.09)', paddingBottom: 6, marginBottom: 6 }}>
-                    <span>Box 2 — Input Tax</span><strong style={{ color: '#1A4D1A' }}>{fmt(vatInputTax)}</strong>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: 6, marginBottom: 10 }}>
-                    <span style={{ fontWeight: 700 }}>Net Payable to VFSC</span><strong style={{ color: '#D85A30', fontSize: 14 }}>{fmt(vatNetPayable)}</strong>
-                  </div>
-                  {vatPurchases.length === 0 && (
-                    <div style={{ background: '#FAEEDA', border: '0.5px solid #FAC775', borderRadius: 6, padding: '8px 10px', fontSize: 11, color: '#633806' }}>
-                      ⚠️ No purchases recorded this month. Add purchases to claim input VAT.
-                    </div>
-                  )}
-                  <div style={{ marginTop: 8, color: '#999', fontSize: 11 }}>TIN: 445579 &nbsp;|&nbsp; Rate: 15%</div>
-                </div>
-              </div>
-            </Card>
-          </>}
-        </>}
-
-        {/* ── By Supplier Tab ── */}
+      {/* ── By Supplier Tab ── */}
         {tab === 'suppliers' && <>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12, marginBottom: 16 }}>
             <StatCard label="Total spend" value={fmt(supplierTotalSpend)} color="#A32D2D" sub={`${fPurchases.length} purchases`} />
@@ -2247,6 +2086,267 @@ function Reports({ invoices, payments, purchases }) {
 
 // ── Purchases ─────────────────────────────────────────────
 const PURCHASE_CATEGORIES = ['Fuel', 'Vehicle Maintenance', 'Insurance', 'Office Supplies', 'Utilities', 'Staff Costs', 'Marketing', 'Equipment', 'Accommodation', 'Food & Beverages', 'Professional Services', 'Bank Charges', 'Other']
+
+
+// ── VAT Return Page (standalone) ──
+function VatPage({ invoices, payments, purchases }) {
+  const nowD = new Date()
+  const defaultVatMonth = nowD.toISOString().slice(0, 7)
+  const [vatMonth, setVatMonth] = useState(defaultVatMonth)
+  const [showExport, setShowExport] = useState(false)
+
+  const MONTHS_LONG = ['January','February','March','April','May','June','July','August','September','October','November','December']
+  const vatParts = vatMonth.split('-')
+  const vatMonthLabel = (MONTHS_LONG[parseInt(vatParts[1])-1] || '') + ' ' + vatParts[0]
+
+  const vatInvoices = invoices.filter(i => i.date?.startsWith(vatMonth))
+  const vatStandard = vatInvoices.filter(i => Number(i.tax) > 0)
+  const vatZeroRated = vatInvoices.filter(i => !Number(i.tax))
+  const vatTotalTax = vatStandard.reduce((s,i) => s + Number(i.tax||0), 0)
+  const vatTotalSubtotal = vatStandard.reduce((s,i) => s + Number(i.subtotal||0), 0)
+  const vatTotalInv = vatInvoices.reduce((s,i) => s + Number(i.total), 0)
+  const vatPurchases = (purchases || []).filter(p => p.date?.startsWith(vatMonth) && (Number(p.vat) > 0 || p.vat_treatment === 'vat_inclusive' || p.vat_treatment === 'vat_exclusive'))
+  const vatPurchasesTotal = vatPurchases.reduce((s,p) => s + Number(p.amount||0), 0)
+  const vatPurchasesExVat = vatPurchases.reduce((s,p) => s + Number(p.amount_ex_vat||0), 0)
+  const vatInputTax = vatPurchases.reduce((s,p) => s + Number(p.vat||0), 0)
+  const vatNetPayable = Math.max(0, vatTotalTax - vatInputTax)
+
+  const printVatReturn = () => {
+    const w = window.open('', '_blank')
+    if (!w) return
+    const stdRows = vatStandard.map(i => `<tr><td><strong>${i.number}</strong></td><td>${fmtDate(i.date)}</td><td>${i.client_name}</td><td style='text-align:right'>${fmt(i.subtotal||0)}</td><td style='text-align:right;color:#2E7D2E'>${fmt(i.tax||0)}</td><td style='text-align:right'>${fmt(i.total)}</td></tr>`).join('')
+    const purRows = vatPurchases.map(p => `<tr><td>${fmtDate(p.date)}</td><td>${p.supplier||''}</td><td>${p.description||''}</td><td style='text-align:right'>${fmt(p.amount_ex_vat||0)}</td><td style='text-align:right;color:#1A4D1A'>${fmt(p.vat||0)}</td><td style='text-align:right'>${fmt(p.amount)}</td></tr>`).join('')
+    w.document.write(`<!DOCTYPE html><html><head><title>VAT Return — ${vatMonthLabel}</title>
+    <style>
+      body{font-family:Arial,sans-serif;color:#222;font-size:13px}
+      .page{max-width:800px;margin:20px auto;background:#fff;border-radius:6px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.15)}
+      .header{background:linear-gradient(135deg,#1A0D06,#3D2214,#5C3D0A);padding:20px 32px;display:flex;justify-content:space-between;align-items:flex-start}
+      .body{padding:24px 32px}
+      h2{font-size:14px;font-weight:700;color:#8B6914;border-bottom:2px solid #E8D5A3;padding-bottom:4px;margin:20px 0 10px}
+      table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:16px}
+      thead{display:table-header-group}
+      th{background:#E8D5A3;padding:7px 10px;text-align:left;font-size:11px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+      td{padding:7px 10px;border-bottom:.5px solid #eee}
+      .summary{background:#f9f6f0;border-radius:8px;padding:16px;display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}
+      .sum-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:.5px solid #eee;font-size:13px}
+      .net{display:flex;justify-content:space-between;padding:10px 0;font-size:16px;font-weight:700;color:#D85A30;border-top:2px solid #D85A30;margin-top:4px}
+      .footer{background:linear-gradient(135deg,#1A0D06,#5C3D0A);padding:12px 32px;color:rgba(255,255,255,.7);font-size:10px;display:flex;justify-content:space-between}
+      .noprint{background:#333;color:#fff;padding:10px 20px;display:flex;justify-content:space-between;align-items:center}
+      .printbtn{background:#8B6914;color:#fff;border:none;padding:7px 18px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600}
+      .rpt-hdr{display:none}
+      @page{margin:18mm 14mm 22mm 14mm;size:A4}
+      @media print{
+        .noprint{display:none}body{background:#fff}.page{box-shadow:none;margin:0;border-radius:0}
+        .header{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+        .footer{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+        th{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+        .rpt-hdr{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #8B6914;padding:6px 40px;position:fixed;top:0;left:0;right:0;background:#fff;z-index:999}
+        .page{padding-top:42px}
+      }
+    </style></head><body>
+    <div class='rpt-hdr'><span style='font-size:12px;font-weight:700;color:#3D2214'>Malakesa Transfer &amp; Tour — VAT Return — ${vatMonthLabel}</span><span style='font-size:10px;color:#888'>TIN: 445579</span></div>
+    <div class='noprint'><span>VAT Return — ${vatMonthLabel}</span><button class='printbtn' onclick='window.print()'>Print / Save PDF</button></div>
+    <div class='page'>
+      <div class='header'>
+        <div>
+          <img src='${MALAKESA_LOGO}' style='width:180px;border-radius:4px;display:block'/>
+          <div style='color:rgba(255,255,255,.7);font-size:11px;margin-top:8px'>TIN: 445579 | Port Vila, Vanuatu</div>
+        </div>
+        <div style='text-align:right;color:#fff'>
+          <div style='font-size:10px;letter-spacing:3px;color:rgba(255,255,255,.6);text-transform:uppercase'>VAT Return</div>
+          <div style='font-size:20px;font-weight:700;color:#FFD700;margin-top:2px'>${vatMonthLabel}</div>
+          <div style='font-size:11px;color:rgba(255,255,255,.7);margin-top:4px'>Filed: ${new Date().toLocaleDateString('en-AU',{day:'2-digit',month:'short',year:'numeric'})}</div>
+        </div>
+      </div>
+      <div class='body'>
+        <h2>Output Tax — Standard-Rated Sales (15%)</h2>
+        <table><thead><tr><th>Invoice #</th><th>Date</th><th>Client</th><th style='text-align:right'>Ex-VAT</th><th style='text-align:right'>VAT 15%</th><th style='text-align:right'>Total</th></tr></thead><tbody>${stdRows || '<tr><td colspan=6 style=text-align:center;color:#999>No standard-rated invoices</td></tr>'}</tbody></table>
+        <h2>Input Tax — Purchases</h2>
+        <table><thead><tr><th>Date</th><th>Supplier</th><th>Description</th><th style='text-align:right'>Ex-VAT</th><th style='text-align:right'>Input VAT</th><th style='text-align:right'>Total</th></tr></thead><tbody>${purRows || '<tr><td colspan=6 style=text-align:center;color:#999>No VAT purchases recorded</td></tr>'}</tbody></table>
+        <div class='summary'>
+          <div>
+            <div class='sum-row'><span>Box 1 — Output VAT</span><strong style='color:#2E7D2E'>${fmt(vatTotalTax)}</strong></div>
+            <div class='sum-row'><span>Box 2 — Input VAT</span><strong style='color:#1A4D1A'>${fmt(vatInputTax)}</strong></div>
+            <div class='net'><span>NET VAT PAYABLE</span><span>${fmt(vatNetPayable)}</span></div>
+          </div>
+          <div style='font-size:12px;color:#555;line-height:1.9'>
+            <div>Total invoiced: <strong>${fmt(vatTotalInv)}</strong></div>
+            <div>Taxable sales (ex-VAT): <strong>${fmt(vatTotalSubtotal)}</strong></div>
+            <div>Zero-rated sales: <strong>${fmt(vatZeroRated.reduce((s,i)=>s+Number(i.total),0))}</strong></div>
+            <div>Total purchases: <strong>${fmt(vatPurchasesTotal)}</strong></div>
+          </div>
+        </div>
+      </div>
+      <div class='footer'><span>Malakesa Transfer &amp; Tour | TIN: 445579 | VAT Return ${vatMonthLabel}</span><span>Computer generated — verify before filing</span></div>
+    </div>
+    <script>window.onload=()=>window.print()<\/script></body></html>`)
+    w.document.close()
+  }
+
+  const exportVatExcel = () => {
+    const esc = v => { const s = String(v == null ? '' : v); return s.includes(',') || s.includes('"') ? '"' + s.replace(/"/g, '""') + '"' : s }
+    const dlRows = [
+      ['Malakesa Transfer and Tour - VAT Return'],
+      ['Period:', vatMonthLabel, 'TIN:', '445579'],
+      ['Output VAT:', vatTotalTax, 'Input VAT:', vatInputTax, 'Net Payable:', vatNetPayable],
+      [],
+      ['OUTPUT TAX - INVOICES'],
+      ['Invoice #','Date','Client','Subtotal (VT)','VAT 15% (VT)','Total (VT)','Rate'],
+      ...vatInvoices.map(i => [i.number, i.date, i.client_name, i.subtotal||0, i.tax||0, i.total, Number(i.tax)>0?'15%':'Zero-rated']),
+      [],
+      ['INPUT TAX - PURCHASES'],
+      ['Date','Supplier','Description','Ex-VAT','Input VAT','Total'],
+      ...vatPurchases.map(p => [p.date, p.supplier, p.description||'', p.amount_ex_vat||0, p.vat||0, p.amount])
+    ]
+    const csv = dlRows.map(r => r.map(esc).join(',')).join('\n')
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a'); a.href = url; a.download = 'Malakesa_VAT_' + vatMonthLabel.replace(/\s/g,'_') + '.csv'; a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  const vatColumns = [
+    { key: 'number', label: 'Invoice #' }, { key: 'date', label: 'Date' },
+    { key: 'client_name', label: 'Client' }, { key: 'subtotal', label: 'Subtotal (VT)' },
+    { key: 'tax', label: 'VAT 15% (VT)' }, { key: 'total', label: 'Total (VT)' },
+    { key: 'rate', label: 'VAT Rate' },
+  ]
+
+  return (
+    <>
+      <Topbar title="VAT Return">
+        <MonthYearPicker value={vatMonth} onChange={setVatMonth} accentColor="#8B6914" />
+        <button className="btn btn-sm" style={{ background: '#1D6F42', borderColor: '#155233', color: '#fff', fontWeight: 500 }} onClick={() => setShowExport(true)}><i className="ti ti-download"></i> Export</button>
+        <button className="btn btn-sm" style={{ background: '#8B6914', borderColor: '#6B5010', color: '#fff', fontWeight: 500 }} onClick={printVatReturn}><i className="ti ti-printer"></i> PDF</button>
+      </Topbar>
+      <div style={{ padding: 20 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12, marginBottom: 16 }}>
+          <StatCard label="Output VAT (sales)" value={fmt(vatTotalTax)} color="#2E7D2E" />
+          <StatCard label="Input VAT (purchases)" value={fmt(vatInputTax)} color="#1A4D1A" />
+          <StatCard label="Net VAT payable" value={fmt(vatNetPayable)} color="#D85A30" sub="output − input" />
+          <StatCard label="Total invoiced" value={fmt(vatTotalInv)} sub={`${vatInvoices.length} invoice${vatInvoices.length!==1?'s':''}`} />
+        </div>
+
+        <div style={{ background: '#EAF3DE', border: '0.5px solid #C0DD97', borderRadius: 8, padding: '10px 16px', marginBottom: 16, fontSize: 13, color: '#27500A', display: 'flex', alignItems: 'center', gap: 10 }}>
+          <i className="ti ti-receipt-tax" style={{ fontSize: 18 }}></i>
+          <span><strong>VAT Period: {vatMonthLabel}</strong> &nbsp;|&nbsp; TIN: 445579 &nbsp;|&nbsp; Rate: 15% &nbsp;|&nbsp; Output VAT to declare: <strong>{fmt(vatTotalTax)}</strong></span>
+        </div>
+
+        {vatInvoices.length === 0 ? (
+          <Card><div style={{ textAlign: 'center', padding: '32px 20px', color: '#666' }}><i className="ti ti-receipt-off" style={{ fontSize: 36, display: 'block', marginBottom: 10 }}></i><p>No invoices for {vatMonthLabel}</p></div></Card>
+        ) : <>
+          <Card style={{ padding: 0, overflow: 'hidden', marginBottom: 16 }}>
+            <div style={{ padding: '12px 20px', borderBottom: '0.5px solid rgba(0,0,0,0.09)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <strong style={{ fontSize: 14 }}>Standard-Rated Invoices (15% VAT)</strong>
+              <span style={{ fontSize: 12, color: '#2E7D2E', fontWeight: 600 }}>{vatStandard.length} invoice{vatStandard.length!==1?'s':''} &nbsp;|&nbsp; VAT: {fmt(vatStandard.reduce((s,i)=>s+Number(i.tax||0),0))}</span>
+            </div>
+            {vatStandard.length === 0 ? <div style={{ padding: 20, color: '#999', fontSize: 13, textAlign: 'center' }}>No standard-rated invoices this month</div> : (
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                <thead><tr style={{ background: '#E8D5A3' }}><Th>Invoice #</Th><Th>Date</Th><Th>Client</Th><Th style={{ textAlign: 'right' }}>Subtotal (ex-VAT)</Th><Th style={{ textAlign: 'right' }}>VAT 15%</Th><Th style={{ textAlign: 'right' }}>Total</Th></tr></thead>
+                <tbody>
+                  {vatStandard.map(inv => (
+                    <tr key={inv.id} style={{ borderBottom: '0.5px solid rgba(0,0,0,0.09)' }}>
+                      <Td><strong>{inv.number}</strong></Td><Td>{fmtDate(inv.date)}</Td><Td>{inv.client_name}</Td>
+                      <Td style={{ textAlign: 'right' }}>{fmt(inv.subtotal||0)}</Td>
+                      <Td style={{ textAlign: 'right', color: '#2E7D2E', fontWeight: 500 }}>{fmt(inv.tax||0)}</Td>
+                      <Td style={{ textAlign: 'right', fontWeight: 500 }}>{fmt(inv.total)}</Td>
+                    </tr>
+                  ))}
+                  <tr style={{ background: '#E8D5A3', fontWeight: 700 }}>
+                    <td colSpan={3} style={{ padding: '9px 14px', fontSize: 13 }}>SUBTOTAL</td>
+                    <td style={{ padding: '9px 14px', textAlign: 'right', fontSize: 13 }}>{fmt(vatStandard.reduce((s,i)=>s+Number(i.subtotal||0),0))}</td>
+                    <td style={{ padding: '9px 14px', textAlign: 'right', fontSize: 13, color: '#2E7D2E' }}>{fmt(vatStandard.reduce((s,i)=>s+Number(i.tax||0),0))}</td>
+                    <td style={{ padding: '9px 14px', textAlign: 'right', fontSize: 13 }}>{fmt(vatStandard.reduce((s,i)=>s+Number(i.total),0))}</td>
+                  </tr>
+                </tbody>
+              </table>
+            )}
+          </Card>
+
+          <Card style={{ padding: 0, overflow: 'hidden', marginBottom: 16 }}>
+            <div style={{ padding: '12px 20px', borderBottom: '0.5px solid rgba(0,0,0,0.09)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <strong style={{ fontSize: 14 }}>Zero-Rated Invoices (0% VAT)</strong>
+              <span style={{ fontSize: 12, color: '#666', fontWeight: 600 }}>{vatZeroRated.length} invoice{vatZeroRated.length!==1?'s':''} &nbsp;|&nbsp; VAT: Nil</span>
+            </div>
+            {vatZeroRated.length === 0 ? <div style={{ padding: 20, color: '#999', fontSize: 13, textAlign: 'center' }}>No zero-rated invoices this month</div> : (
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                <thead><tr style={{ background: '#E8D5A3' }}><Th>Invoice #</Th><Th>Date</Th><Th>Client</Th><Th style={{ textAlign: 'right' }}>Amount</Th><Th style={{ textAlign: 'right' }}>VAT</Th></tr></thead>
+                <tbody>
+                  {vatZeroRated.map(inv => (
+                    <tr key={inv.id} style={{ borderBottom: '0.5px solid rgba(0,0,0,0.09)' }}>
+                      <Td><strong>{inv.number}</strong></Td><Td>{fmtDate(inv.date)}</Td><Td>{inv.client_name}</Td>
+                      <Td style={{ textAlign: 'right', fontWeight: 500 }}>{fmt(inv.total)}</Td>
+                      <Td style={{ textAlign: 'right', color: '#999', fontStyle: 'italic' }}>Nil</Td>
+                    </tr>
+                  ))}
+                  <tr style={{ background: '#E8D5A3', fontWeight: 700 }}>
+                    <td colSpan={3} style={{ padding: '9px 14px', fontSize: 13 }}>SUBTOTAL</td>
+                    <td style={{ padding: '9px 14px', textAlign: 'right', fontSize: 13 }}>{fmt(vatZeroRated.reduce((s,i)=>s+Number(i.total),0))}</td>
+                    <td style={{ padding: '9px 14px', textAlign: 'right', fontSize: 13, color: '#999', fontStyle: 'italic' }}>Nil</td>
+                  </tr>
+                </tbody>
+              </table>
+            )}
+          </Card>
+
+          <Card>
+            <div style={{ fontWeight: 500, marginBottom: 14, fontSize: 14 }}>VAT Return Summary — {vatMonthLabel}</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+              <div>
+                {[['Total Sales (inc. VAT)', fmt(vatTotalInv), '#1a1a1a'],['Taxable Sales (ex-VAT)', fmt(vatTotalSubtotal), '#8B6914'],['Zero-Rated Sales', fmt(vatZeroRated.reduce((s,i)=>s+Number(i.total),0)), '#666'],['VAT Output Tax (Box 1)', fmt(vatTotalTax), '#2E7D2E']].map(([label, value, color]) => (
+                  <div key={label} style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0', borderBottom: '0.5px solid rgba(0,0,0,0.09)', fontSize: 13 }}>
+                    <span style={{ color: '#666' }}>{label}</span>
+                    <span style={{ fontWeight: label.includes('Box') ? 700 : 500, color }}>{value}</span>
+                  </div>
+                ))}
+                <div style={{ marginTop: 8 }}>
+                  {[['Total Purchases (inc. VAT)', fmt(vatPurchasesTotal), '#1a1a1a'],['VAT Input Tax (Box 2)', fmt(vatInputTax), '#1A4D1A']].map(([label, value, color]) => (
+                    <div key={label} style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0', borderBottom: '0.5px solid rgba(0,0,0,0.09)', fontSize: 13 }}>
+                      <span style={{ color: '#666' }}>{label}</span>
+                      <span style={{ fontWeight: label.includes('Box') ? 700 : 500, color }}>{value}</span>
+                    </div>
+                  ))}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', fontSize: 15, fontWeight: 700, color: '#D85A30', borderTop: '2px solid #D85A30', marginTop: 4 }}>
+                    <span>NET VAT PAYABLE</span><span>{fmt(vatNetPayable)}</span>
+                  </div>
+                </div>
+              </div>
+              <div style={{ background: '#f9f6f0', borderRadius: 8, padding: '14px 16px', fontSize: 12, color: '#555', lineHeight: 1.9 }}>
+                <div style={{ fontWeight: 600, color: '#3D2214', marginBottom: 8 }}>📋 Filing Summary</div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '0.5px solid rgba(0,0,0,0.09)', paddingBottom: 6, marginBottom: 6 }}><span>Box 1 — Output Tax</span><strong style={{ color: '#2E7D2E' }}>{fmt(vatTotalTax)}</strong></div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '0.5px solid rgba(0,0,0,0.09)', paddingBottom: 6, marginBottom: 6 }}><span>Box 2 — Input Tax</span><strong style={{ color: '#1A4D1A' }}>{fmt(vatInputTax)}</strong></div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: 6, marginBottom: 10 }}><span style={{ fontWeight: 700 }}>Net Payable to VFSC</span><strong style={{ color: '#D85A30', fontSize: 14 }}>{fmt(vatNetPayable)}</strong></div>
+                {vatPurchases.length === 0 && <div style={{ background: '#FAEEDA', border: '0.5px solid #FAC775', borderRadius: 6, padding: '8px 10px', fontSize: 11, color: '#633806' }}>⚠️ No purchases recorded. Add purchases to claim input VAT.</div>}
+              </div>
+            </div>
+          </Card>
+        </>}
+
+        {showExport && <ExportModal title={`VAT Return — ${vatMonthLabel}`} columns={vatColumns}
+          onExport={(fmt2, sel) => {
+            if (fmt2 === 'pdf') { printVatReturn(); return }
+            const cols = vatColumns.filter(c => sel.has(c.key))
+            const dlRows = [
+              ['Malakesa Transfer and Tour - VAT Return'],
+              ['Period:', vatMonthLabel, 'TIN:', '445579', 'Net VAT Payable:', vatNetPayable],
+              [], ['OUTPUT TAX'], cols.map(c => c.label),
+              ...vatInvoices.map(inv => cols.map(c => { if (c.key==='rate') return Number(inv.tax)>0?'15%':'Zero-rated'; return inv[c.key]??'' })),
+              [], ['INPUT TAX'],
+              ['Date','Supplier','Description','Ex-VAT','Input VAT','Total'],
+              ...vatPurchases.map(p => [p.date,p.supplier,p.description||'',p.amount_ex_vat||0,p.vat||0,p.amount])
+            ]
+            const esc = v => { const s = String(v??''); return s.includes(',')||s.includes('"')?'"'+s.replace(/"/g,'""')+'"':s }
+            const csv = dlRows.map(r=>r.map(esc).join(',')).join('\n')
+            const blob = new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'})
+            const url = URL.createObjectURL(blob)
+            const a = document.createElement('a'); a.href=url; a.download='Malakesa_VAT_'+vatMonthLabel.replace(/\s/g,'_')+'.csv'; a.click()
+            URL.revokeObjectURL(url)
+          }}
+          onClose={() => setShowExport(false)} />}
+      </div>
+    </>
+  )
+}
 
 function Purchases({ purchases, suppliers, customCategories, reload, setModal }) {
   const [filterMonth, setFilterMonth] = useState('')
