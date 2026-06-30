@@ -727,6 +727,66 @@ function Invoices({ invoices, payments, reload, setModal, setSelected }) {
 
   // Export
   const [showExport, setShowExport] = useState(false)
+  const [selectedIds, setSelectedIds] = useState(new Set())
+  const toggleSelect = (id) => setSelectedIds(s => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n })
+  const toggleAll = () => setSelectedIds(s => s.size === filtered.length ? new Set() : new Set(filtered.map(i => i.id)))
+  const selectedInvoices = filtered.filter(i => selectedIds.has(i.id))
+  const allSelected = filtered.length > 0 && selectedIds.size === filtered.length
+  const someSelected = selectedIds.size > 0
+
+  const bulkPrint = () => {
+    const invs = selectedInvoices
+    if (!invs.length) return
+    const w = window.open('', '_blank')
+    if (!w) { alert('Please allow popups.'); return }
+    const now = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+    const rows = invs.map(inv => {
+      const st = getStatus(inv, payments); const bal = getBalance(inv, payments)
+      const stColor = st === 'paid' ? '#3B6D11' : st === 'overdue' ? '#A32D2D' : '#D85A30'
+      return `<tr><td>${inv.number}</td><td>${fmtDate(inv.date)}</td><td>${fmtDate(inv.due_date)}</td><td>${inv.client_name}</td><td style='text-align:right'>${fmt(inv.total)}</td><td style='text-align:right;color:${bal>0?'#D85A30':'#3B6D11'}'>${fmt(bal)}</td><td><span style='background:${stColor}20;color:${stColor};padding:2px 8px;border-radius:99px;font-size:11px;font-weight:600'>${st}</span></td></tr>`
+    }).join('')
+    const totalSel = invs.reduce((s,i)=>s+Number(i.total),0)
+    const totalBal = invs.reduce((s,i)=>s+getBalance(i,payments),0)
+    w.document.write(`<!DOCTYPE html><html><head><title>Bulk Invoice Print</title><style>
+      body{font-family:Arial,sans-serif;color:#222;font-size:13px;margin:0}
+      .rpt-hdr{display:none} @page{margin:18mm 14mm 20mm 14mm;size:A4}
+      table{width:100%;border-collapse:collapse;font-size:12px}
+      thead{display:table-header-group} th{background:#E8D5A3;padding:8px 10px;text-align:left;font-size:11px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+      td{padding:8px 10px;border-bottom:0.5px solid #eee} h1{color:#8B6914;font-size:18px;margin:0 0 4px} .sub{color:#888;font-size:12px;margin-bottom:20px}
+      .noprint{background:#333;color:#fff;padding:10px 20px;display:flex;justify-content:space-between;align-items:center}
+      .printbtn{background:#8B6914;color:#fff;border:none;padding:7px 18px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600}
+      @media print{.noprint{display:none}.rpt-hdr{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #8B6914;padding:6px 40px;position:fixed;top:0;left:0;right:0;background:#fff;z-index:999} body{padding-top:42px}}
+    </style></head><body>
+    <div class='rpt-hdr'><span style='font-size:12px;font-weight:700;color:#3D2214'>Malakesa Transfer &amp; Tour — Selected Invoices (${invs.length})</span><span style='font-size:10px;color:#888'>${now}</span></div>
+    <div class='noprint'><span>Bulk Print — ${invs.length} selected invoice(s)</span><button class='printbtn' onclick='window.print()'>🖨️ Print / Save PDF</button></div>
+    <div style='padding:20px 40px'>
+      <h1>Malakesa Transfer &amp; Tour</h1>
+      <div class='sub'>Selected Invoices &nbsp;|&nbsp; ${invs.length} invoice(s) &nbsp;|&nbsp; ${now}<br>Total: VT ${Number(totalSel).toLocaleString()} &nbsp;|&nbsp; Outstanding: VT ${Number(totalBal).toLocaleString()}</div>
+      <table><thead><tr><th>Invoice #</th><th>Issue Date</th><th>Due Date</th><th>Client</th><th style='text-align:right'>Total</th><th style='text-align:right'>Balance</th><th>Status</th></tr></thead>
+      <tbody>${rows}</tbody>
+      <tr style='background:#E8D5A3;font-weight:700'><td colspan='4' style='padding:9px 10px'>TOTAL (${invs.length} invoices)</td><td style='padding:9px 10px;text-align:right'>VT ${Number(totalSel).toLocaleString()}</td><td style='padding:9px 10px;text-align:right'>VT ${Number(totalBal).toLocaleString()}</td><td></td></tr>
+      </table></div><script>window.onload=()=>window.print()<\/script></body></html>`)
+    w.document.close()
+  }
+
+  const bulkExport = () => {
+    const invs = selectedInvoices
+    if (!invs.length) return
+    const rows = [
+      ['Malakesa Transfer and Tour - Selected Invoices'],
+      ['Selected:', invs.length + ' invoices'],
+      ['Generated:', new Date().toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' })],
+      [],
+      ['Invoice #', 'Issue Date', 'Due Date', 'Client', 'Subtotal (VT)', 'VAT (VT)', 'Total (VT)', 'Balance (VT)', 'Status'],
+      ...invs.map(inv => [
+        inv.number, inv.date, inv.due_date, inv.client_name,
+        inv.subtotal || 0, inv.tax || 0, inv.total,
+        getBalance(inv, payments), getStatus(inv, payments)
+      ])
+    ]
+    downloadCSV('Malakesa_Selected_Invoices.csv', rows)
+  }
+
   const invoiceColumns = [
     { key: 'number', label: 'Invoice #' },
     { key: 'date', label: 'Issue Date' },
@@ -864,6 +924,23 @@ function Invoices({ invoices, payments, reload, setModal, setSelected }) {
           </div>
         )}
 
+        {/* Bulk action bar */}
+        {someSelected && (
+          <div style={{ background: 'linear-gradient(135deg,#1A0D06,#3D2214)', borderRadius: 10, padding: '12px 18px', marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{ color: '#FFD700', fontWeight: 700, fontSize: 15 }}>{selectedIds.size}</span>
+              <span style={{ color: 'rgba(255,255,255,0.8)', fontSize: 13 }}>invoice{selectedIds.size !== 1 ? 's' : ''} selected</span>
+              <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 13 }}>|</span>
+              <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13 }}>Total: <strong style={{ color: '#FFD700' }}>{fmt(selectedInvoices.reduce((s,i)=>s+Number(i.total),0))}</strong></span>
+            </div>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <button className="btn btn-sm" style={{ background: '#8B6914', borderColor: '#6B5010', color: '#fff', fontWeight: 600 }} onClick={bulkPrint}><i className="ti ti-printer"></i> Print Selected</button>
+              <button className="btn btn-sm" style={{ background: '#1D6F42', borderColor: '#155233', color: '#fff', fontWeight: 600 }} onClick={bulkExport}><i className="ti ti-download"></i> Export Selected</button>
+              <button className="btn btn-sm" style={{ color: 'rgba(255,255,255,0.6)', borderColor: 'rgba(255,255,255,0.2)', background: 'none', fontSize: 11 }} onClick={() => setSelectedIds(new Set())}>Clear selection</button>
+            </div>
+          </div>
+        )}
+
         <Card style={{ padding: 0, overflow: 'hidden' }}>
           {filtered.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '48px 20px', color: '#666' }}>
@@ -874,12 +951,14 @@ function Invoices({ invoices, payments, reload, setModal, setSelected }) {
           ) : (
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
               <thead><tr style={{ background: '#E8D5A3' }}>
+                <th style={{ padding: '9px 14px', width: 36 }}><input type="checkbox" checked={allSelected} onChange={toggleAll} style={{ cursor: 'pointer', width: 15, height: 15, accentColor: '#8B6914' }} /></th>
                 <Th>Invoice #</Th><Th>Client</Th><Th>Issue Date</Th><Th>Due Date</Th><Th>Amount</Th><Th>Balance</Th><Th>Status</Th><Th>Actions</Th>
               </tr></thead>
               <tbody>{filtered.map(inv => {
                 const st = getStatus(inv, payments); const bal = getBalance(inv, payments)
                 return (
-                  <tr key={inv.id} style={{ borderBottom: '0.5px solid rgba(0,0,0,0.09)' }}>
+                  <tr key={inv.id} style={{ borderBottom: '0.5px solid rgba(0,0,0,0.09)', background: selectedIds.has(inv.id) ? '#fdf8ec' : st === 'overdue' ? '#FFF8F8' : '#fff' }}>
+                    <td style={{ padding: '9px 14px', width: 36 }}><input type="checkbox" checked={selectedIds.has(inv.id)} onChange={() => toggleSelect(inv.id)} onClick={e => e.stopPropagation()} style={{ cursor: 'pointer', width: 15, height: 15, accentColor: '#8B6914' }} /></td>
                     <Td><strong>{inv.number}</strong></Td>
                     <Td>{inv.client_name}</Td>
                     <Td>{fmtDate(inv.date)}</Td>
