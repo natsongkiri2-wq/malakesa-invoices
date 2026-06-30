@@ -56,7 +56,7 @@ export async function POST(req) {
     <div style="background:linear-gradient(135deg,#1A0D06,#3D2214,#5C3D0A);padding:28px 32px;border-radius:8px 8px 0 0">
       <div style="display:flex;justify-content:space-between;align-items:flex-start">
         <div>
-          <img src="https://malakesa-invoices.vercel.app/malakesa-logo.svg" alt="Malakesa Transfer and Tour" style="width:220px;display:block;border-radius:4px" />
+          <img src="https://malakesa-invoices.vercel.app/malakesa-logo.png" alt="Malakesa Transfer and Tour" style="width:220px;display:block;border-radius:4px" />
           <div style="font-size:11px;color:rgba(255,255,255,0.75);margin-top:10px;line-height:1.9">
             📍 Port Vila, Shefa Province, Vanuatu<br>
             📞 +678 22712 &nbsp;|&nbsp; 📱 7798712<br>
