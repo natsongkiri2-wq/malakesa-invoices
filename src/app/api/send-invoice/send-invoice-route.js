@@ -51,13 +51,7 @@ export async function POST(req) {
     <div style="background:linear-gradient(135deg,#1A0D06,#3D2214,#5C3D0A);padding:28px 32px;border-radius:8px 8px 0 0">
       <div style="display:flex;justify-content:space-between;align-items:flex-start">
         <div>
-          <div style="font-size:26px;font-weight:900;color:#FFD700;letter-spacing:3px;font-family:Georgia,serif">MALAKESA</div>
-          <div style="display:flex;align-items:center;gap:8px;margin:5px 0">
-            <div style="height:1px;width:40px;background:rgba(255,215,0,0.5)"></div>
-            <span style="color:#FFD700;font-size:14px">★</span>
-            <div style="height:1px;width:40px;background:rgba(255,215,0,0.5)"></div>
-          </div>
-          <div style="font-size:8px;color:rgba(255,215,0,0.85);letter-spacing:4px;font-weight:800">TRANSFERS &nbsp;&nbsp; TOURS</div>
+          <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwJSIgdmlld0JveD0iMCAwIDY4MCAxODAiIHJvbGU9ImltZyIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4NCiAgPHRpdGxlPk1hbGFrZXNhIFRyYW5zZmVyIGFuZCBUb3VyIGxvZ288L3RpdGxlPg0KICA8ZGVmcz4NCiAgICA8c3R5bGU+QGltcG9ydCB1cmwoJ2h0dHBzOi8vZm9udHMuZ29vZ2xlYXBpcy5jb20vY3NzMj9mYW1pbHk9UGxheWZhaXIrRGlzcGxheTp3Z2h0QDkwMCZkaXNwbGF5PXN3YXAnKTs8L3N0eWxlPg0KICA8L2RlZnM+DQogIDx0ZXh0IHg9IjM0MCIgeT0iOTIiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSInUGxheWZhaXIgRGlzcGxheScsIEdlb3JnaWEsIHNlcmlmIiBmb250LXNpemU9Ijg4IiBmb250LXdlaWdodD0iOTAwIiBmaWxsPSIjNkI0QTBGIiBsZXR0ZXItc3BhY2luZz0iNSIgc3R5bGU9InBhaW50LW9yZGVyOnN0cm9rZTsgc3Ryb2tlOiM1YTNkMGE7IHN0cm9rZS13aWR0aDoycHg7IHN0cm9rZS1saW5lam9pbjpyb3VuZCI+TUFMQUtFU0E8L3RleHQ+DQogIDxyZWN0IHg9IjQwIiB5PSIxMTQiIHdpZHRoPSI2MDAiIGhlaWdodD0iMi41IiBmaWxsPSIjNkI0QTBGIi8+DQogIDxlbGxpcHNlIGN4PSIzNDAiIGN5PSIxMzgiIHJ4PSI3OCIgcnk9IjM1IiBmaWxsPSIjN0E1NTE4IiBzdHJva2U9IiM0YTMwMDgiIHN0cm9rZS13aWR0aD0iMi41Ii8+DQogIDxlbGxpcHNlIGN4PSIzNDAiIGN5PSIxMzgiIHJ4PSI3MSIgcnk9IjI4IiBmaWxsPSJub25lIiBzdHJva2U9IiNjOGEwNGEiIHN0cm9rZS13aWR0aD0iMS41Ii8+DQogIDxwb2x5Z29uIHBvaW50cz0iMzQwLDExNiAzNDcsMTMyIDM2NiwxMzIgMzUyLDE0MyAzNTcsMTYwIDM0MCwxNTAgMzIzLDE2MCAzMjgsMTQzIDMxNCwxMzIgMzMzLDEzMiIgZmlsbD0iIzFhMTAwOCIgc3Ryb2tlPSIjMWExMDA4IiBzdHJva2Utd2lkdGg9IjEiLz4NCiAgPHRleHQgeD0iMTQ4IiB5PSIxNjIiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgSGVsdmV0aWNhLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjE0IiBmb250LXdlaWdodD0iNzAwIiBsZXR0ZXItc3BhY2luZz0iMyIgZmlsbD0iIzZCNEEwRiI+VFJBTlNGRVJTPC90ZXh0Pg0KICA8dGV4dCB4PSI1MzIiIHk9IjE2MiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9IkFyaWFsLCBIZWx2ZXRpY2EsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTQiIGZvbnQtd2VpZ2h0PSI3MDAiIGxldHRlci1zcGFjaW5nPSIzIiBmaWxsPSIjNkI0QTBGIj5UT1VSUzwvdGV4dD4NCjwvc3ZnPg0K" alt="Malakesa Transfer and Tour" style="width:220px;display:block;border-radius:4px" />
           <div style="font-size:11px;color:rgba(255,255,255,0.75);margin-top:10px;line-height:1.9">
             📍 Port Vila, Shefa Province, Vanuatu<br>
             📞 +678 22712 &nbsp;|&nbsp; 📱 7798712<br>
