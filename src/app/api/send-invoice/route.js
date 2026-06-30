@@ -49,7 +49,7 @@ export async function POST(req) {
 
     const html = `<!DOCTYPE html><html><body style="font-family:Arial,sans-serif;color:#222;max-width:640px;margin:0 auto;padding:20px;background:#f0ebe0">
     <div style="background:linear-gradient(135deg,#1A0D06,#3D2214,#5C3D0A);padding:28px 32px;border-radius:8px 8px 0 0">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+      <div style="display:flex;justify-content:space-between;align-items:center">
         <div>
           <img src="https://malakesa-invoices.vercel.app/malakesa-logo.png" alt="Malakesa Transfer and Tour" style="width:220px;display:block;border-radius:4px" />
           <div style="font-size:11px;color:rgba(255,255,255,0.75);margin-top:10px;line-height:1.9">
