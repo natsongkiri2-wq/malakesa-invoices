@@ -646,7 +646,9 @@ function Invoices({ invoices, payments, reload, setModal, setSelected }) {
       const res = await fetch('/api/send-reminder', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ invoiceId: inv.id }) })
       if (res.ok) { setNotice('Reminder sent to ' + inv.client_name); setTimeout(() => setNotice(''), 5000); setSending(null); return }
     } catch(e) {}
-    window.open('mailto:' + (inv.client_email || '') + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body), '_blank')
+    // mailto: must use location.href not window.open to trigger email app correctly
+    const mailtoUrl = 'mailto:' + (inv.client_email || '') + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body)
+    window.location.href = mailtoUrl
     setNotice('Email app opened for ' + inv.client_name)
     setTimeout(() => setNotice(''), 5000)
     setSending(null)
@@ -707,7 +709,7 @@ function Invoices({ invoices, payments, reload, setModal, setSelected }) {
           'Total outstanding: VT ' + Number(totalOwed).toLocaleString() + '\n\n' +
           'Please arrange payment at your earliest convenience.\n\n' +
           'Thank you,\nMalakesa Transfer and Tour\nTel: +678 22712 | accounts@malakesa.vu'
-        window.open('mailto:' + c.email + '?subject=' + subject + '&body=' + encodeURIComponent(bodyText), '_blank')
+        window.location.href = 'mailto:' + c.email + '?subject=' + subject + '&body=' + encodeURIComponent(bodyText)
       }
 
       setNotice('Reminder sent to ' + clientName + ' (' + c.invoices.length + ' invoice' + (c.invoices.length !== 1 ? 's' : '') + ')')
