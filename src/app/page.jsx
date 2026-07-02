@@ -769,6 +769,80 @@ function Invoices({ invoices, payments, reload, setModal, setSelected }) {
     w.document.close()
   }
 
+  const bulkEmailReminders = async () => {
+    const invs = selectedInvoices.filter(i => getStatus(i, payments) !== 'paid')
+    if (!invs.length) { alert('No unpaid invoices selected.'); return }
+    // Group by client
+    const byClient = {}
+    invs.forEach(inv => {
+      const key = inv.client_name
+      if (!byClient[key]) byClient[key] = { email: inv.client_email || '', invoices: [] }
+      byClient[key].invoices.push(inv)
+    })
+    const withEmail = Object.entries(byClient).filter(([,c]) => c.email)
+    const noEmail = Object.entries(byClient).filter(([,c]) => !c.email).map(([n]) => n)
+    if (!withEmail.length) { alert('No email addresses found for selected clients.\n\nMissing: ' + noEmail.join(', ')); return }
+    let msg = `Send one reminder email per client for ${invs.length} selected invoice(s)?\n\n`
+    withEmail.forEach(([name, c]) => {
+      const total = c.invoices.reduce((s, i) => s + getBalance(i, payments), 0)
+      msg += '- ' + name + ': ' + c.invoices.length + ' invoice(s), VT ' + Number(total).toLocaleString() + ' outstanding\n'
+    })
+    if (noEmail.length) msg += '\nSkipped (no email): ' + noEmail.join(', ')
+    if (!confirm(msg)) return
+    for (const [clientName, c] of withEmail) {
+      const totalOwed = c.invoices.reduce((s, i) => s + getBalance(i, payments), 0)
+      const invoiceLines = c.invoices.map(inv => {
+        const bal = getBalance(inv, payments)
+        return '  - Invoice ' + inv.number + ': VT ' + Number(bal).toLocaleString() + ' (due ' + fmtDate(inv.due_date) + ')'
+      }).join('\n')
+      let sent = false
+      try {
+        if (c.invoices.length === 1) {
+          const res = await fetch('/api/send-reminder', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ invoiceId: c.invoices[0].id }) })
+          if (res.ok) sent = true
+        }
+      } catch(e) {}
+      if (!sent) {
+        const subject = encodeURIComponent('Payment Reminder — Outstanding Invoices')
+        const bodyText = 'Dear ' + clientName + ',\n\nThis is a friendly reminder that the following invoice' + (c.invoices.length > 1 ? 's are' : ' is') + ' outstanding:\n\n' + invoiceLines + '\n\nTotal outstanding: VT ' + Number(totalOwed).toLocaleString() + '\n\nPlease arrange payment at your earliest convenience.\n\nThank you,\nMalakesa Transfer and Tour\nTel: +678 22712 | accounts@malakesa.vu'
+        window.location.href = 'mailto:' + c.email + '?subject=' + subject + '&body=' + encodeURIComponent(bodyText)
+      }
+    }
+    setNotice('Reminders sent to ' + withEmail.length + ' client(s)')
+    setTimeout(() => setNotice(''), 5000)
+  }
+
+  const bulkEmail = async () => {
+    const invs = selectedInvoices
+    if (!invs.length) return
+    // Group by client
+    const byClient = {}
+    invs.forEach(inv => {
+      const key = inv.client_name || 'Unknown'
+      if (!byClient[key]) byClient[key] = { email: inv.client_email || '', invoices: [] }
+      byClient[key].invoices.push(inv)
+    })
+    const clients = Object.entries(byClient)
+    const withEmail = clients.filter(([,c]) => c.email)
+    const noEmail = clients.filter(([,c]) => !c.email).map(([name]) => name)
+    if (withEmail.length === 0) { alert('No email addresses found for selected clients.\nAdd emails in the Clients page.'); return }
+    let msg = 'Send invoice emails to ' + withEmail.length + ' client(s)?\n\n'
+    withEmail.forEach(([name, c]) => { msg += '- ' + name + ': ' + c.invoices.length + ' invoice(s)\n' })
+    if (noEmail.length > 0) msg += '\nSkipped (no email): ' + noEmail.join(', ')
+    if (!confirm(msg)) return
+    let sent = 0, failed = 0
+    for (const [clientName, c] of withEmail) {
+      for (const inv of c.invoices) {
+        try {
+          const res = await fetch('/api/send-invoice', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ invoiceId: inv.id }) })
+          if (res.ok) sent++; else failed++
+        } catch(e) { failed++ }
+      }
+    }
+    setNotice(`Sent ${sent} invoice email${sent!==1?'s':''} successfully${failed>0?' ('+failed+' failed)':''}`)
+    setTimeout(() => setNotice(''), 6000)
+  }
+
   const bulkExport = () => {
     const invs = selectedInvoices
     if (!invs.length) return
@@ -785,6 +859,48 @@ function Invoices({ invoices, payments, reload, setModal, setSelected }) {
       ])
     ]
     downloadCSV('Malakesa_Selected_Invoices.csv', rows)
+  }
+
+  const bulkEmail = async () => {
+    const invs = selectedInvoices
+    if (!invs.length) return
+    // Group by client so each client gets ONE email listing all their selected invoices
+    const byClient = {}
+    invs.forEach(inv => {
+      const key = inv.client_name || 'Unknown'
+      if (!byClient[key]) byClient[key] = { email: inv.client_email || '', invoices: [] }
+      byClient[key].invoices.push(inv)
+    })
+    const clients = Object.entries(byClient)
+    const withEmail = clients.filter(([,c]) => c.email)
+    const noEmail = clients.filter(([,c]) => !c.email).map(([name]) => name)
+    if (withEmail.length === 0) {
+      alert('No email addresses found for selected clients.\nMissing: ' + noEmail.join(', ') + '\nAdd emails in the Clients page.')
+      return
+    }
+    let msg = 'Send invoice email to ' + withEmail.length + ' client(s)?\n\n'
+    withEmail.forEach(([name, c]) => { msg += '- ' + name + ': ' + c.invoices.length + ' invoice(s)\n' })
+    if (noEmail.length > 0) msg += '\nSkipped (no email): ' + noEmail.join(', ')
+    if (!confirm(msg)) return
+    let sent = 0, failed = 0
+    for (const [clientName, c] of withEmail) {
+      for (const inv of c.invoices) {
+        try {
+          const res = await fetch('/api/send-invoice', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ invoiceId: inv.id }) })
+          if (res.ok) sent++
+          else {
+            // Fallback to mailto
+            const bal = getBalance(inv, payments)
+            const subject = encodeURIComponent('Invoice ' + inv.number + ' from Malakesa Transfer and Tour')
+            const body = encodeURIComponent('Dear ' + clientName + ',\n\nPlease find attached invoice ' + inv.number + ' for VT ' + Number(inv.total).toLocaleString() + ', due ' + fmtDate(inv.due_date) + '.\n\nPlease arrange payment at your earliest convenience.\n\nThank you,\nMalakesa Transfer and Tour\nTel: +678 22712 | accounts@malakesa.vu')
+            window.location.href = 'mailto:' + inv.client_email + '?subject=' + subject + '&body=' + body
+            sent++
+          }
+        } catch(e) { failed++ }
+      }
+    }
+    setNotice(sent + ' invoice email' + (sent !== 1 ? 's' : '') + ' sent' + (failed > 0 ? ', ' + failed + ' failed' : ''))
+    setTimeout(() => setNotice(''), 6000)
   }
 
   const invoiceColumns = [
@@ -936,6 +1052,8 @@ function Invoices({ invoices, payments, reload, setModal, setSelected }) {
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
               <button className="btn btn-sm" style={{ background: '#8B6914', borderColor: '#6B5010', color: '#fff', fontWeight: 600 }} onClick={bulkPrint}><i className="ti ti-printer"></i> Print Selected</button>
               <button className="btn btn-sm" style={{ background: '#1D6F42', borderColor: '#155233', color: '#fff', fontWeight: 600 }} onClick={bulkExport}><i className="ti ti-download"></i> Export Selected</button>
+              <button className="btn btn-sm" style={{ background: '#2563A8', borderColor: '#1a4a8a', color: '#fff', fontWeight: 600 }} onClick={bulkEmail}><i className="ti ti-mail"></i> Email Selected</button>
+              <button className="btn btn-sm" style={{ background: '#3D2214', borderColor: '#1A0D06', color: '#FFD700', fontWeight: 600 }} onClick={bulkEmailReminders}><i className="ti ti-mail"></i> Email Reminders</button>
               <button className="btn btn-sm" style={{ color: 'rgba(255,255,255,0.6)', borderColor: 'rgba(255,255,255,0.2)', background: 'none', fontSize: 11 }} onClick={() => setSelectedIds(new Set())}>Clear selection</button>
             </div>
           </div>
@@ -4324,6 +4442,7 @@ function NewInvoiceModal({ clients, onClose, onSave }) {
   const [form, setForm] = useState({ client_id: '', client_name: '', client_email: '', date: todayStr(), due_date: addDays(todayStr(), 14), notes: '' })
   const [items, setItems] = useState([{ id: uid(), description: '', qty: 1, rate: '', total: 0 }, { id: uid(), description: '', qty: 1, rate: '', total: 0 }])
   const [applyVat, setApplyVat] = useState(true)
+  const vatInclusive = true // Rates are always VAT-inclusive at Malakesa
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
@@ -4333,9 +4452,12 @@ function NewInvoiceModal({ clients, onClose, onSave }) {
     u.total = (parseFloat(u.qty) || 0) * (parseFloat(u.rate) || 0)
     return u
   }))
-  const subtotal = items.reduce((s, i) => s + (i.total || 0), 0)
+  const lineTotal = items.reduce((s, i) => s + (i.total || 0), 0)
+  // VAT-inclusive: rate entered includes VAT, so we extract it
+  // VAT-exclusive: rate is pre-VAT, we add VAT on top
+  const subtotal = applyVat && vatInclusive ? Math.round(lineTotal / 1.15) : lineTotal
   const tax = applyVat ? Math.round(subtotal * 0.15) : 0
-  const total = subtotal + tax
+  const total = applyVat && vatInclusive ? lineTotal : subtotal + tax
 
   const handleSave = async () => {
     setError('')
@@ -4362,16 +4484,24 @@ function NewInvoiceModal({ clients, onClose, onSave }) {
         <Field label="Invoice date"><input type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} style={inputStyle} /></Field>
         <Field label="Due date"><input type="date" value={form.due_date} onChange={e => setForm(f => ({ ...f, due_date: e.target.value }))} style={inputStyle} /></Field>
         <Field label="Notes / trip details" style={{ gridColumn: '1/-1' }}><textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} style={{ ...inputStyle, minHeight: 60, resize: 'vertical' }} placeholder="Route, pickup time, special instructions..." /></Field>
-        <div style={{ gridColumn: '1/-1', display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: applyVat ? '#EAF3DE' : '#EDD9A3', borderRadius: 8, border: '0.5px solid ' + (applyVat ? '#C0DD97' : 'rgba(0,0,0,0.1)') }}>
-          <input type="checkbox" id="vatcheck" checked={applyVat} onChange={e => setApplyVat(e.target.checked)} style={{ width: 18, height: 18, cursor: 'pointer', accentColor: '#8B6914' }} />
-          <label htmlFor="vatcheck" style={{ cursor: 'pointer', fontSize: 13, fontWeight: 500, color: applyVat ? '#27500A' : '#666', userSelect: 'none' }}>
-            {applyVat ? '✓ Apply 15% VAT to this invoice' : 'No VAT — zero rated invoice'}
-          </label>
+        <div style={{ gridColumn: '1/-1', background: '#faf6ee', borderRadius: 8, border: '0.5px solid #E8D5A3', padding: '12px 14px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: applyVat ? 10 : 0 }}>
+            <input type="checkbox" id="vatcheck" checked={applyVat} onChange={e => setApplyVat(e.target.checked)} style={{ width: 18, height: 18, cursor: 'pointer', accentColor: '#8B6914' }} />
+            <label htmlFor="vatcheck" style={{ cursor: 'pointer', fontSize: 13, fontWeight: 600, color: applyVat ? '#27500A' : '#666', userSelect: 'none' }}>
+              {applyVat ? '✓ Rates are VAT-inclusive — VAT is extracted for reporting' : 'No VAT — zero rated invoice'}
+            </label>
+          </div>
+          {applyVat && (
+            <div style={{ fontSize: 12, color: '#27500A', background: '#EAF3DE', borderRadius: 6, padding: '7px 12px', marginTop: 2 }}>
+              <i className="ti ti-info-circle" style={{ marginRight: 5 }}></i>
+              Rates are <strong>VAT-inclusive (15%)</strong>. VAT is automatically extracted from the total for reporting.
+            </div>
+          )}
         </div>
       </div>
       <div style={{ fontWeight: 500, marginBottom: 10 }}>Line items</div>
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, marginBottom: 8 }}>
-        <thead><tr style={{ background: '#E8D5A3' }}><Th style={{ width: '42%' }}>Description</Th><Th style={{ width: '12%' }}>Qty</Th><Th style={{ width: '20%' }}>Rate (VT)</Th><Th style={{ width: '18%' }}>Total</Th><Th style={{ width: '8%' }}></Th></tr></thead>
+        <thead><tr style={{ background: '#E8D5A3' }}><Th style={{ width: '42%' }}>Description</Th><Th style={{ width: '12%' }}>Qty</Th><Th style={{ width: '20%' }}>{applyVat ? 'Rate (VT incl. VAT)' : 'Rate (VT)'}</Th><Th style={{ width: '18%' }}>Total</Th><Th style={{ width: '8%' }}></Th></tr></thead>
         <tbody>{items.map(item => (
           <tr key={item.id}>
             <td style={{ padding: '4px 4px' }}><input type="text" value={item.description} onChange={e => updateItem(item.id, 'description', e.target.value)} style={inputStyle} placeholder="e.g. Airport transfer..." /></td>
@@ -4383,10 +4513,20 @@ function NewInvoiceModal({ clients, onClose, onSave }) {
         ))}</tbody>
       </table>
       <button className="btn btn-sm" onClick={() => setItems(i => [...i, { id: uid(), description: '', qty: 1, rate: '', total: 0 }])}><i className="ti ti-plus"></i> Add item</button>
-      <div style={{ marginLeft: 'auto', width: 260, marginTop: 12 }}>
-        {[['Subtotal', fmt(subtotal)], [applyVat ? 'VAT (15%)' : 'VAT', applyVat ? fmt(tax) : 'Not applicable'], ['Total', fmt(total)]].map(([l, v], i) => (
-          <div key={l} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: i < 2 ? '0.5px solid rgba(0,0,0,0.09)' : 'none', fontWeight: i === 2 ? 500 : 400, fontSize: i === 2 ? 15 : 13 }}><span style={{ color: i < 2 ? '#666' : 'inherit' }}>{l}</span><span>{v}</span></div>
-        ))}
+      <div style={{ marginLeft: 'auto', width: 280, marginTop: 12 }}>
+        {applyVat ? (
+          <>
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '0.5px solid rgba(0,0,0,0.09)', fontSize: 13 }}><span style={{ color: '#666' }}>Subtotal (ex-VAT)</span><span>{fmt(subtotal)}</span></div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '0.5px solid rgba(0,0,0,0.09)', fontSize: 13 }}><span style={{ color: '#666' }}>VAT (15% extracted)</span><span style={{ color: '#8B6914' }}>{fmt(tax)}</span></div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', fontSize: 15, fontWeight: 600 }}><span>Total (VAT inclusive)</span><span>{fmt(total)}</span></div>
+          </>
+        ) : (
+          <>
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '0.5px solid rgba(0,0,0,0.09)', fontSize: 13 }}><span style={{ color: '#666' }}>Subtotal</span><span>{fmt(subtotal)}</span></div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '0.5px solid rgba(0,0,0,0.09)', fontSize: 13 }}><span style={{ color: '#666' }}>VAT</span><span>Not applicable</span></div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', fontSize: 15, fontWeight: 600 }}><span>Total</span><span>{fmt(total)}</span></div>
+          </>
+        )}
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 20 }}>
         <button className="btn" onClick={() => previewInvoice({ ...form, items: items.filter(i => i.description.trim()), subtotal, tax, total })}>
