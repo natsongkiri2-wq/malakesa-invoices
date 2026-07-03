@@ -812,37 +812,6 @@ function Invoices({ invoices, payments, reload, setModal, setSelected }) {
     setTimeout(() => setNotice(''), 5000)
   }
 
-  const bulkEmail = async () => {
-    const invs = selectedInvoices
-    if (!invs.length) return
-    // Group by client
-    const byClient = {}
-    invs.forEach(inv => {
-      const key = inv.client_name || 'Unknown'
-      if (!byClient[key]) byClient[key] = { email: inv.client_email || '', invoices: [] }
-      byClient[key].invoices.push(inv)
-    })
-    const clients = Object.entries(byClient)
-    const withEmail = clients.filter(([,c]) => c.email)
-    const noEmail = clients.filter(([,c]) => !c.email).map(([name]) => name)
-    if (withEmail.length === 0) { alert('No email addresses found for selected clients.\nAdd emails in the Clients page.'); return }
-    let msg = 'Send invoice emails to ' + withEmail.length + ' client(s)?\n\n'
-    withEmail.forEach(([name, c]) => { msg += '- ' + name + ': ' + c.invoices.length + ' invoice(s)\n' })
-    if (noEmail.length > 0) msg += '\nSkipped (no email): ' + noEmail.join(', ')
-    if (!confirm(msg)) return
-    let sent = 0, failed = 0
-    for (const [clientName, c] of withEmail) {
-      for (const inv of c.invoices) {
-        try {
-          const res = await fetch('/api/send-invoice', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ invoiceId: inv.id }) })
-          if (res.ok) sent++; else failed++
-        } catch(e) { failed++ }
-      }
-    }
-    setNotice(`Sent ${sent} invoice email${sent!==1?'s':''} successfully${failed>0?' ('+failed+' failed)':''}`)
-    setTimeout(() => setNotice(''), 6000)
-  }
-
   const bulkExport = () => {
     const invs = selectedInvoices
     if (!invs.length) return
