@@ -125,7 +125,7 @@ export default function App() {
             {page === 'purchases' && <Purchases purchases={purchases} suppliers={suppliers} customCategories={customCategories} reload={reload} setModal={setModal} />}
             {page === 'suppliers' && <Suppliers suppliers={suppliers} purchases={purchases} reload={reload} setModal={setModal} />}
             {page === 'vnpf' && <VNPF employees={employees} salaryRecords={salaryRecords} reload={reload} setModal={setModal} setSelected={setSelected} />}
-            {page === 'reports' && <Reports invoices={invoices} payments={payments} purchases={purchases} />}
+            {page === 'reports' && <Reports invoices={invoices} payments={payments} purchases={purchases} salaryRecords={salaryRecords} />}
             {page === 'vat' && <VatPage invoices={invoices} payments={payments} purchases={purchases} />}
             {page === 'clients' && <Clients clients={clients} invoices={invoices} reload={reload} setModal={setModal} />}
           </>
@@ -1424,8 +1424,8 @@ function Unpaid({ invoices, payments, reload, setModal, setSelected }) {
 }
 
 // ── Reports ───────────────────────────────────────────────
-function Reports({ invoices, payments, purchases }) {
-  const [tab, setTab] = useState('revenue') // 'revenue' | 'suppliers'
+function Reports({ invoices, payments, purchases, salaryRecords }) {
+  const [tab, setTab] = useState('revenue') // 'revenue' | 'suppliers' | 'cashflow'
   const [showExport, setShowExport] = useState(false)
   const [period, setPeriod] = useState('all')
   const [revenueMonth, setRevenueMonth] = useState(new Date().toISOString().slice(0, 7))
@@ -2021,6 +2021,7 @@ function Reports({ invoices, payments, purchases }) {
         <div style={{ display: 'flex', gap: 6, background: '#f5f0e8', borderRadius: 10, padding: 4 }}>
           <button style={tabStyle(tab === 'revenue')} onClick={() => setTab('revenue')}><i className="ti ti-chart-bar" style={{ marginRight: 5 }}></i>Revenue</button>
           <button style={tabStyle(tab === 'suppliers')} onClick={() => setTab('suppliers')}><i className="ti ti-truck" style={{ marginRight: 5 }}></i>By Supplier</button>
+          <button style={tabStyle(tab === 'cashflow')} onClick={() => setTab('cashflow')}><i className="ti ti-arrows-exchange" style={{ marginRight: 5 }}></i>Cash Flow</button>
         </div>
       </Topbar>
       <div style={{ padding: '14px 20px 0' }}>
@@ -2200,6 +2201,198 @@ function Reports({ invoices, payments, purchases }) {
             </Card>
           </>}
         </>}
+
+        {tab === 'cashflow' && (() => {
+          // Build last 12 months list
+          const now = new Date()
+          const months = Array.from({ length: 12 }, (_, i) => {
+            const d = new Date(now.getFullYear(), now.getMonth() - 11 + i, 1)
+            return {
+              key: d.toISOString().slice(0, 7),
+              label: d.toLocaleDateString('en-AU', { month: 'short', year: 'numeric' })
+            }
+          })
+
+          // Money IN: payments received per month
+          const moneyIn = months.map(m => ({
+            ...m,
+            value: payments.filter(p => (p.date || '').startsWith(m.key)).reduce((s, p) => s + Number(p.amount || 0), 0)
+          }))
+
+          // Money OUT: purchases + salaries net paid per month
+          const moneyOut = months.map(m => {
+            const purTotal = (purchases || []).filter(p => (p.date || '').startsWith(m.key)).reduce((s, p) => s + Number(p.amount || 0), 0)
+            const salTotal = (salaryRecords || []).filter(r => r.month === m.key).reduce((s, r) => s + Number(r.net_pay || 0), 0)
+            return { ...m, purchases: purTotal, salaries: salTotal, value: purTotal + salTotal }
+          })
+
+          // Net cash flow per month
+          const cashFlow = months.map((m, i) => ({
+            ...m,
+            in: moneyIn[i].value,
+            out: moneyOut[i].value,
+            purchases: moneyOut[i].purchases,
+            salaries: moneyOut[i].salaries,
+            net: moneyIn[i].value - moneyOut[i].value
+          }))
+
+          const totalIn = cashFlow.reduce((s, m) => s + m.in, 0)
+          const totalOut = cashFlow.reduce((s, m) => s + m.out, 0)
+          const totalNet = totalIn - totalOut
+          const totalPurchases = cashFlow.reduce((s, m) => s + m.purchases, 0)
+          const totalSalaries = cashFlow.reduce((s, m) => s + m.salaries, 0)
+          const maxVal = Math.max(...cashFlow.map(m => Math.max(m.in, m.out)), 1)
+
+          const printCashFlow = () => {
+            const w = window.open('', '_blank')
+            if (!w) return
+            const dateStr = new Date().toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' })
+            const rows = cashFlow.map(m => `
+              <tr style='border-bottom:0.5px solid #eee'>
+                <td style='padding:8px 12px;font-weight:500'>${m.label}</td>
+                <td style='padding:8px 12px;text-align:right;color:#3B6D11'>VT ${Number(m.in).toLocaleString()}</td>
+                <td style='padding:8px 12px;text-align:right;color:#666'>VT ${Number(m.purchases).toLocaleString()}</td>
+                <td style='padding:8px 12px;text-align:right;color:#666'>VT ${Number(m.salaries).toLocaleString()}</td>
+                <td style='padding:8px 12px;text-align:right;color:#A32D2D'>VT ${Number(m.out).toLocaleString()}</td>
+                <td style='padding:8px 12px;text-align:right;font-weight:700;color:${m.net >= 0 ? '#3B6D11' : '#A32D2D'}'>VT ${Number(m.net).toLocaleString()}</td>
+              </tr>`).join('')
+            w.document.write(`<!DOCTYPE html><html><head><title>Cash Flow Report</title><style>
+              body{font-family:Arial,sans-serif;color:#222;font-size:13px}
+              h1{color:#8B6914;font-size:20px;margin:0 0 4px} .sub{color:#888;font-size:12px;margin-bottom:20px}
+              table{width:100%;border-collapse:collapse} thead{display:table-header-group}
+              th{background:#E8D5A3;padding:9px 12px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.4px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+              .noprint{background:#333;color:#fff;padding:10px 20px;display:flex;justify-content:space-between;align-items:center}
+              .printbtn{background:#8B6914;color:#fff;border:none;padding:7px 18px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600}
+              .rpt-hdr{display:none} @page{margin:18mm 14mm 20mm 14mm;size:A4}
+              @media print{.noprint{display:none}.rpt-hdr{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #8B6914;padding:6px 40px;position:fixed;top:0;left:0;right:0;background:#fff;z-index:999} body{padding-top:42px 0 0 40px}}
+            </style></head><body>
+            <div class='rpt-hdr'><span style='font-size:12px;font-weight:700;color:#3D2214'>Malakesa Transfer &amp; Tour — Cash Flow Report — Last 12 Months</span><span style='font-size:10px;color:#888'>${dateStr}</span></div>
+            <div class='noprint'><span>Cash Flow Report — Last 12 Months</span><button class='printbtn' onclick='window.print()'>🖨️ Print / Save PDF</button></div>
+            <div style='padding:20px 40px'>
+              <h1>Malakesa Transfer &amp; Tour</h1>
+              <div class='sub'>Cash Flow Report — Last 12 Months &nbsp;|&nbsp; Generated ${dateStr}</div>
+              <div style='display:flex;gap:24px;margin-bottom:20px;flex-wrap:wrap'>
+                <div style='background:#EAF3DE;padding:12px 18px;border-radius:6px'><div style='font-size:11px;color:#555;margin-bottom:4px'>Total Money In</div><div style='font-size:18px;font-weight:700;color:#3B6D11'>VT ${Number(totalIn).toLocaleString()}</div></div>
+                <div style='background:#FCEBEB;padding:12px 18px;border-radius:6px'><div style='font-size:11px;color:#555;margin-bottom:4px'>Total Money Out</div><div style='font-size:18px;font-weight:700;color:#A32D2D'>VT ${Number(totalOut).toLocaleString()}</div></div>
+                <div style='background:${totalNet>=0?'#EAF3DE':'#FCEBEB'};padding:12px 18px;border-radius:6px'><div style='font-size:11px;color:#555;margin-bottom:4px'>Net Cash Flow</div><div style='font-size:18px;font-weight:700;color:${totalNet>=0?'#3B6D11':'#A32D2D'}'>VT ${Number(totalNet).toLocaleString()}</div></div>
+              </div>
+              <table><thead><tr>
+                <th>Month</th><th style='text-align:right'>Money In (Receipts)</th><th style='text-align:right'>Purchases</th><th style='text-align:right'>Salaries</th><th style='text-align:right'>Total Out</th><th style='text-align:right'>Net Cash Flow</th>
+              </tr></thead><tbody>${rows}
+              <tr style='background:#E8D5A3;font-weight:700'>
+                <td style='padding:9px 12px'>TOTAL (12 months)</td>
+                <td style='padding:9px 12px;text-align:right;color:#3B6D11'>VT ${Number(totalIn).toLocaleString()}</td>
+                <td style='padding:9px 12px;text-align:right'>VT ${Number(totalPurchases).toLocaleString()}</td>
+                <td style='padding:9px 12px;text-align:right'>VT ${Number(totalSalaries).toLocaleString()}</td>
+                <td style='padding:9px 12px;text-align:right;color:#A32D2D'>VT ${Number(totalOut).toLocaleString()}</td>
+                <td style='padding:9px 12px;text-align:right;color:${totalNet>=0?'#3B6D11':'#A32D2D'}'>VT ${Number(totalNet).toLocaleString()}</td>
+              </tr></tbody></table></div>
+              <script>window.onload=()=>window.print()<\/script></body></html>`)
+            w.document.close()
+          }
+
+          const exportCashFlow = () => {
+            const rows = [
+              ['Malakesa Transfer and Tour - Cash Flow Report'],
+              ['Period: Last 12 months'],
+              ['Generated:', new Date().toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' })],
+              [],
+              ['Month', 'Money In (VT)', 'Purchases (VT)', 'Salaries (VT)', 'Total Out (VT)', 'Net Cash Flow (VT)'],
+              ...cashFlow.map(m => [m.label, m.in, m.purchases, m.salaries, m.out, m.net]),
+              [],
+              ['TOTAL', totalIn, totalPurchases, totalSalaries, totalOut, totalNet]
+            ]
+            downloadCSV('Malakesa_CashFlow_12months.csv', rows)
+          }
+
+          return (
+            <div>
+              {/* Summary cards */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12, marginBottom: 16 }}>
+                <StatCard label="Total money in" value={fmt(totalIn)} color="#3B6D11" sub="Payments received" />
+                <StatCard label="Total purchases" value={fmt(totalPurchases)} color="#A32D2D" sub="12 months" />
+                <StatCard label="Total salaries" value={fmt(totalSalaries)} color="#A32D2D" sub="Net pay" />
+                <StatCard label="Net cash flow" value={fmt(totalNet)} color={totalNet >= 0 ? '#3B6D11' : '#A32D2D'} sub={totalNet >= 0 ? 'Cash positive' : 'Cash negative'} />
+              </div>
+
+              {/* Visual bar chart */}
+              <Card style={{ padding: '20px 20px 16px', marginBottom: 16 }}>
+                <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 16 }}>Monthly cash flow — last 12 months</div>
+                <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, height: 160, borderBottom: '1px solid #E8D5A3', paddingBottom: 8 }}>
+                  {cashFlow.map(m => {
+                    const inH = Math.round((m.in / maxVal) * 140)
+                    const outH = Math.round((m.out / maxVal) * 140)
+                    const net = m.net
+                    return (
+                      <div key={m.key} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+                        <div style={{ width: '100%', display: 'flex', gap: 2, alignItems: 'flex-end', height: 140 }}>
+                          <div style={{ flex: 1, background: '#3B6D11', borderRadius: '3px 3px 0 0', height: inH + 'px', minHeight: m.in > 0 ? 3 : 0, title: 'In: ' + fmt(m.in) }} title={`In: ${fmt(m.in)}`}></div>
+                          <div style={{ flex: 1, background: '#A32D2D', borderRadius: '3px 3px 0 0', height: outH + 'px', minHeight: m.out > 0 ? 3 : 0 }} title={`Out: ${fmt(m.out)}`}></div>
+                        </div>
+                        <div style={{ fontSize: 9, color: '#888', textAlign: 'center', whiteSpace: 'nowrap', overflow: 'hidden', width: '100%' }}>{m.label.split(' ')[0]}</div>
+                        <div style={{ fontSize: 9, fontWeight: 600, color: net >= 0 ? '#3B6D11' : '#A32D2D' }}>{net >= 0 ? '+' : ''}{Math.round(net/1000)}k</div>
+                      </div>
+                    )
+                  })}
+                </div>
+                <div style={{ display: 'flex', gap: 16, marginTop: 10, fontSize: 12, color: '#666' }}>
+                  <span><span style={{ display: 'inline-block', width: 12, height: 12, background: '#3B6D11', borderRadius: 2, marginRight: 5, verticalAlign: 'middle' }}></span>Money in (payments received)</span>
+                  <span><span style={{ display: 'inline-block', width: 12, height: 12, background: '#A32D2D', borderRadius: 2, marginRight: 5, verticalAlign: 'middle' }}></span>Money out (purchases + salaries)</span>
+                  <span style={{ marginLeft: 'auto', fontSize: 11, color: '#aaa' }}>numbers show net VT (thousands)</span>
+                </div>
+              </Card>
+
+              {/* Detailed monthly table */}
+              <Card style={{ padding: 0, overflow: 'hidden' }}>
+                <div style={{ padding: '12px 20px', borderBottom: '0.5px solid rgba(0,0,0,0.09)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontWeight: 600, fontSize: 13 }}>Month by month breakdown</span>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button className="btn btn-sm" style={{ background: '#8B6914', borderColor: '#6B5010', color: '#fff', fontWeight: 500 }} onClick={printCashFlow}><i className="ti ti-printer"></i> PDF</button>
+                    <button className="btn btn-sm" style={{ background: '#1D6F42', borderColor: '#155233', color: '#fff', fontWeight: 500 }} onClick={exportCashFlow}><i className="ti ti-download"></i> Export</button>
+                  </div>
+                </div>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                  <thead><tr style={{ background: '#E8D5A3' }}>
+                    <Th>Month</Th>
+                    <Th style={{ textAlign: 'right', color: '#3B6D11' }}>Money In</Th>
+                    <Th style={{ textAlign: 'right' }}>Purchases</Th>
+                    <Th style={{ textAlign: 'right' }}>Salaries</Th>
+                    <Th style={{ textAlign: 'right', color: '#A32D2D' }}>Total Out</Th>
+                    <Th style={{ textAlign: 'right' }}>Net Cash Flow</Th>
+                  </tr></thead>
+                  <tbody>
+                    {cashFlow.map(m => (
+                      <tr key={m.key} style={{ borderBottom: '0.5px solid rgba(0,0,0,0.07)', background: m.net < 0 ? '#FFF8F8' : '#fff' }}>
+                        <Td style={{ fontWeight: 500 }}>{m.label}</Td>
+                        <Td style={{ textAlign: 'right', color: '#3B6D11', fontWeight: m.in > 0 ? 500 : 400 }}>{m.in > 0 ? fmt(m.in) : <span style={{ color: '#ccc' }}>—</span>}</Td>
+                        <Td style={{ textAlign: 'right', color: '#666' }}>{m.purchases > 0 ? fmt(m.purchases) : <span style={{ color: '#ccc' }}>—</span>}</Td>
+                        <Td style={{ textAlign: 'right', color: '#666' }}>{m.salaries > 0 ? fmt(m.salaries) : <span style={{ color: '#ccc' }}>—</span>}</Td>
+                        <Td style={{ textAlign: 'right', color: '#A32D2D', fontWeight: m.out > 0 ? 500 : 400 }}>{m.out > 0 ? fmt(m.out) : <span style={{ color: '#ccc' }}>—</span>}</Td>
+                        <Td style={{ textAlign: 'right' }}>
+                          <span style={{ fontWeight: 700, color: m.net >= 0 ? '#3B6D11' : '#A32D2D', background: m.net >= 0 ? '#EAF3DE' : '#FCEBEB', padding: '2px 8px', borderRadius: 99, fontSize: 12 }}>
+                            {m.net >= 0 ? '+' : ''}{fmt(m.net)}
+                          </span>
+                        </Td>
+                      </tr>
+                    ))}
+                    <tr style={{ background: '#E8D5A3', fontWeight: 700 }}>
+                      <td style={{ padding: '9px 14px', fontSize: 13 }}>TOTAL (12 months)</td>
+                      <td style={{ padding: '9px 14px', textAlign: 'right', fontSize: 13, color: '#3B6D11' }}>{fmt(totalIn)}</td>
+                      <td style={{ padding: '9px 14px', textAlign: 'right', fontSize: 13 }}>{fmt(totalPurchases)}</td>
+                      <td style={{ padding: '9px 14px', textAlign: 'right', fontSize: 13 }}>{fmt(totalSalaries)}</td>
+                      <td style={{ padding: '9px 14px', textAlign: 'right', fontSize: 13, color: '#A32D2D' }}>{fmt(totalOut)}</td>
+                      <td style={{ padding: '9px 14px', textAlign: 'right', fontSize: 13 }}>
+                        <span style={{ fontWeight: 700, color: totalNet >= 0 ? '#3B6D11' : '#A32D2D', background: totalNet >= 0 ? '#EAF3DE' : '#FCEBEB', padding: '2px 8px', borderRadius: 99, fontSize: 12 }}>
+                          {totalNet >= 0 ? '+' : ''}{fmt(totalNet)}
+                        </span>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </Card>
+            </div>
+          )
+        })()}
 
       </div>
 
