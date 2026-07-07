@@ -16,6 +16,8 @@ export async function PATCH(req, { params }) {
     .update({
       name: body.name,
       email: body.email || null,
+      email2: body.email2 || null,
+      email3: body.email3 || null,
       phone: body.phone || null,
       address: body.address || null,
     })
