@@ -40,7 +40,76 @@ const Badge = ({ status }) => {
 }
 
 // ── Main App ──────────────────────────────────────────────
+function LoginScreen({ onLogin }) {
+  const [pw, setPw] = useState('')
+  const [error, setError] = useState('')
+  const [show, setShow] = useState(false)
+  const [busy, setBusy] = useState(false)
+
+  const handleLogin = () => {
+    setBusy(true)
+    setTimeout(() => {
+      if (pw === 'Malakesa2024!') {
+        setError('')
+        onLogin()
+      } else {
+        setError('Incorrect password. Please try again.')
+        setPw('')
+        setBusy(false)
+      }
+    }, 400)
+  }
+
+  return (
+    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg,#1A0D06 0%,#3D2214 40%,#5C3D0A 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+      <div style={{ width: '100%', maxWidth: 420 }}>
+        <div style={{ textAlign: 'center', marginBottom: 32 }}>
+          <img src={MALAKESA_LOGO} alt="Malakesa" style={{ width: 240, borderRadius: 8, display: 'block', margin: '0 auto 16px' }} />
+          <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12, letterSpacing: 2 }}>INVOICE & PURCHASES MANAGER</div>
+        </div>
+        <div style={{ background: 'rgba(255,255,255,0.05)', border: '0.5px solid rgba(255,215,0,0.2)', borderRadius: 16, padding: '32px 32px 28px' }}>
+          <h2 style={{ color: '#FFD700', fontSize: 20, fontWeight: 700, margin: '0 0 6px', textAlign: 'center' }}>Welcome back</h2>
+          <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: 13, textAlign: 'center', margin: '0 0 24px' }}>Enter your password to continue</p>
+          {error && (
+            <div style={{ background: 'rgba(163,45,45,0.25)', border: '0.5px solid rgba(163,45,45,0.5)', borderRadius: 8, padding: '10px 14px', marginBottom: 16, fontSize: 13, color: '#ffaaaa', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <i className="ti ti-alert-circle"></i> {error}
+            </div>
+          )}
+          <div style={{ marginBottom: 20 }}>
+            <label style={{ display: 'block', color: 'rgba(255,255,255,0.6)', fontSize: 11, fontWeight: 600, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 1 }}>Password</label>
+            <div style={{ position: 'relative' }}>
+              <input
+                type={show ? 'text' : 'password'}
+                value={pw}
+                onChange={e => { setPw(e.target.value); setError('') }}
+                onKeyDown={e => e.key === 'Enter' && handleLogin()}
+                placeholder="Enter password"
+                autoFocus
+                style={{ width: '100%', padding: '12px 44px 12px 14px', borderRadius: 10, border: error ? '1px solid rgba(163,45,45,0.6)' : '1px solid rgba(255,215,0,0.2)', background: 'rgba(255,255,255,0.08)', color: '#fff', fontSize: 15, outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit' }}
+              />
+              <button onClick={() => setShow(s => !s)} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', padding: 0, fontSize: 16 }}>
+                <i className={`ti ${show ? 'ti-eye-off' : 'ti-eye'}`}></i>
+              </button>
+            </div>
+          </div>
+          <button
+            onClick={handleLogin}
+            disabled={busy || !pw}
+            style={{ width: '100%', padding: 13, background: pw && !busy ? 'linear-gradient(135deg,#8B6914,#C9A84C)' : 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 10, color: pw && !busy ? '#fff' : 'rgba(255,255,255,0.3)', fontSize: 15, fontWeight: 700, cursor: pw && !busy ? 'pointer' : 'not-allowed', fontFamily: 'inherit' }}
+          >
+            {busy ? 'Signing in...' : 'Sign in'}
+          </button>
+        </div>
+        <p style={{ textAlign: 'center', color: 'rgba(255,255,255,0.25)', fontSize: 11, marginTop: 24 }}>Malakesa Transfer and Tour — Port Vila, Vanuatu</p>
+      </div>
+    </div>
+  )
+}
+
 export default function App() {
+  const [isLoggedIn, setIsLoggedIn] = useState(() => {
+    try { return sessionStorage.getItem('malakesa_auth') === 'yes' } catch(e) { return false }
+  })
   const [page, setPage] = useState('dashboard')
   const [invoices, setInvoices] = useState([])
   const [payments, setPayments] = useState([])
@@ -87,6 +156,8 @@ export default function App() {
     { id: 'reports', label: 'Reports', icon: 'ti-chart-bar' },
   ]
 
+  if (!isLoggedIn) return <LoginScreen onLogin={() => { try { sessionStorage.setItem('malakesa_auth', 'yes') } catch(e) {}; setIsLoggedIn(true) }} />
+
   return (
     <div style={{ display: 'flex', height: '100vh', fontFamily: '-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif', fontSize: 14, color: '#1a1a1a', background: '#E8D5A3' }}>
       {/* Sidebar */}
@@ -110,6 +181,11 @@ export default function App() {
             </div>
           ))}
         </nav>
+        <div style={{ padding: '10px 16px', borderTop: '1px solid rgba(255,215,0,0.15)' }}>
+          <button onClick={() => { try { sessionStorage.removeItem('malakesa_auth') } catch(e) {}; setIsLoggedIn(false) }} style={{ width: '100%', background: 'rgba(255,255,255,0.07)', border: '0.5px solid rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.65)', borderRadius: 8, padding: '7px 12px', fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center' }}>
+            <i className="ti ti-logout" style={{ fontSize: 14 }}></i> Log out
+          </button>
+        </div>
         <div style={{ padding: '14px 16px', borderTop: '1px solid rgba(255,215,0,0.2)', fontSize: 11, color: '#C9A84C', fontWeight: 600, textAlign: 'center', letterSpacing: '1.5px' }}>📍 PORT VILA, VANUATU</div>
       </div>
 
