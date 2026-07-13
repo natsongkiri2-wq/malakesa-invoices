@@ -41,9 +41,9 @@ export async function POST(req) {
 
     const itemsHtml = (inv.items || []).map(it => `
       <tr>
+        <td style="padding:9px 12px;border-bottom:1px solid #f0ebe0;color:#555">${it.date || '-'}</td>
         <td style="padding:9px 12px;border-bottom:1px solid #f0ebe0;color:#555">${it.name || '-'}</td>
         <td style="padding:9px 12px;border-bottom:1px solid #f0ebe0">${it.description}</td>
-        <td style="padding:9px 12px;border-bottom:1px solid #f0ebe0;color:#555">${it.flight || '-'}</td>
         <td style="padding:9px 12px;border-bottom:1px solid #f0ebe0;color:#555">${it.voucher || '-'}</td>
         <td style="padding:9px 12px;border-bottom:1px solid #f0ebe0;text-align:center">${it.qty}</td>
         <td style="padding:9px 12px;border-bottom:1px solid #f0ebe0;text-align:right">${fmt(it.rate)}</td>
@@ -81,11 +81,12 @@ export async function POST(req) {
             : `<div style="font-size:12px;color:#888;margin-top:3px">${uniqueEmails[0]}</div>`}
         </div>
       </div>
+      ${inv.notes ? `<div style="margin-top:0;margin-bottom:20px;padding:12px 16px;background:#faf6ee;border-left:4px solid #8B6914;border-radius:0 6px 6px 0;font-size:12px;color:#555"><strong>Notes:</strong> ${inv.notes}</div>` : ''}
       <table style="width:100%;border-collapse:collapse;font-size:13px">
         <thead><tr style="background:linear-gradient(135deg,#3D2214,#8B6914)">
+          <th style="padding:10px 12px;text-align:left;color:#FFD700;font-size:10px;letter-spacing:1px;font-weight:700">DATE</th>
           <th style="padding:10px 12px;text-align:left;color:#FFD700;font-size:10px;letter-spacing:1px;font-weight:700">NAME</th>
           <th style="padding:10px 12px;text-align:left;color:#FFD700;font-size:10px;letter-spacing:1px;font-weight:700">DESCRIPTION</th>
-          <th style="padding:10px 12px;text-align:left;color:#FFD700;font-size:10px;letter-spacing:1px;font-weight:700">FLIGHT #</th>
           <th style="padding:10px 12px;text-align:left;color:#FFD700;font-size:10px;letter-spacing:1px;font-weight:700">VOUCHER #</th>
           <th style="padding:10px 12px;text-align:center;color:#FFD700;font-size:10px;letter-spacing:1px;font-weight:700">QTY</th>
           <th style="padding:10px 12px;text-align:right;color:#FFD700;font-size:10px;letter-spacing:1px;font-weight:700">RATE (VT)</th>
@@ -105,7 +106,6 @@ export async function POST(req) {
         <div style="display:flex;justify-content:space-between;padding:8px 12px;background:${balance > 0 ? '#FAEEDA' : '#EAF3DE'};border-radius:6px;font-size:14px;font-weight:700;color:${balance > 0 ? '#8B6914' : '#27500A'}"><span>Balance due</span><span>${fmt(balance)}</span></div>
         ` : ''}
       </div>
-      ${inv.notes ? `<div style="margin-top:20px;padding:12px 16px;background:#faf6ee;border-left:4px solid #8B6914;border-radius:0 6px 6px 0;font-size:12px;color:#555"><strong>Notes:</strong> ${inv.notes}</div>` : ''}
       <p style="text-align:center;font-size:13px;font-style:italic;color:#8B6914;margin:28px 0 16px">Thank you for choosing Malakesa Transfer &amp; Tour!</p>
       <div style="padding-top:16px;border-top:1px solid #f0ebe0;font-size:11px;color:#999;text-align:center;line-height:1.9">
         Malakesa Transfer and Tour &nbsp;|&nbsp; Port Vila, Vanuatu<br>
