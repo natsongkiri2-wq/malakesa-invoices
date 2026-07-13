@@ -4646,6 +4646,7 @@ function previewInvoice(inv) {
           <div class="bill-detail">Due: <strong>${inv.due_date || ''}</strong></div>
         </div>
       </div>
+      ${inv.notes ? '<div class="notes"><strong>Notes:</strong> ' + inv.notes + '</div>' : ''}
       <table>
         <thead><tr><th>Name</th><th>Description</th><th>Flight #</th><th>Voucher #</th><th class="text-right">Qty</th><th class="text-right">Rate (VT)</th><th class="text-right">Amount (VT)</th></tr></thead>
         <tbody>${(inv.items || []).map(it => '<tr>' + (it.name ? '<td>' + it.name + '</td>' : '<td style="color:#ccc">-</td>') + '<td>' + (it.description || '') + '</td>' + (it.flight ? '<td>' + it.flight + '</td>' : '<td style="color:#ccc">-</td>') + (it.voucher ? '<td>' + it.voucher + '</td>' : '<td style="color:#ccc">-</td>') + '<td class="text-right">' + (it.qty || 0) + '</td><td class="text-right">VT ' + Number(it.rate || 0).toLocaleString() + '</td><td class="text-right">VT ' + Number(it.total || 0).toLocaleString() + '</td></tr>').join('')}</tbody>
@@ -4655,7 +4656,6 @@ function previewInvoice(inv) {
         <div class="trow"><span>${inv.tax > 0 ? 'VAT (15%)' : 'VAT'}</span><span>${inv.tax > 0 ? 'VT ' + Number(inv.tax).toLocaleString() : 'Not applicable'}</span></div>
         <div class="trow grand"><span>TOTAL DUE</span><span>VT ${Number(inv.total || 0).toLocaleString()}</span></div>
       </div>
-      ${inv.notes ? '<div class="notes"><strong>Notes:</strong> ' + inv.notes + '</div>' : ''}
       <div class="thankyou">Tankiu Tumas — Thank you for choosing Malakesa Transfer &amp; Tour!</div>
     </div>
     <div class="footer">
@@ -4919,6 +4919,7 @@ function ViewInvoiceModal({ invoice, payments, onClose, onPay }) {
           <div class="bill-detail">Due: <strong>${fmtDate(invoice.due_date)}</strong></div>
         </div>
       </div>
+      ${invoice.notes ? '<div class="notes"><strong>Notes:</strong> ' + invoice.notes + '</div>' : ''}
       <table>
         <thead><tr><th>Name</th><th>Description</th><th>Flight #</th><th>Voucher #</th><th class="text-right">Qty</th><th class="text-right">Rate (VT)</th><th class="text-right">Amount (VT)</th></tr></thead>
         <tbody>${(invoice.items || []).map(it => '<tr>' + (it.name ? '<td>' + it.name + '</td>' : '<td style="color:#ccc">-</td>') + '<td>' + (it.description || '') + '</td>' + (it.flight ? '<td>' + it.flight + '</td>' : '<td style="color:#ccc">-</td>') + (it.voucher ? '<td>' + it.voucher + '</td>' : '<td style="color:#ccc">-</td>') + '<td class="text-right">' + (it.qty || 0) + '</td><td class="text-right">VT ' + Number(it.rate || 0).toLocaleString() + '</td><td class="text-right">VT ' + Number(it.total || 0).toLocaleString() + '</td></tr>').join('')}</tbody>
@@ -4930,7 +4931,6 @@ function ViewInvoiceModal({ invoice, payments, onClose, onPay }) {
         <div class="trow balance" style="color:${balance > 0 ? '#D85A30' : '#3B6D11'}"><span>Balance due</span><span>VT ${Number(balance).toLocaleString()}</span></div>
       </div>
       ${invPayments.length > 0 ? `<div class="payments"><div class="payments-title">Payments received</div>${invPayments.map(p => `<div class="payrow"><span>${fmtDate(p.date)} — ${p.method}</span><span style="color:#3B6D11;font-weight:bold">VT ${Number(p.amount).toLocaleString()}</span></div>`).join('')}</div>` : ''}
-      ${invoice.notes ? '<div class="notes"><strong>Notes:</strong> ' + invoice.notes + '</div>' : ''}
       <div class="thankyou">Tankiu Tumas — Thank you for choosing Malakesa Transfer &amp; Tour!</div>
     </div>
     <div class="footer">
@@ -5086,6 +5086,7 @@ function ViewInvoiceModal({ invoice, payments, onClose, onPay }) {
         <div><div style={{ fontSize: 12, color: '#666' }}>Bill to</div><div style={{ fontWeight: 500 }}>{invoice.client_name}</div><div style={{ fontSize: 12, color: '#666' }}>{invoice.client_email}</div></div>
         <div style={{ textAlign: 'right' }}><div style={{ fontSize: 12, color: '#666' }}>Issue date</div><div>{fmtDate(invoice.date)}</div><div style={{ fontSize: 12, color: '#666', marginTop: 6 }}>Due date</div><div style={status === 'overdue' ? { color: '#A32D2D', fontWeight: 500 } : {}}>{fmtDate(invoice.due_date)}</div></div>
       </div>
+      {invoice.notes && <div style={{ marginTop: 4, marginBottom: 12, padding: '10px 14px', background: '#E8D5A3', borderRadius: 8, fontSize: 13, color: '#666' }}>{invoice.notes}</div>}
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, marginBottom: 12 }}>
         <thead><tr style={{ background: '#E8D5A3' }}><Th>Description</Th><Th style={{ textAlign: 'center' }}>Qty</Th><Th style={{ textAlign: 'right' }}>Rate</Th><Th style={{ textAlign: 'right' }}>Total</Th></tr></thead>
         <tbody>{(invoice.items || []).map((it, i) => <tr key={i} style={{ borderBottom: '0.5px solid rgba(0,0,0,0.09)' }}><Td>{it.name || ''}</Td><Td>{it.description}</Td><Td style={{ color: '#555' }}>{it.flight || ''}</Td><Td style={{ color: '#555' }}>{it.voucher || ''}</Td><Td style={{ textAlign: 'center' }}>{it.qty}</Td><Td style={{ textAlign: 'right' }}>{fmt(it.rate)}</Td><Td style={{ textAlign: 'right', fontWeight: 500 }}>{fmt(it.total)}</Td></tr>)}</tbody>
@@ -5094,7 +5095,6 @@ function ViewInvoiceModal({ invoice, payments, onClose, onPay }) {
         {[['Subtotal', fmt(invoice.subtotal)], ['VAT (15%)', fmt(Math.round(Number(invoice.subtotal)*0.15))], ['Total', fmt(invoice.total)]].map(([l, v], i) => <div key={l} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: i < 2 ? '0.5px solid rgba(0,0,0,0.09)' : 'none', fontWeight: i === 2 ? 500 : 400 }}><span style={{ color: i < 2 ? '#666' : 'inherit' }}>{l}</span><span>{v}</span></div>)}
         <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', fontWeight: 500, color: balance > 0 ? '#D85A30' : '#3B6D11' }}><span>Balance due</span><span>{fmt(balance)}</span></div>
       </div>
-      {invoice.notes && <div style={{ marginTop: 12, padding: '10px 14px', background: '#E8D5A3', borderRadius: 8, fontSize: 13, color: '#666' }}>{invoice.notes}</div>}
       {invPayments.length > 0 && (
         <div style={{ marginTop: 16 }}>
           <div style={{ fontWeight: 500, marginBottom: 8 }}>Payments received</div>
