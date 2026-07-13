@@ -4648,8 +4648,8 @@ function previewInvoice(inv) {
       </div>
       ${inv.notes ? '<div class="notes"><strong>Notes:</strong> ' + inv.notes + '</div>' : ''}
       <table>
-        <thead><tr><th>Name</th><th>Description</th><th>Flight #</th><th>Voucher #</th><th class="text-right">Qty</th><th class="text-right">Rate (VT)</th><th class="text-right">Amount (VT)</th></tr></thead>
-        <tbody>${(inv.items || []).map(it => '<tr>' + (it.name ? '<td>' + it.name + '</td>' : '<td style="color:#ccc">-</td>') + '<td>' + (it.description || '') + '</td>' + (it.flight ? '<td>' + it.flight + '</td>' : '<td style="color:#ccc">-</td>') + (it.voucher ? '<td>' + it.voucher + '</td>' : '<td style="color:#ccc">-</td>') + '<td class="text-right">' + (it.qty || 0) + '</td><td class="text-right">VT ' + Number(it.rate || 0).toLocaleString() + '</td><td class="text-right">VT ' + Number(it.total || 0).toLocaleString() + '</td></tr>').join('')}</tbody>
+        <thead><tr><th>Date</th><th>Name</th><th>Description</th><th>Voucher #</th><th class="text-right">Qty</th><th class="text-right">Rate (VT)</th><th class="text-right">Amount (VT)</th></tr></thead>
+        <tbody>${(inv.items || []).map(it => '<tr>' + (it.date ? '<td>' + it.date + '</td>' : '<td style="color:#ccc">-</td>') + (it.name ? '<td>' + it.name + '</td>' : '<td style="color:#ccc">-</td>') + '<td>' + (it.description || '') + '</td>' + (it.voucher ? '<td>' + it.voucher + '</td>' : '<td style="color:#ccc">-</td>') + '<td class="text-right">' + (it.qty || 0) + '</td><td class="text-right">VT ' + Number(it.rate || 0).toLocaleString() + '</td><td class="text-right">VT ' + Number(it.total || 0).toLocaleString() + '</td></tr>').join('')}</tbody>
       </table>
       <div class="totals">
         <div class="trow"><span>Subtotal</span><span>VT ${Number(inv.subtotal || 0).toLocaleString()}</span></div>
@@ -4678,7 +4678,7 @@ function previewInvoice(inv) {
 
 function NewInvoiceModal({ clients, onClose, onSave }) {
   const [form, setForm] = useState({ client_id: '', client_name: '', client_email: '', date: todayStr(), due_date: addDays(todayStr(), 14), notes: '' })
-  const [items, setItems] = useState([{ id: uid(), description: '', name: '', flight: '', voucher: '', qty: 1, rate: '', total: 0 }, { id: uid(), description: '', name: '', flight: '', voucher: '', qty: 1, rate: '', total: 0 }])
+  const [items, setItems] = useState([{ id: uid(), date: '', description: '', name: '', voucher: '', qty: 1, rate: '', total: 0 }, { id: uid(), date: '', description: '', name: '', voucher: '', qty: 1, rate: '', total: 0 }])
   const [applyVat, setApplyVat] = useState(true)
   const vatInclusive = true // Rates are always VAT-inclusive at Malakesa
   const [saving, setSaving] = useState(false)
@@ -4739,12 +4739,12 @@ function NewInvoiceModal({ clients, onClose, onSave }) {
       </div>
       <div style={{ fontWeight: 500, marginBottom: 10 }}>Line items</div>
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, marginBottom: 8 }}>
-        <thead><tr style={{ background: '#E8D5A3' }}><Th style={{ width: '12%' }}>Name</Th><Th style={{ width: '22%' }}>Description</Th><Th style={{ width: '10%' }}>Flight #</Th><Th style={{ width: '10%' }}>Voucher #</Th><Th style={{ width: '8%' }}>Qty</Th><Th style={{ width: '14%' }}>{applyVat ? 'Rate (VT incl. VAT)' : 'Rate (VT)'}</Th><Th style={{ width: '12%' }}>Total</Th><Th style={{ width: '6%' }}></Th></tr></thead>
+        <thead><tr style={{ background: '#E8D5A3' }}><Th style={{ width: '10%' }}>Date</Th><Th style={{ width: '12%' }}>Name</Th><Th style={{ width: '20%' }}>Description</Th><Th style={{ width: '10%' }}>Voucher #</Th><Th style={{ width: '8%' }}>Qty</Th><Th style={{ width: '14%' }}>{applyVat ? 'Rate (VT incl. VAT)' : 'Rate (VT)'}</Th><Th style={{ width: '12%' }}>Total</Th><Th style={{ width: '6%' }}></Th></tr></thead>
         <tbody>{items.map(item => (
           <tr key={item.id}>
+            <td style={{ padding: '4px 4px' }}><input type="text" value={item.date || ''} onChange={e => updateItem(item.id, 'date', e.target.value)} style={inputStyle} placeholder="e.g. 10JUL" /></td>
             <td style={{ padding: '4px 4px' }}><input type="text" value={item.name || ''} onChange={e => updateItem(item.id, 'name', e.target.value)} style={inputStyle} placeholder="Pax name" /></td>
             <td style={{ padding: '4px 4px' }}><input type="text" value={item.description} onChange={e => updateItem(item.id, 'description', e.target.value)} style={inputStyle} placeholder="e.g. Airport transfer..." /></td>
-            <td style={{ padding: '4px 4px' }}><input type="text" value={item.flight || ''} onChange={e => updateItem(item.id, 'flight', e.target.value)} style={inputStyle} placeholder="e.g. NF100" /></td>
             <td style={{ padding: '4px 4px' }}><input type="text" value={item.voucher || ''} onChange={e => updateItem(item.id, 'voucher', e.target.value)} style={inputStyle} placeholder="Voucher #" /></td>
             <td style={{ padding: '4px 4px' }}><input type="number" value={item.qty} min="0" step="0.5" onChange={e => updateItem(item.id, 'qty', e.target.value)} style={inputStyle} /></td>
             <td style={{ padding: '4px 4px' }}><input type="number" value={item.rate} min="0" onChange={e => updateItem(item.id, 'rate', e.target.value)} style={inputStyle} placeholder="0" /></td>
@@ -4753,7 +4753,7 @@ function NewInvoiceModal({ clients, onClose, onSave }) {
           </tr>
         ))}</tbody>
       </table>
-      <button className="btn btn-sm" onClick={() => setItems(i => [...i, { id: uid(), description: '', name: '', flight: '', voucher: '', qty: 1, rate: '', total: 0 }])}><i className="ti ti-plus"></i> Add item</button>
+      <button className="btn btn-sm" onClick={() => setItems(i => [...i, { id: uid(), date: '', description: '', name: '', voucher: '', qty: 1, rate: '', total: 0 }])}><i className="ti ti-plus"></i> Add item</button>
       <div style={{ marginLeft: 'auto', width: 280, marginTop: 12 }}>
         {applyVat ? (
           <>
@@ -4921,8 +4921,8 @@ function ViewInvoiceModal({ invoice, payments, onClose, onPay }) {
       </div>
       ${invoice.notes ? '<div class="notes"><strong>Notes:</strong> ' + invoice.notes + '</div>' : ''}
       <table>
-        <thead><tr><th>Name</th><th>Description</th><th>Flight #</th><th>Voucher #</th><th class="text-right">Qty</th><th class="text-right">Rate (VT)</th><th class="text-right">Amount (VT)</th></tr></thead>
-        <tbody>${(invoice.items || []).map(it => '<tr>' + (it.name ? '<td>' + it.name + '</td>' : '<td style="color:#ccc">-</td>') + '<td>' + (it.description || '') + '</td>' + (it.flight ? '<td>' + it.flight + '</td>' : '<td style="color:#ccc">-</td>') + (it.voucher ? '<td>' + it.voucher + '</td>' : '<td style="color:#ccc">-</td>') + '<td class="text-right">' + (it.qty || 0) + '</td><td class="text-right">VT ' + Number(it.rate || 0).toLocaleString() + '</td><td class="text-right">VT ' + Number(it.total || 0).toLocaleString() + '</td></tr>').join('')}</tbody>
+        <thead><tr><th>Date</th><th>Name</th><th>Description</th><th>Voucher #</th><th class="text-right">Qty</th><th class="text-right">Rate (VT)</th><th class="text-right">Amount (VT)</th></tr></thead>
+        <tbody>${(invoice.items || []).map(it => '<tr>' + (it.date ? '<td>' + it.date + '</td>' : '<td style="color:#ccc">-</td>') + (it.name ? '<td>' + it.name + '</td>' : '<td style="color:#ccc">-</td>') + '<td>' + (it.description || '') + '</td>' + (it.voucher ? '<td>' + it.voucher + '</td>' : '<td style="color:#ccc">-</td>') + '<td class="text-right">' + (it.qty || 0) + '</td><td class="text-right">VT ' + Number(it.rate || 0).toLocaleString() + '</td><td class="text-right">VT ' + Number(it.total || 0).toLocaleString() + '</td></tr>').join('')}</tbody>
       </table>
       <div class="totals">
         <div class="trow"><span>Subtotal</span><span>VT ${Number(invoice.subtotal || 0).toLocaleString()}</span></div>
@@ -5088,8 +5088,8 @@ function ViewInvoiceModal({ invoice, payments, onClose, onPay }) {
       </div>
       {invoice.notes && <div style={{ marginTop: 4, marginBottom: 12, padding: '10px 14px', background: '#E8D5A3', borderRadius: 8, fontSize: 13, color: '#666' }}>{invoice.notes}</div>}
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, marginBottom: 12 }}>
-        <thead><tr style={{ background: '#E8D5A3' }}><Th>Description</Th><Th style={{ textAlign: 'center' }}>Qty</Th><Th style={{ textAlign: 'right' }}>Rate</Th><Th style={{ textAlign: 'right' }}>Total</Th></tr></thead>
-        <tbody>{(invoice.items || []).map((it, i) => <tr key={i} style={{ borderBottom: '0.5px solid rgba(0,0,0,0.09)' }}><Td>{it.name || ''}</Td><Td>{it.description}</Td><Td style={{ color: '#555' }}>{it.flight || ''}</Td><Td style={{ color: '#555' }}>{it.voucher || ''}</Td><Td style={{ textAlign: 'center' }}>{it.qty}</Td><Td style={{ textAlign: 'right' }}>{fmt(it.rate)}</Td><Td style={{ textAlign: 'right', fontWeight: 500 }}>{fmt(it.total)}</Td></tr>)}</tbody>
+        <thead><tr style={{ background: '#E8D5A3' }}><Th>Date</Th><Th>Name</Th><Th>Description</Th><Th>Voucher #</Th><Th style={{ textAlign: 'center' }}>Qty</Th><Th style={{ textAlign: 'right' }}>Rate</Th><Th style={{ textAlign: 'right' }}>Total</Th></tr></thead>
+        <tbody>{(invoice.items || []).map((it, i) => <tr key={i} style={{ borderBottom: '0.5px solid rgba(0,0,0,0.09)' }}><Td>{it.date || ''}</Td><Td>{it.name || ''}</Td><Td>{it.description}</Td><Td style={{ color: '#555' }}>{it.voucher || ''}</Td><Td style={{ textAlign: 'center' }}>{it.qty}</Td><Td style={{ textAlign: 'right' }}>{fmt(it.rate)}</Td><Td style={{ textAlign: 'right', fontWeight: 500 }}>{fmt(it.total)}</Td></tr>)}</tbody>
       </table>
       <div style={{ marginLeft: 'auto', width: 260 }}>
         {[['Subtotal', fmt(invoice.subtotal)], ['VAT (15%)', fmt(Math.round(Number(invoice.subtotal)*0.15))], ['Total', fmt(invoice.total)]].map(([l, v], i) => <div key={l} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: i < 2 ? '0.5px solid rgba(0,0,0,0.09)' : 'none', fontWeight: i === 2 ? 500 : 400 }}><span style={{ color: i < 2 ? '#666' : 'inherit' }}>{l}</span><span>{v}</span></div>)}
