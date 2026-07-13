@@ -41,7 +41,10 @@ export async function POST(req) {
 
     const itemsHtml = (inv.items || []).map(it => `
       <tr>
+        <td style="padding:9px 12px;border-bottom:1px solid #f0ebe0;color:#555">${it.name || '-'}</td>
         <td style="padding:9px 12px;border-bottom:1px solid #f0ebe0">${it.description}</td>
+        <td style="padding:9px 12px;border-bottom:1px solid #f0ebe0;color:#555">${it.flight || '-'}</td>
+        <td style="padding:9px 12px;border-bottom:1px solid #f0ebe0;color:#555">${it.voucher || '-'}</td>
         <td style="padding:9px 12px;border-bottom:1px solid #f0ebe0;text-align:center">${it.qty}</td>
         <td style="padding:9px 12px;border-bottom:1px solid #f0ebe0;text-align:right">${fmt(it.rate)}</td>
         <td style="padding:9px 12px;border-bottom:1px solid #f0ebe0;text-align:right;font-weight:600">${fmt(it.total)}</td>
@@ -49,7 +52,7 @@ export async function POST(req) {
 
     const html = `<!DOCTYPE html><html><body style="font-family:Arial,sans-serif;color:#222;max-width:640px;margin:0 auto;padding:20px;background:#f0ebe0">
     <div style="background:linear-gradient(135deg,#1A0D06,#3D2214,#5C3D0A);padding:28px 32px;border-radius:8px 8px 0 0">
-      <div style="display:flex;justify-content:space-between;align-items:center">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
         <div>
           <img src="https://malakesa-invoices.vercel.app/malakesa-logo.png" alt="Malakesa Transfer and Tour" style="width:220px;display:block;border-radius:4px" />
           <div style="font-size:11px;color:rgba(255,255,255,0.75);margin-top:10px;line-height:1.9">
@@ -80,7 +83,10 @@ export async function POST(req) {
       </div>
       <table style="width:100%;border-collapse:collapse;font-size:13px">
         <thead><tr style="background:linear-gradient(135deg,#3D2214,#8B6914)">
+          <th style="padding:10px 12px;text-align:left;color:#FFD700;font-size:10px;letter-spacing:1px;font-weight:700">NAME</th>
           <th style="padding:10px 12px;text-align:left;color:#FFD700;font-size:10px;letter-spacing:1px;font-weight:700">DESCRIPTION</th>
+          <th style="padding:10px 12px;text-align:left;color:#FFD700;font-size:10px;letter-spacing:1px;font-weight:700">FLIGHT #</th>
+          <th style="padding:10px 12px;text-align:left;color:#FFD700;font-size:10px;letter-spacing:1px;font-weight:700">VOUCHER #</th>
           <th style="padding:10px 12px;text-align:center;color:#FFD700;font-size:10px;letter-spacing:1px;font-weight:700">QTY</th>
           <th style="padding:10px 12px;text-align:right;color:#FFD700;font-size:10px;letter-spacing:1px;font-weight:700">RATE (VT)</th>
           <th style="padding:10px 12px;text-align:right;color:#FFD700;font-size:10px;letter-spacing:1px;font-weight:700">TOTAL (VT)</th>
