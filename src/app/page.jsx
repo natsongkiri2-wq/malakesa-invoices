@@ -797,7 +797,9 @@ function Invoices({ invoices, payments, reload, setModal, setSelected }) {
 
   const handleDelete = async (id) => {
     if (!confirm('Delete this invoice?')) return
-    await fetch('/api/invoices/' + id, { method: 'DELETE' }); reload()
+    const res = await fetch('/api/invoices/' + id, { method: 'DELETE' })
+    if (!res.ok) { const d = await res.json().catch(() => ({})); alert(d.error || 'Could not delete this invoice'); return }
+    reload()
   }
 
   const selectStyle = { padding: '6px 10px', borderRadius: 8, border: '0.5px solid #8B6914', fontSize: 13, fontFamily: 'inherit', background: '#8B6914', color: '#fff', fontWeight: 500, cursor: 'pointer' }
@@ -1135,7 +1137,7 @@ function Invoices({ invoices, payments, reload, setModal, setSelected }) {
                       {st !== 'paid' && <button className="btn btn-sm" style={{ borderColor: '#2563A8', color: '#2563A8' }} onClick={() => { setSelected(inv); setModal('editInvoice') }} title="Edit"><i className="ti ti-edit"></i></button>}
                       {bal > 0 && <button className="btn btn-sm" style={{ borderColor: '#3B6D11', color: '#3B6D11' }} onClick={() => { setSelected(inv); setModal('payment') }} title="Record payment"><i className="ti ti-cash"></i></button>}
                       {(st === 'overdue' || st === 'unpaid') && <button className="btn btn-sm" style={{ borderColor: '#8B6914', color: '#8B6914' }} onClick={() => sendReminder(inv)} disabled={sending === inv.id} title="Send reminder email"><i className="ti ti-mail"></i> {sending === inv.id ? '...' : 'Remind'}</button>}
-                      <button className="btn btn-sm" style={{ borderColor: '#A32D2D', color: '#A32D2D' }} onClick={() => handleDelete(inv.id)} title="Delete"><i className="ti ti-trash"></i></button>
+                      {st !== 'paid' && <button className="btn btn-sm" style={{ borderColor: '#A32D2D', color: '#A32D2D' }} onClick={() => handleDelete(inv.id)} title="Delete"><i className="ti ti-trash"></i></button>}
                     </div></Td>
                   </tr>
                 )
