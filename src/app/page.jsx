@@ -210,6 +210,7 @@ export default function App() {
 
       {/* Modals */}
       {modal === 'newInvoice' && <NewInvoiceModal clients={clients} onClose={() => setModal(null)} onSave={() => { setModal(null); reload() }} />}
+      {modal === 'editInvoice' && selected && <NewInvoiceModal clients={clients} invoice={selected} onClose={() => { setModal(null); setSelected(null) }} onSave={() => { setModal(null); setSelected(null); reload() }} />}
       {modal === 'payment' && selected && <PaymentModal invoice={selected} payments={payments} onClose={() => { setModal(null); setSelected(null) }} onSave={() => { setModal(null); setSelected(null); reload() }} />}
       {modal === 'newClient' && <NewClientModal onClose={() => setModal(null)} onSave={() => { setModal(null); reload() }} />}
       {modal === 'newSupplier' && <NewSupplierModal onClose={() => setModal(null)} onSave={() => { setModal(null); reload() }} />}
@@ -1131,6 +1132,7 @@ function Invoices({ invoices, payments, reload, setModal, setSelected }) {
                     <Td><Badge status={st} /></Td>
                     <Td><div style={{ display: 'flex', gap: 5 }}>
                       <button className="btn btn-sm" onClick={() => { setSelected(inv); setModal('viewInvoice') }} title="View"><i className="ti ti-eye"></i></button>
+                      <button className="btn btn-sm" style={{ borderColor: '#2563A8', color: '#2563A8' }} onClick={() => { setSelected(inv); setModal('editInvoice') }} title="Edit"><i className="ti ti-edit"></i></button>
                       {bal > 0 && <button className="btn btn-sm" style={{ borderColor: '#3B6D11', color: '#3B6D11' }} onClick={() => { setSelected(inv); setModal('payment') }} title="Record payment"><i className="ti ti-cash"></i></button>}
                       {(st === 'overdue' || st === 'unpaid') && <button className="btn btn-sm" style={{ borderColor: '#8B6914', color: '#8B6914' }} onClick={() => sendReminder(inv)} disabled={sending === inv.id} title="Send reminder email"><i className="ti ti-mail"></i> {sending === inv.id ? '...' : 'Remind'}</button>}
                       <button className="btn btn-sm" style={{ borderColor: '#A32D2D', color: '#A32D2D' }} onClick={() => handleDelete(inv.id)} title="Delete"><i className="ti ti-trash"></i></button>
@@ -4678,10 +4680,15 @@ function previewInvoice(inv) {
 }
 
 
-function NewInvoiceModal({ clients, onClose, onSave }) {
-  const [form, setForm] = useState({ client_id: '', client_name: '', client_email: '', date: todayStr(), due_date: addDays(todayStr(), 14), notes: '' })
-  const [items, setItems] = useState([{ id: uid(), date: '', description: '', name: '', voucher: '', qty: 1, rate: '', total: 0 }, { id: uid(), date: '', description: '', name: '', voucher: '', qty: 1, rate: '', total: 0 }])
-  const [applyVat, setApplyVat] = useState(true)
+function NewInvoiceModal({ clients, invoice, onClose, onSave }) {
+  const isEdit = !!invoice
+  const [form, setForm] = useState(isEdit
+    ? { client_id: invoice.client_id || '', client_name: invoice.client_name || '', client_email: invoice.client_email || '', date: invoice.date || todayStr(), due_date: invoice.due_date || addDays(todayStr(), 14), notes: invoice.notes || '' }
+    : { client_id: '', client_name: '', client_email: '', date: todayStr(), due_date: addDays(todayStr(), 14), notes: '' })
+  const [items, setItems] = useState(isEdit && invoice.items && invoice.items.length
+    ? invoice.items.map(it => ({ id: uid(), date: it.date || '', description: it.description || '', name: it.name || '', voucher: it.voucher || '', qty: it.qty || 1, rate: it.rate || '', total: it.total || 0 }))
+    : [{ id: uid(), date: '', description: '', name: '', voucher: '', qty: 1, rate: '', total: 0 }, { id: uid(), date: '', description: '', name: '', voucher: '', qty: 1, rate: '', total: 0 }])
+  const [applyVat, setApplyVat] = useState(isEdit ? (invoice.vat_applied !== undefined ? invoice.vat_applied : Number(invoice.tax) > 0) : true)
   const vatInclusive = true // Rates are always VAT-inclusive at Malakesa
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -4705,13 +4712,15 @@ function NewInvoiceModal({ clients, onClose, onSave }) {
     const validItems = items.filter(i => i.description.trim())
     if (!validItems.length) { setError('Add at least one line item'); return }
     setSaving(true)
-    const res = await fetch('/api/invoices', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...form, items: validItems.map(({ id, ...r }) => r), subtotal, tax, total, vat_applied: applyVat }) })
+    const url = isEdit ? `/api/invoices/${invoice.id}` : '/api/invoices'
+    const method = isEdit ? 'PUT' : 'POST'
+    const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...form, items: validItems.map(({ id, ...r }) => r), subtotal, tax, total, vat_applied: applyVat }) })
     if (!res.ok) { const d = await res.json(); setError(d.error || 'Failed to save'); setSaving(false); return }
     onSave()
   }
 
   return (
-    <Modal title="New Invoice" onClose={onClose} wide>
+    <Modal title={isEdit ? `Edit Invoice — ${invoice.number}` : 'New Invoice'} onClose={onClose} wide>
       {error && <Alert type="danger">{error}</Alert>}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
         <Field label="Client *">
@@ -4777,7 +4786,7 @@ function NewInvoiceModal({ clients, onClose, onSave }) {
         </button>
         <div style={{ display: 'flex', gap: 8 }}>
           <button className="btn" onClick={onClose}>Cancel</button>
-          <button className="btn btn-primary" onClick={handleSave} disabled={saving}><i className="ti ti-check"></i> {saving ? 'Saving...' : 'Save Invoice'}</button>
+          <button className="btn btn-primary" onClick={handleSave} disabled={saving}><i className="ti ti-check"></i> {saving ? (isEdit ? 'Updating...' : 'Saving...') : (isEdit ? 'Update Invoice' : 'Save Invoice')}</button>
         </div>
       </div>
     </Modal>
@@ -4954,6 +4963,164 @@ function ViewInvoiceModal({ invoice, payments, onClose, onPay }) {
     w.document.close()
   }
 
+  const [downloading, setDownloading] = useState(false)
+  const loadPdfLibs = () => {
+    if (!window.__pdfLibsPromise) {
+      const loadScript = (src) => new Promise((resolve, reject) => {
+        if (document.querySelector(`script[src="${src}"]`)) { resolve(); return }
+        const s = document.createElement('script')
+        s.src = src
+        s.onload = () => resolve()
+        s.onerror = () => reject(new Error('Failed to load PDF library'))
+        document.head.appendChild(s)
+      })
+      window.__pdfLibsPromise = Promise.all([
+        loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js'),
+        loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'),
+      ])
+    }
+    return window.__pdfLibsPromise
+  }
+
+  const downloadInvoicePDF = async () => {
+    setDownloading(true)
+    try {
+      await loadPdfLibs()
+      const statusColors = { paid: '#27500A', unpaid: '#712B13', overdue: '#791F1F', partial: '#633806', draft: '#444441' }
+      const statusBg = { paid: '#E3F2DE', unpaid: '#FAECE7', overdue: '#FCEBEB', partial: '#FAEEDA', draft: '#F1EFE8' }
+      const html = `<!DOCTYPE html><html><head><style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; color: #222; font-size: 13px; background: #fff; }
+    .page { width: 800px; background: #fff; }
+    .header { background: linear-gradient(135deg, #1A0D06 0%, #3D2214 50%, #5C3D0A 100%); padding: 28px 40px; display: flex; justify-content: space-between; align-items: flex-start; }
+    .logo-contact { font-size: 10px; color: rgba(255,255,255,0.7); margin-top: 10px; line-height: 1.8; }
+    .inv-meta { text-align: right; color: #fff; }
+    .inv-num { font-size: 26px; font-weight: 700; color: #FFD700; }
+    .inv-date { font-size: 11px; color: rgba(255,255,255,0.8); margin-top: 5px; line-height: 1.8; }
+    .status-badge { display: inline-block; padding: 3px 12px; border-radius: 99px; font-size: 10px; font-weight: 700; letter-spacing: 1px; margin-top: 8px; text-transform: uppercase; }
+    .body { padding: 32px 40px; }
+    .bill-row { display: flex; justify-content: space-between; margin-bottom: 28px; gap: 20px; }
+    .bill-label { font-size: 9px; font-weight: 800; color: #8B6914; text-transform: uppercase; letter-spacing: 2px; border-bottom: 2px solid #8B6914; padding-bottom: 3px; margin-bottom: 8px; display: inline-block; }
+    .bill-name { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+    .bill-detail { font-size: 12px; color: #555; line-height: 1.7; }
+    table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+    thead tr { background: linear-gradient(135deg, #3D2214, #8B6914); }
+    th { padding: 10px 14px; text-align: left; font-size: 10px; font-weight: 700; color: #FFD700; letter-spacing: 1px; text-transform: uppercase; }
+    td { padding: 11px 14px; border-bottom: 1px solid #f0ebe0; font-size: 13px; }
+    tr:nth-child(even) td { background: #faf6ee; }
+    .text-right { text-align: right; }
+    .totals { margin-left: auto; width: 280px; margin-top: 12px; }
+    .trow { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid #eee; font-size: 13px; color: #555; }
+    .trow.grand { border-bottom: none; font-size: 17px; font-weight: 800; color: #3D2214; padding-top: 12px; }
+    .trow.balance { font-weight: 700; }
+    .notes { background: #faf6ee; border-left: 4px solid #8B6914; padding: 12px 16px; border-radius: 0 6px 6px 0; margin-top: 20px; font-size: 12px; color: #555; }
+    .payments { margin-top: 20px; }
+    .payments-title { font-size: 12px; font-weight: 700; color: #3D2214; margin-bottom: 6px; }
+    .payrow { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #f0ebe0; font-size: 12px; }
+    .thankyou { text-align: center; font-size: 14px; font-weight: 600; color: #8B6914; margin: 24px 0 16px; font-style: italic; }
+    .footer { background: linear-gradient(135deg, #1A0D06, #5C3D0A); padding: 18px 40px; display: flex; justify-content: space-between; align-items: center; }
+    .footer-l { color: rgba(255,255,255,0.85); font-size: 11px; line-height: 1.9; }
+    .footer-r { text-align: right; color: #FFD700; font-size: 11px; line-height: 1.9; }
+  </style></head><body>
+  <div class="page">
+    <div class="header">
+      <div>
+        <img src="${MALAKESA_LOGO}" alt="Malakesa Transfer and Tour" style="width:220px;border-radius:6px;display:block" />
+        <div class="logo-contact">
+          📍 Port Vila, Shefa Province, Vanuatu<br>
+          📞 +678 22712 &nbsp;|&nbsp; 📱 +678 7798712 &nbsp;|&nbsp; ✉️ accounts@malakesa.vu
+        </div>
+      </div>
+      <div class="inv-meta">
+        <div style="font-size:10px;color:rgba(255,255,255,0.6);letter-spacing:2px;margin-bottom:4px">TAX INVOICE</div>
+        <div style="font-size:10px;color:rgba(255,255,255,0.6);margin-bottom:8px">TIN # 445579</div>
+        <div class="inv-num">${invoice.number}</div>
+        <div class="inv-date">
+          Issue date: <strong>${fmtDate(invoice.date)}</strong><br>
+          Due date: <strong>${fmtDate(invoice.due_date)}</strong>
+        </div>
+        <div class="status-badge" style="background:${statusBg[status] || '#F1EFE8'};color:${statusColors[status] || '#444441'}">${status}</div>
+      </div>
+    </div>
+    <div class="body">
+      <div class="bill-row">
+        <div>
+          <div class="bill-label">Bill to</div>
+          <div class="bill-name">${invoice.client_name || '—'}</div>
+          <div class="bill-detail">${invoice.client_email || ''}</div>
+        </div>
+        <div style="text-align:right">
+          <div class="bill-label">Invoice details</div>
+          <div class="bill-detail">Invoice #: <strong>${invoice.number}</strong></div>
+          <div class="bill-detail">Issue: <strong>${fmtDate(invoice.date)}</strong></div>
+          <div class="bill-detail">Due: <strong>${fmtDate(invoice.due_date)}</strong></div>
+        </div>
+      </div>
+      ${invoice.notes ? '<div class="notes"><strong>Notes:</strong> ' + invoice.notes + '</div>' : ''}
+      <table>
+        <thead><tr><th>Date</th><th>Name</th><th>Description</th><th>Voucher #</th><th class="text-right">Qty</th><th class="text-right">Rate (VT)</th><th class="text-right">Amount (VT)</th></tr></thead>
+        <tbody>${(invoice.items || []).map(it => '<tr>' + (it.date ? '<td>' + it.date + '</td>' : '<td style="color:#ccc">-</td>') + (it.name ? '<td>' + it.name + '</td>' : '<td style="color:#ccc">-</td>') + '<td>' + (it.description || '') + '</td>' + (it.voucher ? '<td>' + it.voucher + '</td>' : '<td style="color:#ccc">-</td>') + '<td class="text-right">' + (it.qty || 0) + '</td><td class="text-right">VT ' + Number(it.rate || 0).toLocaleString() + '</td><td class="text-right">VT ' + Number(it.total || 0).toLocaleString() + '</td></tr>').join('')}</tbody>
+      </table>
+      <div class="totals">
+        <div class="trow"><span>Subtotal</span><span>VT ${Number(invoice.subtotal || 0).toLocaleString()}</span></div>
+        <div class="trow"><span>${invoice.tax > 0 ? 'VAT (15%)' : 'VAT'}</span><span>${invoice.tax > 0 ? 'VT ' + Number(invoice.tax).toLocaleString() : 'Not applicable'}</span></div>
+        <div class="trow grand"><span>TOTAL DUE</span><span>VT ${Number(invoice.total || 0).toLocaleString()}</span></div>
+        <div class="trow balance" style="color:${balance > 0 ? '#D85A30' : '#3B6D11'}"><span>Balance due</span><span>VT ${Number(balance).toLocaleString()}</span></div>
+      </div>
+      ${invPayments.length > 0 ? `<div class="payments"><div class="payments-title">Payments received</div>${invPayments.map(p => `<div class="payrow"><span>${fmtDate(p.date)} — ${p.method}</span><span style="color:#3B6D11;font-weight:bold">VT ${Number(p.amount).toLocaleString()}</span></div>`).join('')}</div>` : ''}
+      <div class="thankyou">Tankiu Tumas — Thank you for choosing Malakesa Transfer &amp; Tour!</div>
+    </div>
+    <div class="footer">
+      <div class="footer-l">
+        <div><strong style="color:#FFD700">Malakesa Transfer &amp; Tour</strong></div>
+        <div>Port Vila, Shefa Province, Vanuatu</div>
+        <div>📞 +678 22712 &nbsp;|&nbsp; 📱 +678 7798712 &nbsp;|&nbsp; ✉️ accounts@malakesa.vu</div>
+      </div>
+      <div class="footer-r">
+        <div>Payment due: ${fmtDate(invoice.due_date)}</div>
+        <div>Cash | Bank Transfer | Mobile Money</div>
+        <div style="opacity:0.7">Computer generated invoice</div>
+      </div>
+    </div>
+  </div></body></html>`
+
+      const iframe = document.createElement('iframe')
+      iframe.style.position = 'fixed'
+      iframe.style.left = '-99999px'
+      iframe.style.top = '0'
+      iframe.style.width = '820px'
+      iframe.style.height = '1200px'
+      iframe.style.border = 'none'
+      document.body.appendChild(iframe)
+      iframe.srcdoc = html
+      await new Promise(resolve => { iframe.onload = resolve })
+      await new Promise(r => setTimeout(r, 400))
+      const pageEl = iframe.contentDocument.querySelector('.page')
+      const canvas = await window.html2canvas(pageEl, { scale: 2, useCORS: true, backgroundColor: '#ffffff' })
+      const imgData = canvas.toDataURL('image/png')
+      const { jsPDF } = window.jspdf
+      const pdf = new jsPDF('p', 'mm', 'a4')
+      const pageWidth = 210, pageHeight = 297
+      const imgWidth = pageWidth
+      const imgHeight = canvas.height * imgWidth / canvas.width
+      let heightLeft = imgHeight
+      let position = 0
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight)
+      heightLeft -= pageHeight
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight
+        pdf.addPage()
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight)
+        heightLeft -= pageHeight
+      }
+      pdf.save(`${invoice.number}.pdf`)
+      document.body.removeChild(iframe)
+    } catch (err) {
+      alert('Could not generate PDF: ' + err.message)
+    }
+    setDownloading(false)
+  }
+
   const printReceipt = (payment) => {
     const w = window.open('', '_blank')
     if (!w) { alert('Please allow popups to print receipts.'); return }
@@ -5076,6 +5243,7 @@ function ViewInvoiceModal({ invoice, payments, onClose, onPay }) {
         <Badge status={status} />
         <div style={{ display: 'flex', gap: 6 }}>
           <button className="btn btn-sm" onClick={printInvoice}><i className="ti ti-printer"></i> Print</button>
+          <button className="btn btn-sm" onClick={downloadInvoicePDF} disabled={downloading}><i className="ti ti-download"></i> {downloading ? 'Generating...' : 'Download PDF'}</button>
           <button className="btn btn-sm" onClick={emailInvoice} disabled={emailStatus === 'sending'}><i className="ti ti-mail"></i> {emailStatus === 'sending' ? 'Sending...' : 'Email'}</button>
           {emailStatus && emailStatus !== 'sending' && (
             <span style={{ fontSize: 12, color: emailStatus.startsWith('error') ? '#D85A30' : '#3B6D11', display: 'flex', alignItems: 'center', gap: 6 }}>
