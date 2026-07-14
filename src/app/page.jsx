@@ -5095,8 +5095,8 @@ function ViewInvoiceModal({ invoice, payments, onClose, onPay }) {
     await new Promise(resolve => { iframe.onload = resolve })
     await new Promise(r => setTimeout(r, 400))
     const pageEl = iframe.contentDocument.querySelector('.page')
-    const canvas = await window.html2canvas(pageEl, { scale: 2, useCORS: true, backgroundColor: '#ffffff' })
-    const imgData = canvas.toDataURL('image/png')
+    const canvas = await window.html2canvas(pageEl, { scale: 1.5, useCORS: true, backgroundColor: '#ffffff' })
+    const imgData = canvas.toDataURL('image/jpeg', 0.82)
     const { jsPDF } = window.jspdf
     const pdf = new jsPDF('p', 'mm', 'a4')
     const pageWidth = 210, pageHeight = 297
@@ -5104,12 +5104,12 @@ function ViewInvoiceModal({ invoice, payments, onClose, onPay }) {
     const imgHeight = canvas.height * imgWidth / canvas.width
     let heightLeft = imgHeight
     let position = 0
-    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight)
+    pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight)
     heightLeft -= pageHeight
     while (heightLeft > 0) {
       position = heightLeft - imgHeight
       pdf.addPage()
-      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight)
+      pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight)
       heightLeft -= pageHeight
     }
     document.body.removeChild(iframe)
@@ -5233,7 +5233,14 @@ function ViewInvoiceModal({ invoice, payments, onClose, onPay }) {
       const pdf = await buildInvoicePdf()
       const dataUri = pdf.output('datauristring')
       const pdfBase64 = dataUri.split(',')[1]
-      const res = await fetch('/api/send-invoice', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ invoiceId: invoice.id, pdfBase64 }) })
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 60000)
+      let res
+      try {
+        res = await fetch('/api/send-invoice', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ invoiceId: invoice.id, pdfBase64 }), signal: controller.signal })
+      } finally {
+        clearTimeout(timeoutId)
+      }
       const data = await res.json()
       if (res.ok) {
         setEmailStatus('Sent to ' + (data.sentTo || []).join(', '))
@@ -5243,7 +5250,11 @@ function ViewInvoiceModal({ invoice, payments, onClose, onPay }) {
       }
       setEmailStatus('error: ' + (data.error || 'Failed to send'))
       setTimeout(() => setEmailStatus(''), 6000)
-    } catch (e) { setEmailStatus('error: ' + e.message); setTimeout(() => setEmailStatus(''), 6000) }
+    } catch (e) {
+      const msg = e.name === 'AbortError' ? 'Sending took too long — check your connection and try again' : e.message
+      setEmailStatus('error: ' + msg)
+      setTimeout(() => setEmailStatus(''), 8000)
+    }
   }
 
   const mailtoFallback = () => {
