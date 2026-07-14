@@ -100,7 +100,7 @@ function LoginScreen({ onLogin }) {
             {busy ? 'Signing in...' : 'Sign in'}
           </button>
         </div>
-        <p style={{ textAlign: 'center', color: 'rgba(255,255,255,0.25)', fontSize: 11, marginTop: 24 }}>Malakesa Transfer and Tour — Port Vila, Vanuatu</p>
+        <p style={{ textAlign: 'center', color: 'rgba(255,255,255,0.25)', fontSize: 11, marginTop: 24 }}>Malakesa Transfers and Tours — Port Vila, Vanuatu</p>
       </div>
     </div>
   )
@@ -165,7 +165,7 @@ export default function App() {
         <div style={{ padding: '16px 16px 12px', borderBottom: '1px solid rgba(255,215,0,0.15)', textAlign: 'center', background: 'linear-gradient(135deg, #1A0D06 0%, #3D2214 100%)' }}>
           <img
             src={MALAKESA_LOGO}
-            alt="Malakesa Transfer and Tour"
+            alt="Malakesa Transfers and Tours"
             style={{ width: '100%', maxWidth: 188, borderRadius: 6, display: 'block', margin: '0 auto 4px' }}
           />
           <div style={{ marginTop: 8, background: 'rgba(255,215,0,0.1)', border: '0.5px solid rgba(255,215,0,0.3)', borderRadius: 4, padding: '3px 8px', display: 'inline-block' }}>
@@ -706,7 +706,7 @@ function Invoices({ invoices, payments, reload, setModal, setSelected }) {
       'Tel: +678 22712 | Mob: +678 7798712\n' +
       'Email: accounts@malakesa.vu\n\n' +
       'Thank you for your business.\n\n' +
-      'Malakesa Transfer and Tour\n' +
+      'Malakesa Transfers and Tours\n' +
       'Port Vila, Shefa Province, Vanuatu'
     return { subject, body, bal }
   }
@@ -785,7 +785,7 @@ function Invoices({ invoices, payments, reload, setModal, setSelected }) {
           invoiceLines + '\n\n' +
           'Total outstanding: VT ' + Number(totalOwed).toLocaleString() + '\n\n' +
           'Please arrange payment at your earliest convenience.\n\n' +
-          'Thank you,\nMalakesa Transfer and Tour\nTel: +678 22712 | accounts@malakesa.vu'
+          'Thank you,\nMalakesa Transfers and Tours\nTel: +678 22712 | accounts@malakesa.vu'
         window.location.href = 'mailto:' + c.email + '?subject=' + subject + '&body=' + encodeURIComponent(bodyText)
       }
 
@@ -834,10 +834,10 @@ function Invoices({ invoices, payments, reload, setModal, setSelected }) {
       .printbtn{background:#8B6914;color:#fff;border:none;padding:7px 18px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600}
       @media print{.noprint{display:none}.rpt-hdr{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #8B6914;padding:6px 40px;position:fixed;top:0;left:0;right:0;background:#fff;z-index:999} body{padding-top:42px}}
     </style></head><body>
-    <div class='rpt-hdr'><span style='font-size:12px;font-weight:700;color:#3D2214'>Malakesa Transfer &amp; Tour — Selected Invoices (${invs.length})</span><span style='font-size:10px;color:#888'>${now}</span></div>
+    <div class='rpt-hdr'><span style='font-size:12px;font-weight:700;color:#3D2214'>Malakesa Transfers &amp; Tours — Selected Invoices (${invs.length})</span><span style='font-size:10px;color:#888'>${now}</span></div>
     <div class='noprint'><span>Bulk Print — ${invs.length} selected invoice(s)</span><button class='printbtn' onclick='window.print()'>🖨️ Print / Save PDF</button></div>
     <div style='padding:20px 40px'>
-      <h1>Malakesa Transfer &amp; Tour</h1>
+      <h1>Malakesa Transfers &amp; Tours</h1>
       <div class='sub'>Selected Invoices &nbsp;|&nbsp; ${invs.length} invoice(s) &nbsp;|&nbsp; ${now}<br>Total: VT ${Number(totalSel).toLocaleString()} &nbsp;|&nbsp; Outstanding: VT ${Number(totalBal).toLocaleString()}</div>
       <table><thead><tr><th>Invoice #</th><th>Issue Date</th><th>Due Date</th><th>Client</th><th style='text-align:right'>Total</th><th style='text-align:right'>Balance</th><th>Status</th></tr></thead>
       <tbody>${rows}</tbody>
@@ -881,7 +881,7 @@ function Invoices({ invoices, payments, reload, setModal, setSelected }) {
       } catch(e) {}
       if (!sent) {
         const subject = encodeURIComponent('Payment Reminder — Outstanding Invoices')
-        const bodyText = 'Dear ' + clientName + ',\n\nThis is a friendly reminder that the following invoice' + (c.invoices.length > 1 ? 's are' : ' is') + ' outstanding:\n\n' + invoiceLines + '\n\nTotal outstanding: VT ' + Number(totalOwed).toLocaleString() + '\n\nPlease arrange payment at your earliest convenience.\n\nThank you,\nMalakesa Transfer and Tour\nTel: +678 22712 | accounts@malakesa.vu'
+        const bodyText = 'Dear ' + clientName + ',\n\nThis is a friendly reminder that the following invoice' + (c.invoices.length > 1 ? 's are' : ' is') + ' outstanding:\n\n' + invoiceLines + '\n\nTotal outstanding: VT ' + Number(totalOwed).toLocaleString() + '\n\nPlease arrange payment at your earliest convenience.\n\nThank you,\nMalakesa Transfers and Tours\nTel: +678 22712 | accounts@malakesa.vu'
         window.location.href = 'mailto:' + c.email + '?subject=' + subject + '&body=' + encodeURIComponent(bodyText)
       }
     }
@@ -893,7 +893,7 @@ function Invoices({ invoices, payments, reload, setModal, setSelected }) {
     const invs = selectedInvoices
     if (!invs.length) return
     const rows = [
-      ['Malakesa Transfer and Tour - Selected Invoices'],
+      ['Malakesa Transfers and Tours - Selected Invoices'],
       ['Selected:', invs.length + ' invoices'],
       ['Generated:', new Date().toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' })],
       [],
@@ -937,8 +937,8 @@ function Invoices({ invoices, payments, reload, setModal, setSelected }) {
           else {
             // Fallback to mailto
             const bal = getBalance(inv, payments)
-            const subject = encodeURIComponent('Invoice ' + inv.number + ' from Malakesa Transfer and Tour')
-            const body = encodeURIComponent('Dear ' + clientName + ',\n\nPlease find attached invoice ' + inv.number + ' for VT ' + Number(inv.total).toLocaleString() + ', due ' + fmtDate(inv.due_date) + '.\n\nPlease arrange payment at your earliest convenience.\n\nThank you,\nMalakesa Transfer and Tour\nTel: +678 22712 | accounts@malakesa.vu')
+            const subject = encodeURIComponent('Invoice ' + inv.number + ' from Malakesa Transfers and Tours')
+            const body = encodeURIComponent('Dear ' + clientName + ',\n\nPlease find attached invoice ' + inv.number + ' for VT ' + Number(inv.total).toLocaleString() + ', due ' + fmtDate(inv.due_date) + '.\n\nPlease arrange payment at your earliest convenience.\n\nThank you,\nMalakesa Transfers and Tours\nTel: +678 22712 | accounts@malakesa.vu')
             window.location.href = 'mailto:' + inv.client_email + '?subject=' + subject + '&body=' + body
             sent++
           }
@@ -982,9 +982,9 @@ function Invoices({ invoices, payments, reload, setModal, setSelected }) {
         .printbtn{background:#8B6914;color:#fff;border:none;padding:7px 18px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600}
         @media print{.noprint{display:none}.rpt-hdr{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #8B6914;padding:6px 40px;position:fixed;top:0;left:0;right:0;background:#fff;z-index:999} body{padding-top:42px}}
       </style></head><body>
-      <div class='rpt-hdr'><span style='font-size:12px;font-weight:700;color:#3D2214'>Malakesa Transfer &amp; Tour — Invoices Export — ${filterDesc}</span><span style='font-size:10px;color:#888'>${now}</span></div>
+      <div class='rpt-hdr'><span style='font-size:12px;font-weight:700;color:#3D2214'>Malakesa Transfers &amp; Tours — Invoices Export — ${filterDesc}</span><span style='font-size:10px;color:#888'>${now}</span></div>
       <div class='noprint'><span>Invoices Export — ${filterDesc}</span><button class='printbtn' onclick='window.print()'>🖨️ Print / Save PDF</button></div>
-      <div style='padding:20px 40px'><h1>Malakesa Transfer &amp; Tour</h1><div class='sub'>Invoices Export &nbsp;|&nbsp; ${filterDesc} &nbsp;|&nbsp; ${now}<br>${filtered.length} invoice(s) &nbsp;|&nbsp; Total: VT ${Number(totalFiltered).toLocaleString()} &nbsp;|&nbsp; Outstanding: VT ${Number(totalBalance).toLocaleString()}</div>
+      <div style='padding:20px 40px'><h1>Malakesa Transfers &amp; Tours</h1><div class='sub'>Invoices Export &nbsp;|&nbsp; ${filterDesc} &nbsp;|&nbsp; ${now}<br>${filtered.length} invoice(s) &nbsp;|&nbsp; Total: VT ${Number(totalFiltered).toLocaleString()} &nbsp;|&nbsp; Outstanding: VT ${Number(totalBalance).toLocaleString()}</div>
       <table><thead><tr><th>Invoice #</th><th>Issue Date</th><th>Client</th><th style='text-align:right'>Subtotal</th><th style='text-align:right'>VAT</th><th style='text-align:right'>Total</th><th style='text-align:right'>Balance</th><th>Status</th></tr></thead><tbody>${rows}</tbody>
       <tr style='background:#E8D5A3;font-weight:700'><td colspan='5' style='padding:9px 10px'>TOTAL (${filtered.length} invoices)</td><td style='padding:9px 10px;text-align:right'>VT ${Number(totalFiltered).toLocaleString()}</td><td style='padding:9px 10px;text-align:right'>VT ${Number(totalBalance).toLocaleString()} owing</td><td></td></tr>
       </table></div><script>window.onload=()=>window.print()<\/script></body></html>`)
@@ -993,7 +993,7 @@ function Invoices({ invoices, payments, reload, setModal, setSelected }) {
     }
     // Excel/CSV export
     const cols = invoiceColumns.filter(c => selected.has(c.key))
-    const header = ['Malakesa Transfer and Tour - Invoice Export']
+    const header = ['Malakesa Transfers and Tours - Invoice Export']
     const filterDesc = [filterClient && `Client: ${filterClient}`, filterStatus && `Status: ${filterStatus}`, filterMonth && `Month: ${filterMonth}`].filter(Boolean).join(' | ') || 'All'
     const rows = [
       header,
@@ -1206,13 +1206,13 @@ function Payments({ payments, invoices, reload, setModal, setSelected }) {
     }
   </style></head><body>
   <div class="rpt-hdr">
-    <span style="font-size:11px;font-weight:700;color:#3D2214">Malakesa Transfer &amp; Tour &nbsp;—&nbsp; Payment Receipt &nbsp;—&nbsp; ${receiptNum}</span>
+    <span style="font-size:11px;font-weight:700;color:#3D2214">Malakesa Transfers &amp; Tours &nbsp;—&nbsp; Payment Receipt &nbsp;—&nbsp; ${receiptNum}</span>
     <span style="font-size:10px;color:#888">Page <span class="pgnum"></span></span>
   </div>
   <div class="noprint"><span>${receiptNum}</span><button class="printbtn" onclick="window.print()">Print / Save PDF</button></div>
   <div class="page">
     <div class="header">
-      <img src="${MALAKESA_LOGO}" alt="Malakesa Transfer and Tour" style="width:200px;border-radius:6px;display:block;margin:0 auto" />
+      <img src="${MALAKESA_LOGO}" alt="Malakesa Transfers and Tours" style="width:200px;border-radius:6px;display:block;margin:0 auto" />
       <div class="rec-label">PAYMENT RECEIPT</div>
       <div class="rec-num">${receiptNum}</div>
     </div>
@@ -1236,7 +1236,7 @@ function Payments({ payments, invoices, reload, setModal, setSelected }) {
       <div class="thankyou">Tankiu Tumas \u2014 Thank you for your payment!</div>
     </div>
     <div class="footer">
-      Malakesa Transfer and Tour | Port Vila, Shefa Province, Vanuatu<br>
+      Malakesa Transfers and Tours | Port Vila, Shefa Province, Vanuatu<br>
       +678 22712 | +678 7798712 | accounts@malakesa.vu
     </div>
   </div>
@@ -1393,7 +1393,7 @@ function Unpaid({ invoices, payments, reload, setModal, setSelected }) {
     } catch(e) {}
     const bal = getBalance(inv, payments)
     const subject = encodeURIComponent('Payment Reminder — ' + inv.number)
-    const body = encodeURIComponent('Dear ' + inv.client_name + ',\n\nThis is a friendly reminder that invoice ' + inv.number + ' has an outstanding balance of VT ' + Number(bal).toLocaleString() + ' due on ' + fmtDate(inv.due_date) + '.\n\nPlease arrange payment at your earliest convenience.\n\nThank you,\nMalakesa Transfer and Tour')
+    const body = encodeURIComponent('Dear ' + inv.client_name + ',\n\nThis is a friendly reminder that invoice ' + inv.number + ' has an outstanding balance of VT ' + Number(bal).toLocaleString() + ' due on ' + fmtDate(inv.due_date) + '.\n\nPlease arrange payment at your earliest convenience.\n\nThank you,\nMalakesa Transfers and Tours')
     window.open('mailto:' + (inv.client_email || '') + '?subject=' + subject + '&body=' + body, '_blank')
     setNotice('Email app opened for ' + inv.client_name)
     setTimeout(() => setNotice(''), 4000)
@@ -1432,12 +1432,12 @@ function Unpaid({ invoices, payments, reload, setModal, setSelected }) {
     }
     </style></head><body>
     <div class="rpt-hdr">
-      <span style="font-size:12px;font-weight:700;color:#3D2214">Malakesa Transfer &amp; Tour &nbsp;—&nbsp; Unpaid Invoices Report</span>
+      <span style="font-size:12px;font-weight:700;color:#3D2214">Malakesa Transfers &amp; Tours &nbsp;—&nbsp; Unpaid Invoices Report</span>
       <span style="font-size:10px;color:#888">Generated ${new Date().toLocaleDateString('en-GB', {day:'2-digit',month:'short',year:'numeric'})}</span>
     </div>
     <div class="report-body">
     <div style="display:flex;justify-content:space-between;margin-top:20px">
-      <div><h1>Malakesa Transfer &amp; Tour</h1><div class="sub">Unpaid Invoices Report — Generated ${new Date().toLocaleDateString('en-GB', {day:'2-digit',month:'short',year:'numeric'})}</div></div>
+      <div><h1>Malakesa Transfers &amp; Tours</h1><div class="sub">Unpaid Invoices Report — Generated ${new Date().toLocaleDateString('en-GB', {day:'2-digit',month:'short',year:'numeric'})}</div></div>
       <div style="text-align:right;font-size:12px;color:#888">${filterClient ? 'Client: ' + filterClient + '<br>' : ''}${filterMonth ? 'Month: ' + filterMonth : ''}</div>
     </div>
     <table><thead><tr><th>Invoice #</th><th>Client</th><th>Due Date</th><th>Amount</th><th>Balance</th><th>Status</th></tr></thead>
@@ -1661,18 +1661,18 @@ function Reports({ invoices, payments, purchases, salaryRecords }) {
       }
     </style></head><body>
     <div class="rpt-hdr">
-      <span style="font-size:12px;font-weight:700;color:#3D2214">Malakesa Transfer &amp; Tour &nbsp;—&nbsp; VAT Return &nbsp;—&nbsp; ${vatMonthLabel}</span>
+      <span style="font-size:12px;font-weight:700;color:#3D2214">Malakesa Transfers &amp; Tours &nbsp;—&nbsp; VAT Return &nbsp;—&nbsp; ${vatMonthLabel}</span>
       <span style="font-size:10px;color:#888">TIN: 445579 &nbsp;|&nbsp; Generated ${new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}</span>
     </div>
     <div class="rpt-footer-bar">
-      <span>VAT Return — ${vatMonthLabel} &nbsp;|&nbsp; Malakesa Transfer &amp; Tour &nbsp;|&nbsp; TIN: 445579</span>
+      <span>VAT Return — ${vatMonthLabel} &nbsp;|&nbsp; Malakesa Transfers &amp; Tours &nbsp;|&nbsp; TIN: 445579</span>
       <span>Computer generated — verify before filing</span>
     </div>
     <div class="noprint"><span>VAT Return — ${vatMonthLabel}</span><button class="printbtn" onclick="window.print()">🖨️ Print / Save PDF</button></div>
     <div class="page">
       <div class="header">
         <div>
-          <img src="${MALAKESA_LOGO}" alt="Malakesa Transfer and Tour" style="width:200px;border-radius:6px;display:block" />
+          <img src="${MALAKESA_LOGO}" alt="Malakesa Transfers and Tours" style="width:200px;border-radius:6px;display:block" />
           <div class="logo-contact">
             📍 Port Vila, Shefa Province, Vanuatu<br>
             📞 +678 22712 &nbsp;|&nbsp; 📱 +678 7798712 &nbsp;|&nbsp; ✉️ accounts@malakesa.vu
@@ -1762,7 +1762,7 @@ function Reports({ invoices, payments, purchases, salaryRecords }) {
       </div>
       <div class="footer">
         <div class="footer-l">
-          <div><strong style="color:#FFD700">Malakesa Transfer &amp; Tour</strong></div>
+          <div><strong style="color:#FFD700">Malakesa Transfers &amp; Tours</strong></div>
           <div>TIN: 445579 &nbsp;|&nbsp; Port Vila, Vanuatu</div>
           <div>VAT Period: ${vatMonthLabel}</div>
         </div>
@@ -1869,18 +1869,18 @@ function Reports({ invoices, payments, purchases, salaryRecords }) {
       }
     </style></head><body>
     <div class="rpt-hdr">
-      <span style="font-size:12px;font-weight:700;color:#3D2214">Malakesa Transfer &amp; Tour &nbsp;—&nbsp; Purchases by Supplier &nbsp;—&nbsp; ${supplierPeriodLabel}</span>
+      <span style="font-size:12px;font-weight:700;color:#3D2214">Malakesa Transfers &amp; Tours &nbsp;—&nbsp; Purchases by Supplier &nbsp;—&nbsp; ${supplierPeriodLabel}</span>
       <span style="font-size:10px;color:#888">Generated ${new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}</span>
     </div>
     <div class="rpt-footer-bar">
-      <span>Purchases by Supplier — ${supplierPeriodLabel} &nbsp;|&nbsp; Malakesa Transfer &amp; Tour</span>
+      <span>Purchases by Supplier — ${supplierPeriodLabel} &nbsp;|&nbsp; Malakesa Transfers &amp; Tours</span>
       <span>Computer generated — confidential</span>
     </div>
     <div class="noprint"><span>Purchases by Supplier — ${supplierPeriodLabel}</span><button class="printbtn" onclick="window.print()">🖨️ Print / Save PDF</button></div>
     <div class="page">
       <div class="header">
         <div>
-          <img src="${MALAKESA_LOGO}" alt="Malakesa Transfer and Tour" style="width:200px;border-radius:6px;display:block" />
+          <img src="${MALAKESA_LOGO}" alt="Malakesa Transfers and Tours" style="width:200px;border-radius:6px;display:block" />
           <div class="logo-contact">
             📍 Port Vila, Shefa Province, Vanuatu<br>
             📞 +678 22712 &nbsp;|&nbsp; 📱 +678 7798712 &nbsp;|&nbsp; ✉️ accounts@malakesa.vu
@@ -1921,7 +1921,7 @@ function Reports({ invoices, payments, purchases, salaryRecords }) {
       </div>
       <div class="footer">
         <div class="footer-l">
-          <div><strong style="color:#FFD700">Malakesa Transfer &amp; Tour</strong></div>
+          <div><strong style="color:#FFD700">Malakesa Transfers &amp; Tours</strong></div>
           <div>Port Vila, Vanuatu</div>
         </div>
         <div class="footer-r">
@@ -1966,15 +1966,15 @@ function Reports({ invoices, payments, purchases, salaryRecords }) {
       }
     </style></head><body>
     <div class="rpt-hdr">
-      <span style="font-size:12px;font-weight:700;color:#3D2214">Malakesa Transfer &amp; Tour &nbsp;—&nbsp; Revenue Report &nbsp;—&nbsp; ${periodLabel}</span>
+      <span style="font-size:12px;font-weight:700;color:#3D2214">Malakesa Transfers &amp; Tours &nbsp;—&nbsp; Revenue Report &nbsp;—&nbsp; ${periodLabel}</span>
       <span style="font-size:10px;color:#888">Generated ${new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}</span>
     </div>
     <div class="rpt-footer-bar">
-      <span>Revenue Report — ${periodLabel} &nbsp;|&nbsp; Malakesa Transfer &amp; Tour</span>
+      <span>Revenue Report — ${periodLabel} &nbsp;|&nbsp; Malakesa Transfers &amp; Tours</span>
       <span>Computer generated — confidential</span>
     </div>
     <div class="report-body" style="padding:0 40px">
-    <h1 style="margin-top:20px">Malakesa Transfer &amp; Tour</h1>
+    <h1 style="margin-top:20px">Malakesa Transfers &amp; Tours</h1>
     <div class="sub">Revenue Report &nbsp;|&nbsp; ${periodLabel}${filterClient ? ' &nbsp;|&nbsp; Client: ' + filterClient : ''} &nbsp;|&nbsp; Generated ${new Date().toLocaleDateString('en-GB', {day:'2-digit',month:'long',year:'numeric'})}</div>
     <div class="stats">
       <div class="stat"><div class="stat-label">Total Invoiced</div><div class="stat-value">VT ${Number(totalInv).toLocaleString()}</div></div>
@@ -1994,7 +1994,7 @@ function Reports({ invoices, payments, purchases, salaryRecords }) {
     <h2>Payment Methods</h2>
     <table><thead><tr><th>Method</th><th class="right">Amount</th><th class="right">% of collected</th></tr></thead>
     <tbody>${Object.entries(byMethod).map(([m, a]) => '<tr><td>' + m + '</td><td class="right green">VT ' + Number(a).toLocaleString() + '</td><td class="right">' + (totalCol > 0 ? Math.round((a/totalCol)*100) : 0) + '%</td></tr>').join('')}</tbody></table>
-    <div class="footer">Malakesa Transfer and Tour &nbsp;|&nbsp; Port Vila, Vanuatu &nbsp;|&nbsp; This report is confidential</div>
+    <div class="footer">Malakesa Transfers and Tours &nbsp;|&nbsp; Port Vila, Vanuatu &nbsp;|&nbsp; This report is confidential</div>
     <script>window.onload=()=>window.print()<\/script></body></html>`)
     w.document.close()
   }
@@ -2018,7 +2018,7 @@ function Reports({ invoices, payments, purchases, salaryRecords }) {
 
   const exportRevenueExcel = () => {
     const rows = [
-      ['Malakesa Transfer and Tour - Revenue Report'],
+      ['Malakesa Transfers and Tours - Revenue Report'],
       ['Period:', periodLabel],
       ['Generated:', new Date().toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' })],
       [],
@@ -2045,7 +2045,7 @@ function Reports({ invoices, payments, purchases, salaryRecords }) {
 
   const exportVatExcel = () => {
     const rows = [
-      ['Malakesa Transfer and Tour - VAT Return'],
+      ['Malakesa Transfers and Tours - VAT Return'],
       ['Period:', vatMonthLabel],
       ['TIN:', '445579'],
       ['Generated:', new Date().toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' })],
@@ -2077,7 +2077,7 @@ function Reports({ invoices, payments, purchases, salaryRecords }) {
 
   const exportSupplierExcel = () => {
     const rows = [
-      ['Malakesa Transfer and Tour - Purchases by Supplier'],
+      ['Malakesa Transfers and Tours - Purchases by Supplier'],
       ['Period:', supplierPeriodLabel],
       ['Generated:', new Date().toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' })],
       [],
@@ -2344,10 +2344,10 @@ function Reports({ invoices, payments, purchases, salaryRecords }) {
               .rpt-hdr{display:none} @page{margin:18mm 14mm 20mm 14mm;size:A4}
               @media print{.noprint{display:none}.rpt-hdr{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #8B6914;padding:6px 40px;position:fixed;top:0;left:0;right:0;background:#fff;z-index:999} body{padding-top:42px 0 0 40px}}
             </style></head><body>
-            <div class='rpt-hdr'><span style='font-size:12px;font-weight:700;color:#3D2214'>Malakesa Transfer &amp; Tour — Cash Flow Report — Last 12 Months</span><span style='font-size:10px;color:#888'>${dateStr}</span></div>
+            <div class='rpt-hdr'><span style='font-size:12px;font-weight:700;color:#3D2214'>Malakesa Transfers &amp; Tours — Cash Flow Report — Last 12 Months</span><span style='font-size:10px;color:#888'>${dateStr}</span></div>
             <div class='noprint'><span>Cash Flow Report — Last 12 Months</span><button class='printbtn' onclick='window.print()'>🖨️ Print / Save PDF</button></div>
             <div style='padding:20px 40px'>
-              <h1>Malakesa Transfer &amp; Tour</h1>
+              <h1>Malakesa Transfers &amp; Tours</h1>
               <div class='sub'>Cash Flow Report — Last 12 Months &nbsp;|&nbsp; Generated ${dateStr}</div>
               <div style='display:flex;gap:24px;margin-bottom:20px;flex-wrap:wrap'>
                 <div style='background:#EAF3DE;padding:12px 18px;border-radius:6px'><div style='font-size:11px;color:#555;margin-bottom:4px'>Total Money In</div><div style='font-size:18px;font-weight:700;color:#3B6D11'>VT ${Number(totalIn).toLocaleString()}</div></div>
@@ -2371,7 +2371,7 @@ function Reports({ invoices, payments, purchases, salaryRecords }) {
 
           const exportCashFlow = () => {
             const rows = [
-              ['Malakesa Transfer and Tour - Cash Flow Report'],
+              ['Malakesa Transfers and Tours - Cash Flow Report'],
               ['Period: Last 12 months'],
               ['Generated:', new Date().toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' })],
               [],
@@ -2501,7 +2501,7 @@ function Reports({ invoices, payments, purchases, salaryRecords }) {
               if (fmt === 'pdf') { printReport(); return }
               const cols = revenueColumns.filter(c => sel.has(c.key))
               const dlRows = [
-                ['Malakesa Transfer and Tour - Revenue Report'],
+                ['Malakesa Transfers and Tours - Revenue Report'],
                 ['Period:', periodLabel, 'Total Invoiced:', totalInv, 'Collected:', totalCol, 'Outstanding:', outstanding],
                 [], cols.map(c => c.label),
                 ...fi.map(inv => cols.map(c => {
@@ -2519,7 +2519,7 @@ function Reports({ invoices, payments, purchases, salaryRecords }) {
               if (fmt === 'pdf') { printVatReturn(); return }
               const cols = vatColumns.filter(c => sel.has(c.key))
               const dlRows = [
-                ['Malakesa Transfer and Tour - VAT Return'],
+                ['Malakesa Transfers and Tours - VAT Return'],
                 ['Period:', vatMonthLabel, 'TIN:', '445579', 'Net VAT Payable:', Math.max(0, vatTotalTax - vatInputTax)],
                 [], ['OUTPUT TAX - INVOICES'], cols.map(c => c.label),
                 ...vatInvoices.map(inv => cols.map(c => {
@@ -2539,7 +2539,7 @@ function Reports({ invoices, payments, purchases, salaryRecords }) {
               if (fmt === 'pdf') { printSupplierReport(); return }
               const cols = supplierColumns.filter(c => sel.has(c.key))
               const dlRows = [
-                ['Malakesa Transfer and Tour - Purchases by Supplier'],
+                ['Malakesa Transfers and Tours - Purchases by Supplier'],
                 ['Period:', supplierPeriodLabel, 'Suppliers:', supplierRows.length, 'Total spend:', supplierRows.reduce((s,r)=>s+r.total,0)],
                 [], ['SUPPLIER SUMMARY'],
                 ['Supplier','Purchases','Ex-VAT (VT)','Input VAT (VT)','Total (VT)'],
@@ -2620,7 +2620,7 @@ function VatPage({ invoices, payments, purchases }) {
         .page{padding-top:42px}
       }
     </style></head><body>
-    <div class='rpt-hdr'><span style='font-size:12px;font-weight:700;color:#3D2214'>Malakesa Transfer &amp; Tour — VAT Return — ${vatMonthLabel}</span><span style='font-size:10px;color:#888'>TIN: 445579</span></div>
+    <div class='rpt-hdr'><span style='font-size:12px;font-weight:700;color:#3D2214'>Malakesa Transfers &amp; Tours — VAT Return — ${vatMonthLabel}</span><span style='font-size:10px;color:#888'>TIN: 445579</span></div>
     <div class='noprint'><span>VAT Return — ${vatMonthLabel}</span><button class='printbtn' onclick='window.print()'>Print / Save PDF</button></div>
     <div class='page'>
       <div class='header'>
@@ -2653,7 +2653,7 @@ function VatPage({ invoices, payments, purchases }) {
           </div>
         </div>
       </div>
-      <div class='footer'><span>Malakesa Transfer &amp; Tour | TIN: 445579 | VAT Return ${vatMonthLabel}</span><span>Computer generated — verify before filing</span></div>
+      <div class='footer'><span>Malakesa Transfers &amp; Tours | TIN: 445579 | VAT Return ${vatMonthLabel}</span><span>Computer generated — verify before filing</span></div>
     </div>
     <script>window.onload=()=>window.print()<\/script></body></html>`)
     w.document.close()
@@ -2662,7 +2662,7 @@ function VatPage({ invoices, payments, purchases }) {
   const exportVatExcel = () => {
     const esc = v => { const s = String(v == null ? '' : v); return s.includes(',') || s.includes('"') ? '"' + s.replace(/"/g, '""') + '"' : s }
     const dlRows = [
-      ['Malakesa Transfer and Tour - VAT Return'],
+      ['Malakesa Transfers and Tours - VAT Return'],
       ['Period:', vatMonthLabel, 'TIN:', '445579'],
       ['Output VAT:', vatTotalTax, 'Input VAT:', vatInputTax, 'Net Payable:', vatNetPayable],
       [],
@@ -2803,7 +2803,7 @@ function VatPage({ invoices, payments, purchases }) {
             if (fmt2 === 'pdf') { printVatReturn(); return }
             const cols = vatColumns.filter(c => sel.has(c.key))
             const dlRows = [
-              ['Malakesa Transfer and Tour - VAT Return'],
+              ['Malakesa Transfers and Tours - VAT Return'],
               ['Period:', vatMonthLabel, 'TIN:', '445579', 'Net VAT Payable:', vatNetPayable],
               [], ['OUTPUT TAX'], cols.map(c => c.label),
               ...vatInvoices.map(inv => cols.map(c => { if (c.key==='rate') return Number(inv.tax)>0?'15%':'Zero-rated'; return inv[c.key]??'' })),
@@ -2889,9 +2889,9 @@ function Purchases({ purchases, suppliers, customCategories, reload, setModal })
         .printbtn{background:#8B6914;color:#fff;border:none;padding:7px 18px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600}
         @media print{.noprint{display:none}.rpt-hdr{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #8B6914;padding:6px 30px;position:fixed;top:0;left:0;right:0;background:#fff;z-index:999} body{padding-top:42px}}
       </style></head><body>
-      <div class='rpt-hdr'><span style='font-size:12px;font-weight:700;color:#3D2214'>Malakesa Transfer &amp; Tour — Purchases — ${filterDesc}</span><span style='font-size:10px;color:#888'>${now}</span></div>
+      <div class='rpt-hdr'><span style='font-size:12px;font-weight:700;color:#3D2214'>Malakesa Transfers &amp; Tours — Purchases — ${filterDesc}</span><span style='font-size:10px;color:#888'>${now}</span></div>
       <div class='noprint'><span>Purchases Export — ${filterDesc}</span><button class='printbtn' onclick='window.print()'>🖨️ Print / Save PDF</button></div>
-      <div style='padding:20px 30px'><h1>Malakesa Transfer &amp; Tour</h1>
+      <div style='padding:20px 30px'><h1>Malakesa Transfers &amp; Tours</h1>
       <div class='sub'>Purchases Export &nbsp;|&nbsp; ${filterDesc} &nbsp;|&nbsp; ${now}<br>${filtered.length} purchase(s) &nbsp;|&nbsp; Total: VT ${Number(totalAmount).toLocaleString()} &nbsp;|&nbsp; Input VAT: VT ${Number(totalVat).toLocaleString()}</div>
       <table><thead><tr><th>Date</th><th>Supplier</th><th>Description</th><th>Category</th><th style='text-align:right'>Ex-VAT</th><th style='text-align:right'>VAT</th><th style='text-align:right'>Total</th><th>Ref</th></tr></thead><tbody>${rows}</tbody>
       <tr style='background:#E8D5A3;font-weight:700'><td colspan='4' style='padding:8px'>TOTAL (${filtered.length})</td><td style='padding:8px;text-align:right'>VT ${Number(totalExVat).toLocaleString()}</td><td style='padding:8px;text-align:right;color:#2E7D2E'>VT ${Number(totalVat).toLocaleString()}</td><td style='padding:8px;text-align:right'>VT ${Number(totalAmount).toLocaleString()}</td><td></td></tr>
@@ -2901,7 +2901,7 @@ function Purchases({ purchases, suppliers, customCategories, reload, setModal })
     }
     const cols = purchaseColumns.filter(c => selected.has(c.key))
     const rows = [
-      ['Malakesa Transfer and Tour - Purchases Export'],
+      ['Malakesa Transfers and Tours - Purchases Export'],
       ['Filters:', filterDesc],
       ['Generated:', new Date().toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' })],
       [],
@@ -3607,20 +3607,20 @@ function VNPF({ employees, salaryRecords, reload, setModal, setSelected }) {
     </style></head><body>
     <div class="rpt-hdr">
       <div style="display:flex;align-items:center;gap:12px">
-        <span style="font-size:12px;font-weight:700;color:#3D2214">Malakesa Transfer &amp; Tour</span>
+        <span style="font-size:12px;font-weight:700;color:#3D2214">Malakesa Transfers &amp; Tours</span>
         <span style="font-size:11px;color:#8B6914;font-weight:600">VNPF Contribution Schedule — ${monthLabel}</span>
       </div>
       <span style="font-size:10px;color:#888">TIN: 445579 &nbsp;|&nbsp; Page <span class="pgnum"></span></span>
     </div>
     <div class="rpt-footer">
-      <span>VNPF Schedule — ${monthLabel} &nbsp;|&nbsp; Malakesa Transfer &amp; Tour &nbsp;|&nbsp; TIN: 445579</span>
+      <span>VNPF Schedule — ${monthLabel} &nbsp;|&nbsp; Malakesa Transfers &amp; Tours &nbsp;|&nbsp; TIN: 445579</span>
       <span>Page <span class="pgnum2"></span> &nbsp;|&nbsp; Computer generated — verify before filing</span>
     </div>
     <div class="noprint"><span>VNPF Contribution Schedule — ${monthLabel}</span><button class="printbtn" onclick="window.print()">🖨️ Print / Save PDF</button></div>
     <div class="page">
       <div class="header">
         <div>
-          <img src="${MALAKESA_LOGO}" alt="Malakesa Transfer and Tour" style="width:200px;border-radius:6px;display:block" />
+          <img src="${MALAKESA_LOGO}" alt="Malakesa Transfers and Tours" style="width:200px;border-radius:6px;display:block" />
           <div class="logo-contact">
             📍 Port Vila, Shefa Province, Vanuatu<br>
             📞 +678 22712 &nbsp;|&nbsp; 📱 +678 7798712 &nbsp;|&nbsp; ✉️ accounts@malakesa.vu
@@ -3637,7 +3637,7 @@ function VNPF({ employees, salaryRecords, reload, setModal, setSelected }) {
       </div>
       <div class="body">
         <div class="info-box">
-          ⚠️ <strong>Employer:</strong> Malakesa Transfer and Tour &nbsp;|&nbsp; TIN 445579 &nbsp;|&nbsp; Employee rate: 6% &nbsp;|&nbsp; Employer rate: 6% &nbsp;|&nbsp; Period: ${monthLabel}
+          ⚠️ <strong>Employer:</strong> Malakesa Transfers and Tours &nbsp;|&nbsp; TIN 445579 &nbsp;|&nbsp; Employee rate: 6% &nbsp;|&nbsp; Employer rate: 6% &nbsp;|&nbsp; Period: ${monthLabel}
         </div>
         <div class="stats">
           <div class="stat"><div class="stat-label">Total Gross Salaries</div><div class="stat-value">VT ${Number(totalSalary).toLocaleString()}</div></div>
@@ -3662,7 +3662,7 @@ function VNPF({ employees, salaryRecords, reload, setModal, setSelected }) {
       </div>
       <div class="footer">
         <div class="footer-l">
-          <div><strong style="color:#FFD700">Malakesa Transfer &amp; Tour</strong></div>
+          <div><strong style="color:#FFD700">Malakesa Transfers &amp; Tours</strong></div>
           <div>TIN: 445579 &nbsp;|&nbsp; Port Vila, Vanuatu</div>
           <div>Period: ${monthLabel}</div>
         </div>
@@ -3972,7 +3972,7 @@ body{background:#fff}
 }
 </style></head><body>
 <div class='rpt-hdr'>
-  <span style='font-size:11px;font-weight:700;color:#3D2214'>Malakesa Transfer &amp; Tour &nbsp;—&nbsp; Payslip &nbsp;—&nbsp; ${emp.name} &nbsp;—&nbsp; ${mLabel}</span>
+  <span style='font-size:11px;font-weight:700;color:#3D2214'>Malakesa Transfers &amp; Tours &nbsp;—&nbsp; Payslip &nbsp;—&nbsp; ${emp.name} &nbsp;—&nbsp; ${mLabel}</span>
   <span style='font-size:10px;color:#888'>Page <span class='pgnum'></span></span>
 </div>
 <div class='noprint'><span>Payslip — ${emp.name} — ${mLabel}</span><button class='printbtn' onclick='window.print()'>Print / Save PDF</button></div>
@@ -4018,7 +4018,7 @@ body{background:#fff}
     </div>
   </div>
   <div class='ftr'>
-    <div><strong style='color:#FFD700'>Malakesa Transfer &amp; Tour</strong><br>Port Vila, Shefa Province, Vanuatu<br>TIN: 445579 | PO Box 823</div>
+    <div><strong style='color:#FFD700'>Malakesa Transfers &amp; Tours</strong><br>Port Vila, Shefa Province, Vanuatu<br>TIN: 445579 | PO Box 823</div>
     <div style='text-align:right'>Tel: +678 22712 | Mob: +678 7798712<br>Email: accounts@malakesa.vu<br><span style='opacity:.6'>Computer generated payslip</span></div>
   </div>
 </div>
@@ -4610,7 +4610,7 @@ function previewInvoice(inv) {
     }
   </style></head><body>
   <div class="rpt-hdr">
-    <span style="font-size:11px;font-weight:700;color:#3D2214">Malakesa Transfer &amp; Tour &nbsp;—&nbsp; DRAFT PREVIEW</span>
+    <span style="font-size:11px;font-weight:700;color:#3D2214">Malakesa Transfers &amp; Tours &nbsp;—&nbsp; DRAFT PREVIEW</span>
     <span style="font-size:10px;color:#888">Page <span class="pgnum"></span></span>
   </div>
   <div class="noprint">
@@ -4620,7 +4620,7 @@ function previewInvoice(inv) {
   <div class="page">
     <div class="header">
       <div>
-        <img src="${MALAKESA_LOGO}" alt="Malakesa Transfer and Tour" style="width:220px;border-radius:6px;display:block" />
+        <img src="${MALAKESA_LOGO}" alt="Malakesa Transfers and Tours" style="width:220px;border-radius:6px;display:block" />
         <div class="logo-contact">
           📍 Port Vila, Shefa Province, Vanuatu<br>
           📞 +678 22712 &nbsp;|&nbsp; 📱 +678 7798712 &nbsp;|&nbsp; ✉️ accounts@malakesa.vu
@@ -4661,11 +4661,11 @@ function previewInvoice(inv) {
         <div class="trow"><span>${inv.tax > 0 ? 'VAT (15%)' : 'VAT'}</span><span>${inv.tax > 0 ? 'VT ' + Number(inv.tax).toLocaleString() : 'Not applicable'}</span></div>
         <div class="trow grand"><span>TOTAL DUE</span><span>VT ${Number(inv.total || 0).toLocaleString()}</span></div>
       </div>
-      <div class="thankyou">Tankiu Tumas — Thank you for choosing Malakesa Transfer &amp; Tour!</div>
+      <div class="thankyou">Tankiu Tumas — Thank you for choosing Malakesa Transfers &amp; Tours!</div>
     </div>
     <div class="footer">
       <div class="footer-l">
-        <div><strong style="color:#FFD700">Malakesa Transfer &amp; Tour</strong></div>
+        <div><strong style="color:#FFD700">Malakesa Transfers &amp; Tours</strong></div>
         <div>Port Vila, Shefa Province, Vanuatu</div>
         <div>📞 +678 22712 &nbsp;|&nbsp; 📱 +678 7798712 &nbsp;|&nbsp; ✉️ accounts@malakesa.vu</div>
       </div>
@@ -4892,7 +4892,7 @@ function ViewInvoiceModal({ invoice, payments, onClose, onPay }) {
     }
   </style></head><body>
   <div class="rpt-hdr">
-    <span style="font-size:11px;font-weight:700;color:#3D2214">Malakesa Transfer &amp; Tour &nbsp;—&nbsp; Invoice ${invoice.number} &nbsp;—&nbsp; ${invoice.client_name || ''}</span>
+    <span style="font-size:11px;font-weight:700;color:#3D2214">Malakesa Transfers &amp; Tours &nbsp;—&nbsp; Invoice ${invoice.number} &nbsp;—&nbsp; ${invoice.client_name || ''}</span>
     <span style="font-size:10px;color:#888">Page <span class="pgnum"></span></span>
   </div>
   <div class="noprint">
@@ -4902,7 +4902,7 @@ function ViewInvoiceModal({ invoice, payments, onClose, onPay }) {
   <div class="page">
     <div class="header">
       <div>
-        <img src="${MALAKESA_LOGO}" alt="Malakesa Transfer and Tour" style="width:220px;border-radius:6px;display:block" />
+        <img src="${MALAKESA_LOGO}" alt="Malakesa Transfers and Tours" style="width:220px;border-radius:6px;display:block" />
         <div class="logo-contact">
           📍 Port Vila, Shefa Province, Vanuatu<br>
           📞 +678 22712 &nbsp;|&nbsp; 📱 +678 7798712 &nbsp;|&nbsp; ✉️ accounts@malakesa.vu
@@ -4945,11 +4945,11 @@ function ViewInvoiceModal({ invoice, payments, onClose, onPay }) {
         <div class="trow balance" style="color:${balance > 0 ? '#D85A30' : '#3B6D11'}"><span>Balance due</span><span>VT ${Number(balance).toLocaleString()}</span></div>
       </div>
       ${invPayments.length > 0 ? `<div class="payments"><div class="payments-title">Payments received</div>${invPayments.map(p => `<div class="payrow"><span>${fmtDate(p.date)} — ${p.method}</span><span style="color:#3B6D11;font-weight:bold">VT ${Number(p.amount).toLocaleString()}</span></div>`).join('')}</div>` : ''}
-      <div class="thankyou">Tankiu Tumas — Thank you for choosing Malakesa Transfer &amp; Tour!</div>
+      <div class="thankyou">Tankiu Tumas — Thank you for choosing Malakesa Transfers &amp; Tours!</div>
     </div>
     <div class="footer">
       <div class="footer-l">
-        <div><strong style="color:#FFD700">Malakesa Transfer &amp; Tour</strong></div>
+        <div><strong style="color:#FFD700">Malakesa Transfers &amp; Tours</strong></div>
         <div>Port Vila, Shefa Province, Vanuatu</div>
         <div>📞 +678 22712 &nbsp;|&nbsp; 📱 +678 7798712 &nbsp;|&nbsp; ✉️ accounts@malakesa.vu</div>
       </div>
@@ -5024,7 +5024,7 @@ function ViewInvoiceModal({ invoice, payments, onClose, onPay }) {
   <div class="page">
     <div class="header">
       <div>
-        <img src="${MALAKESA_LOGO}" alt="Malakesa Transfer and Tour" style="width:220px;border-radius:6px;display:block" />
+        <img src="${MALAKESA_LOGO}" alt="Malakesa Transfers and Tours" style="width:220px;border-radius:6px;display:block" />
         <div class="logo-contact">
           📍 Port Vila, Shefa Province, Vanuatu<br>
           📞 +678 22712 &nbsp;|&nbsp; 📱 +678 7798712 &nbsp;|&nbsp; ✉️ accounts@malakesa.vu
@@ -5067,11 +5067,11 @@ function ViewInvoiceModal({ invoice, payments, onClose, onPay }) {
         <div class="trow balance" style="color:${balance > 0 ? '#D85A30' : '#3B6D11'}"><span>Balance due</span><span>VT ${Number(balance).toLocaleString()}</span></div>
       </div>
       ${invPayments.length > 0 ? `<div class="payments"><div class="payments-title">Payments received</div>${invPayments.map(p => `<div class="payrow"><span>${fmtDate(p.date)} — ${p.method}</span><span style="color:#3B6D11;font-weight:bold">VT ${Number(p.amount).toLocaleString()}</span></div>`).join('')}</div>` : ''}
-      <div class="thankyou">Tankiu Tumas — Thank you for choosing Malakesa Transfer &amp; Tour!</div>
+      <div class="thankyou">Tankiu Tumas — Thank you for choosing Malakesa Transfers &amp; Tours!</div>
     </div>
     <div class="footer">
       <div class="footer-l">
-        <div><strong style="color:#FFD700">Malakesa Transfer &amp; Tour</strong></div>
+        <div><strong style="color:#FFD700">Malakesa Transfers &amp; Tours</strong></div>
         <div>Port Vila, Shefa Province, Vanuatu</div>
         <div>📞 +678 22712 &nbsp;|&nbsp; 📱 +678 7798712 &nbsp;|&nbsp; ✉️ accounts@malakesa.vu</div>
       </div>
@@ -5165,13 +5165,13 @@ function ViewInvoiceModal({ invoice, payments, onClose, onPay }) {
     }
   </style></head><body>
   <div class="rpt-hdr">
-    <span style="font-size:11px;font-weight:700;color:#3D2214">Malakesa Transfer &amp; Tour &nbsp;—&nbsp; Payment Receipt &nbsp;—&nbsp; ${receiptNum}</span>
+    <span style="font-size:11px;font-weight:700;color:#3D2214">Malakesa Transfers &amp; Tours &nbsp;—&nbsp; Payment Receipt &nbsp;—&nbsp; ${receiptNum}</span>
     <span style="font-size:10px;color:#888">Page <span class="pgnum"></span></span>
   </div>
   <div class="noprint"><span>${receiptNum}</span><button class="printbtn" onclick="window.print()">Print / Save PDF</button></div>
   <div class="page">
     <div class="header">
-      <img src="${MALAKESA_LOGO}" alt="Malakesa Transfer and Tour" style="width:200px;border-radius:6px;display:block;margin:0 auto" />
+      <img src="${MALAKESA_LOGO}" alt="Malakesa Transfers and Tours" style="width:200px;border-radius:6px;display:block;margin:0 auto" />
       <div class="rec-label">PAYMENT RECEIPT</div>
       <div class="rec-num">${receiptNum}</div>
     </div>
@@ -5195,7 +5195,7 @@ function ViewInvoiceModal({ invoice, payments, onClose, onPay }) {
       <div class="thankyou">Tankiu Tumas — Thank you for your payment!</div>
     </div>
     <div class="footer">
-      Malakesa Transfer and Tour | Port Vila, Shefa Province, Vanuatu<br>
+      Malakesa Transfers and Tours | Port Vila, Shefa Province, Vanuatu<br>
       +678 22712 | +678 7798712 | accounts@malakesa.vu
     </div>
   </div>
@@ -5258,8 +5258,8 @@ function ViewInvoiceModal({ invoice, payments, onClose, onPay }) {
   }
 
   const mailtoFallback = () => {
-    const subject = encodeURIComponent(`Invoice ${invoice.number} from Malakesa Transfer and Tour`)
-    const body = encodeURIComponent(`Dear ${invoice.client_name},\n\nPlease find your invoice ${invoice.number} for ${fmt(invoice.total)}, due ${fmtDate(invoice.due_date)}.\n\nTotal: ${fmt(invoice.total)}\nBalance due: ${fmt(balance)}\n\nThank you,\nMalakesa Transfer and Tour`)
+    const subject = encodeURIComponent(`Invoice ${invoice.number} from Malakesa Transfers and Tours`)
+    const body = encodeURIComponent(`Dear ${invoice.client_name},\n\nPlease find your invoice ${invoice.number} for ${fmt(invoice.total)}, due ${fmtDate(invoice.due_date)}.\n\nTotal: ${fmt(invoice.total)}\nBalance due: ${fmt(balance)}\n\nThank you,\nMalakesa Transfers and Tours`)
     window.open(`mailto:${invoice.client_email || ''}?subject=${subject}&body=${body}`, '_blank')
   }
 

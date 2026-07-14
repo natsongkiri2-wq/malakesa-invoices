@@ -18,7 +18,7 @@ export function getTransporter() {
 
 export async function sendMail({ to, subject, html, attachments }) {
   const transporter = getTransporter()
-  const fromName = process.env.COMPANY_NAME || 'Malakesa Transfer and Tour'
+  const fromName = process.env.COMPANY_NAME || 'Malakesa Transfers and Tours'
   const fromAddress = process.env.EMAIL_USER
 
   return transporter.sendMail({

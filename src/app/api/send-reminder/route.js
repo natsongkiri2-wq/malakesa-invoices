@@ -56,7 +56,7 @@ export async function POST(req) {
     <div style="background:linear-gradient(135deg,#1A0D06,#3D2214,#5C3D0A);padding:28px 32px;border-radius:8px 8px 0 0">
       <div style="display:flex;justify-content:space-between;align-items:center">
         <div>
-          <img src="https://malakesa-invoices.vercel.app/malakesa-logo.png" alt="Malakesa Transfer and Tour" style="width:220px;display:block;border-radius:4px" />
+          <img src="https://malakesa-invoices.vercel.app/malakesa-logo.png" alt="Malakesa Transfers and Tours" style="width:220px;display:block;border-radius:4px" />
           <div style="font-size:11px;color:rgba(255,255,255,0.75);margin-top:10px;line-height:1.9">
             📍 Port Vila, Shefa Province, Vanuatu<br>
             📞 +678 22712 &nbsp;|&nbsp; 📱 7798712<br>
@@ -85,9 +85,9 @@ export async function POST(req) {
         ${totalPaid > 0 ? `<br>Already paid: ${fmt(totalPaid)}` : ''}
       </div>
       <p style="font-size:14px;line-height:1.6">Please arrange payment at your earliest convenience. If you have already made this payment, please disregard this notice.</p>
-      <p style="text-align:center;font-size:13px;font-style:italic;color:#8B6914;margin:28px 0 16px">Thank you for choosing Malakesa Transfer &amp; Tour!</p>
+      <p style="text-align:center;font-size:13px;font-style:italic;color:#8B6914;margin:28px 0 16px">Thank you for choosing Malakesa Transfers &amp; Tours!</p>
       <div style="padding-top:16px;border-top:1px solid #f0ebe0;font-size:11px;color:#999;text-align:center;line-height:1.9">
-        Malakesa Transfer and Tour &nbsp;|&nbsp; Port Vila, Vanuatu<br>
+        Malakesa Transfers and Tours &nbsp;|&nbsp; Port Vila, Vanuatu<br>
         📞 +678 22712 &nbsp;|&nbsp; 📱 7798712 &nbsp;|&nbsp; ✉️ accounts@malakesa.vu
       </div>
     </div></body></html>`

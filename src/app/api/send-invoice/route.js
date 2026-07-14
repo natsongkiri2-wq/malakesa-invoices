@@ -45,7 +45,7 @@ export async function POST(req) {
     <div style="background:linear-gradient(135deg,#1A0D06,#3D2214,#5C3D0A);padding:28px 32px;border-radius:8px 8px 0 0">
       <div style="display:flex;justify-content:space-between;align-items:flex-start">
         <div>
-          <img src="https://malakesa-invoices.vercel.app/malakesa-logo.png" alt="Malakesa Transfer and Tour" style="width:220px;display:block;border-radius:4px" />
+          <img src="https://malakesa-invoices.vercel.app/malakesa-logo.png" alt="Malakesa Transfers and Tours" style="width:220px;display:block;border-radius:4px" />
           <div style="font-size:11px;color:rgba(255,255,255,0.75);margin-top:10px;line-height:1.9">
             📍 Port Vila, Shefa Province, Vanuatu<br>
             📞 +678 22712 &nbsp;|&nbsp; 📱 7798712<br>
@@ -80,9 +80,9 @@ export async function POST(req) {
       </div>
       ${inv.notes ? `<div style="margin-bottom:16px;padding:12px 16px;background:#faf6ee;border-left:4px solid #8B6914;border-radius:0 6px 6px 0;font-size:12px;color:#555"><strong>Notes:</strong> ${inv.notes}</div>` : ''}
       <p style="font-size:13px;color:#888;line-height:1.6">The full breakdown of items and rates is in the attached PDF.</p>
-      <p style="text-align:center;font-size:13px;font-style:italic;color:#8B6914;margin:28px 0 16px">Thank you for choosing Malakesa Transfer &amp; Tour!</p>
+      <p style="text-align:center;font-size:13px;font-style:italic;color:#8B6914;margin:28px 0 16px">Thank you for choosing Malakesa Transfers &amp; Tours!</p>
       <div style="padding-top:16px;border-top:1px solid #f0ebe0;font-size:11px;color:#999;text-align:center;line-height:1.9">
-        Malakesa Transfer and Tour &nbsp;|&nbsp; Port Vila, Vanuatu<br>
+        Malakesa Transfers and Tours &nbsp;|&nbsp; Port Vila, Vanuatu<br>
         📞 +678 22712 &nbsp;|&nbsp; 📱 7798712 &nbsp;|&nbsp; ✉️ accounts@malakesa.vu
       </div>
     </div></body></html>`
@@ -93,7 +93,7 @@ export async function POST(req) {
 
     await sendMail({
       to: uniqueEmails,
-      subject: `Invoice ${inv.number} from Malakesa Transfer and Tour`,
+      subject: `Invoice ${inv.number} from Malakesa Transfers and Tours`,
       html,
       attachments,
     })
