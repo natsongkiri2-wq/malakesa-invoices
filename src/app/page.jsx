@@ -2561,7 +2561,8 @@ function Reports({ invoices, payments, purchases, salaryRecords }) {
 
 // ── Purchases ─────────────────────────────────────────────
 const PURCHASE_CATEGORIES = ['Fuel', 'Vehicle Maintenance', 'Insurance', 'Office Supplies', 'Utilities', 'Staff Costs', 'Marketing', 'Equipment', 'Accommodation', 'Food & Beverages', 'Professional Services', 'Bank Charges', 'Other']
-
+
+
 
 // ── VAT Return Page (standalone) ──
 function VatPage({ invoices, payments, purchases }) {
@@ -4626,8 +4627,8 @@ function previewInvoice(inv) {
         </div>
       </div>
       <div class="inv-meta">
-        <div style="font-size:10px;color:rgba(255,255,255,0.6);letter-spacing:2px;margin-bottom:4px">TAX INVOICE</div>
-        <div style="font-size:10px;color:rgba(255,255,255,0.6);margin-bottom:8px">TIN # 445579</div>
+        <div style="font-size:16px;font-weight:700;color:rgba(255,255,255,0.85);letter-spacing:1.5px;margin-bottom:3px">TAX INVOICE</div>
+        <div style="font-size:14px;color:rgba(255,255,255,0.75);margin-bottom:8px">TIN # 445579</div>
         <div class="inv-num">${inv.number || 'DRAFT'}</div>
         <div class="inv-date">
           Issue date: <strong>${inv.date || ''}</strong><br>
@@ -4908,8 +4909,8 @@ function ViewInvoiceModal({ invoice, payments, onClose, onPay }) {
         </div>
       </div>
       <div class="inv-meta">
-        <div style="font-size:10px;color:rgba(255,255,255,0.6);letter-spacing:2px;margin-bottom:4px">TAX INVOICE</div>
-        <div style="font-size:10px;color:rgba(255,255,255,0.6);margin-bottom:8px">TIN # 445579</div>
+        <div style="font-size:16px;font-weight:700;color:rgba(255,255,255,0.85);letter-spacing:1.5px;margin-bottom:3px">TAX INVOICE</div>
+        <div style="font-size:14px;color:rgba(255,255,255,0.75);margin-bottom:8px">TIN # 445579</div>
         <div class="inv-num">${invoice.number}</div>
         <div class="inv-date">
           Issue date: <strong>${fmtDate(invoice.date)}</strong><br>
@@ -5032,8 +5033,8 @@ function ViewInvoiceModal({ invoice, payments, onClose, onPay }) {
         </div>
       </div>
       <div class="inv-meta">
-        <div style="font-size:10px;color:rgba(255,255,255,0.6);letter-spacing:2px;margin-bottom:4px">TAX INVOICE</div>
-        <div style="font-size:10px;color:rgba(255,255,255,0.6);margin-bottom:8px">TIN # 445579</div>
+        <div style="font-size:16px;font-weight:700;color:rgba(255,255,255,0.85);letter-spacing:1.5px;margin-bottom:3px">TAX INVOICE</div>
+        <div style="font-size:14px;color:rgba(255,255,255,0.75);margin-bottom:8px">TIN # 445579</div>
         <div class="inv-num">${invoice.number}</div>
         <div class="inv-date">
           Issue date: <strong>${fmtDate(invoice.date)}</strong><br>
