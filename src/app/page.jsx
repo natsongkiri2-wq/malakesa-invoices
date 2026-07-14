@@ -1123,7 +1123,7 @@ function Invoices({ invoices, payments, reload, setModal, setSelected }) {
                 return (
                   <tr key={inv.id} style={{ borderBottom: '0.5px solid rgba(0,0,0,0.09)', background: selectedIds.has(inv.id) ? '#fdf8ec' : st === 'overdue' ? '#FFF8F8' : '#fff' }}>
                     <td style={{ padding: '9px 14px', width: 36 }}><input type="checkbox" checked={selectedIds.has(inv.id)} onChange={() => toggleSelect(inv.id)} onClick={e => e.stopPropagation()} style={{ cursor: 'pointer', width: 15, height: 15, accentColor: '#8B6914' }} /></td>
-                    <Td><strong>{inv.number}</strong></Td>
+                    <Td><strong>{inv.number}</strong> {inv.last_emailed_at && <i className="ti ti-mail-check" style={{ color: '#3B6D11', marginLeft: 4 }} title={`Emailed ${new Date(inv.last_emailed_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}`}></i>}</Td>
                     <Td>{inv.client_name}</Td>
                     <Td>{fmtDate(inv.date)}</Td>
                     <Td style={st === 'overdue' ? { color: '#A32D2D', fontWeight: 500 } : {}}>{fmtDate(inv.due_date)}</Td>
@@ -4983,13 +4983,11 @@ function ViewInvoiceModal({ invoice, payments, onClose, onPay }) {
     return window.__pdfLibsPromise
   }
 
-  const downloadInvoicePDF = async () => {
-    setDownloading(true)
-    try {
-      await loadPdfLibs()
-      const statusColors = { paid: '#27500A', unpaid: '#712B13', overdue: '#791F1F', partial: '#633806', draft: '#444441' }
-      const statusBg = { paid: '#E3F2DE', unpaid: '#FAECE7', overdue: '#FCEBEB', partial: '#FAEEDA', draft: '#F1EFE8' }
-      const html = `<!DOCTYPE html><html><head><style>
+  const buildInvoicePdf = async () => {
+    await loadPdfLibs()
+    const statusColors = { paid: '#27500A', unpaid: '#712B13', overdue: '#791F1F', partial: '#633806', draft: '#444441' }
+    const statusBg = { paid: '#E3F2DE', unpaid: '#FAECE7', overdue: '#FCEBEB', partial: '#FAEEDA', draft: '#F1EFE8' }
+    const html = `<!DOCTYPE html><html><head><style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: Arial, sans-serif; color: #222; font-size: 13px; background: #fff; }
     .page { width: 800px; background: #fff; }
@@ -5085,37 +5083,44 @@ function ViewInvoiceModal({ invoice, payments, onClose, onPay }) {
     </div>
   </div></body></html>`
 
-      const iframe = document.createElement('iframe')
-      iframe.style.position = 'fixed'
-      iframe.style.left = '-99999px'
-      iframe.style.top = '0'
-      iframe.style.width = '820px'
-      iframe.style.height = '1200px'
-      iframe.style.border = 'none'
-      document.body.appendChild(iframe)
-      iframe.srcdoc = html
-      await new Promise(resolve => { iframe.onload = resolve })
-      await new Promise(r => setTimeout(r, 400))
-      const pageEl = iframe.contentDocument.querySelector('.page')
-      const canvas = await window.html2canvas(pageEl, { scale: 2, useCORS: true, backgroundColor: '#ffffff' })
-      const imgData = canvas.toDataURL('image/png')
-      const { jsPDF } = window.jspdf
-      const pdf = new jsPDF('p', 'mm', 'a4')
-      const pageWidth = 210, pageHeight = 297
-      const imgWidth = pageWidth
-      const imgHeight = canvas.height * imgWidth / canvas.width
-      let heightLeft = imgHeight
-      let position = 0
+    const iframe = document.createElement('iframe')
+    iframe.style.position = 'fixed'
+    iframe.style.left = '-99999px'
+    iframe.style.top = '0'
+    iframe.style.width = '820px'
+    iframe.style.height = '1200px'
+    iframe.style.border = 'none'
+    document.body.appendChild(iframe)
+    iframe.srcdoc = html
+    await new Promise(resolve => { iframe.onload = resolve })
+    await new Promise(r => setTimeout(r, 400))
+    const pageEl = iframe.contentDocument.querySelector('.page')
+    const canvas = await window.html2canvas(pageEl, { scale: 2, useCORS: true, backgroundColor: '#ffffff' })
+    const imgData = canvas.toDataURL('image/png')
+    const { jsPDF } = window.jspdf
+    const pdf = new jsPDF('p', 'mm', 'a4')
+    const pageWidth = 210, pageHeight = 297
+    const imgWidth = pageWidth
+    const imgHeight = canvas.height * imgWidth / canvas.width
+    let heightLeft = imgHeight
+    let position = 0
+    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight)
+    heightLeft -= pageHeight
+    while (heightLeft > 0) {
+      position = heightLeft - imgHeight
+      pdf.addPage()
       pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight)
       heightLeft -= pageHeight
-      while (heightLeft > 0) {
-        position = heightLeft - imgHeight
-        pdf.addPage()
-        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight)
-        heightLeft -= pageHeight
-      }
+    }
+    document.body.removeChild(iframe)
+    return pdf
+  }
+
+  const downloadInvoicePDF = async () => {
+    setDownloading(true)
+    try {
+      const pdf = await buildInvoicePdf()
       pdf.save(`${invoice.number}.pdf`)
-      document.body.removeChild(iframe)
     } catch (err) {
       alert('Could not generate PDF: ' + err.message)
     }
@@ -5220,13 +5225,22 @@ function ViewInvoiceModal({ invoice, payments, onClose, onPay }) {
   }
 
   const [emailStatus, setEmailStatus] = useState('')
+  const [lastEmailedAt, setLastEmailedAt] = useState(invoice.last_emailed_at || null)
 
   const emailInvoice = async () => {
     setEmailStatus('sending')
     try {
-      const res = await fetch('/api/send-invoice', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ invoiceId: invoice.id }) })
+      const pdf = await buildInvoicePdf()
+      const dataUri = pdf.output('datauristring')
+      const pdfBase64 = dataUri.split(',')[1]
+      const res = await fetch('/api/send-invoice', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ invoiceId: invoice.id, pdfBase64 }) })
       const data = await res.json()
-      if (res.ok) { setEmailStatus('Sent to ' + (data.sentTo || []).join(', ')); setTimeout(() => setEmailStatus(''), 5000); return }
+      if (res.ok) {
+        setEmailStatus('Sent to ' + (data.sentTo || []).join(', '))
+        setLastEmailedAt(data.lastEmailedAt || new Date().toISOString())
+        setTimeout(() => setEmailStatus(''), 5000)
+        return
+      }
       setEmailStatus('error: ' + (data.error || 'Failed to send'))
       setTimeout(() => setEmailStatus(''), 6000)
     } catch (e) { setEmailStatus('error: ' + e.message); setTimeout(() => setEmailStatus(''), 6000) }
@@ -5241,7 +5255,14 @@ function ViewInvoiceModal({ invoice, payments, onClose, onPay }) {
   return (
     <Modal title={invoice.number} onClose={onClose} wide>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-        <Badge status={status} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <Badge status={status} />
+          {lastEmailedAt && (
+            <span style={{ fontSize: 12, color: '#3B6D11', display: 'flex', alignItems: 'center', gap: 4 }} title={`Last emailed ${new Date(lastEmailedAt).toLocaleString()}`}>
+              <i className="ti ti-mail-check"></i> Emailed {new Date(lastEmailedAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+            </span>
+          )}
+        </div>
         <div style={{ display: 'flex', gap: 6 }}>
           <button className="btn btn-sm" onClick={printInvoice}><i className="ti ti-printer"></i> Print</button>
           <button className="btn btn-sm" onClick={downloadInvoicePDF} disabled={downloading}><i className="ti ti-download"></i> {downloading ? 'Generating...' : 'Download PDF'}</button>

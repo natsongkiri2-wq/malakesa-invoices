@@ -16,7 +16,7 @@ export function getTransporter() {
   })
 }
 
-export async function sendMail({ to, subject, html }) {
+export async function sendMail({ to, subject, html, attachments }) {
   const transporter = getTransporter()
   const fromName = process.env.COMPANY_NAME || 'Malakesa Transfer and Tour'
   const fromAddress = process.env.EMAIL_USER
@@ -26,5 +26,6 @@ export async function sendMail({ to, subject, html }) {
     to,
     subject,
     html,
+    attachments,
   })
 }
