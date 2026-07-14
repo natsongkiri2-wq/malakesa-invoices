@@ -63,6 +63,7 @@ export async function POST(req) {
         </div>
         <div style="text-align:right">
           <div style="font-size:10px;color:rgba(255,255,255,0.6);letter-spacing:2px;margin-bottom:4px">TAX INVOICE</div>
+          <div style="font-size:10px;color:rgba(255,255,255,0.6);margin-bottom:4px">TIN # 445579</div>
           <div style="font-size:28px;font-weight:700;color:#FFD700">${inv.number}</div>
           <div style="font-size:11px;color:rgba(255,255,255,0.8);margin-top:6px;line-height:1.9">
             Issue: ${fmtDate(inv.date)}<br>

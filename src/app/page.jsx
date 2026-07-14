@@ -4624,6 +4624,8 @@ function previewInvoice(inv) {
         </div>
       </div>
       <div class="inv-meta">
+        <div style="font-size:10px;color:rgba(255,255,255,0.6);letter-spacing:2px;margin-bottom:4px">TAX INVOICE</div>
+        <div style="font-size:10px;color:rgba(255,255,255,0.6);margin-bottom:8px">TIN # 445579</div>
         <div class="inv-num">${inv.number || 'DRAFT'}</div>
         <div class="inv-date">
           Issue date: <strong>${inv.date || ''}</strong><br>
@@ -4897,6 +4899,8 @@ function ViewInvoiceModal({ invoice, payments, onClose, onPay }) {
         </div>
       </div>
       <div class="inv-meta">
+        <div style="font-size:10px;color:rgba(255,255,255,0.6);letter-spacing:2px;margin-bottom:4px">TAX INVOICE</div>
+        <div style="font-size:10px;color:rgba(255,255,255,0.6);margin-bottom:8px">TIN # 445579</div>
         <div class="inv-num">${invoice.number}</div>
         <div class="inv-date">
           Issue date: <strong>${fmtDate(invoice.date)}</strong><br>
