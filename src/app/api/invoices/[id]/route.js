@@ -25,6 +25,17 @@ export async function PUT(req, { params }) {
   const { id } = params
   const body = await req.json()
 
+  const { data: existing, error: fetchError } = await supabase
+    .from('invoices').select('total').eq('id', id).single()
+  if (fetchError || !existing) return NextResponse.json({ error: 'Invoice not found' }, { status: 404 })
+
+  const { data: payments } = await supabase
+    .from('payments').select('amount').eq('invoice_id', id)
+  const totalPaid = (payments || []).reduce((s, p) => s + Number(p.amount), 0)
+  if (totalPaid >= Number(existing.total) && Number(existing.total) > 0) {
+    return NextResponse.json({ error: 'This invoice is fully paid and cannot be edited' }, { status: 403 })
+  }
+
   const { data, error } = await supabase
     .from('invoices')
     .update({
