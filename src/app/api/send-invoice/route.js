@@ -46,8 +46,8 @@ export async function POST(req) {
         <td style="padding:9px 12px;border-bottom:1px solid #f0ebe0">${it.description}</td>
         <td style="padding:9px 12px;border-bottom:1px solid #f0ebe0;color:#555">${it.voucher || '-'}</td>
         <td style="padding:9px 12px;border-bottom:1px solid #f0ebe0;text-align:center">${it.qty}</td>
-        <td style="padding:9px 12px;border-bottom:1px solid #f0ebe0;text-align:right">${fmt(it.rate)}</td>
-        <td style="padding:9px 12px;border-bottom:1px solid #f0ebe0;text-align:right;font-weight:600">${fmt(it.total)}</td>
+        <td style="padding:9px 12px;border-bottom:1px solid #f0ebe0;text-align:right;white-space:nowrap">${fmt(it.rate)}</td>
+        <td style="padding:9px 12px;border-bottom:1px solid #f0ebe0;text-align:right;font-weight:600;white-space:nowrap">${fmt(it.total)}</td>
       </tr>`).join('')
 
     const html = `<!DOCTYPE html><html><body style="font-family:Arial,sans-serif;color:#222;max-width:640px;margin:0 auto;padding:20px;background:#f0ebe0">

@@ -4654,7 +4654,7 @@ function previewInvoice(inv) {
       ${inv.notes ? '<div class="notes"><strong>Notes:</strong> ' + inv.notes + '</div>' : ''}
       <table>
         <thead><tr><th>Date</th><th>Name</th><th>Description</th><th>Voucher #</th><th class="text-right">Qty</th><th class="text-right">Rate (VT)</th><th class="text-right">Amount (VT)</th></tr></thead>
-        <tbody>${(inv.items || []).map(it => '<tr>' + (it.date ? '<td>' + it.date + '</td>' : '<td style="color:#ccc">-</td>') + (it.name ? '<td>' + it.name + '</td>' : '<td style="color:#ccc">-</td>') + '<td>' + (it.description || '') + '</td>' + (it.voucher ? '<td>' + it.voucher + '</td>' : '<td style="color:#ccc">-</td>') + '<td class="text-right">' + (it.qty || 0) + '</td><td class="text-right">VT ' + Number(it.rate || 0).toLocaleString() + '</td><td class="text-right">VT ' + Number(it.total || 0).toLocaleString() + '</td></tr>').join('')}</tbody>
+        <tbody>${(inv.items || []).map(it => '<tr>' + (it.date ? '<td>' + it.date + '</td>' : '<td style="color:#ccc">-</td>') + (it.name ? '<td>' + it.name + '</td>' : '<td style="color:#ccc">-</td>') + '<td>' + (it.description || '') + '</td>' + (it.voucher ? '<td>' + it.voucher + '</td>' : '<td style="color:#ccc">-</td>') + '<td class="text-right">' + (it.qty || 0) + '</td><td class="text-right" style="white-space:nowrap">VT&nbsp;' + Number(it.rate || 0).toLocaleString() + '</td><td class="text-right" style="white-space:nowrap">VT&nbsp;' + Number(it.total || 0).toLocaleString() + '</td></tr>').join('')}</tbody>
       </table>
       <div class="totals">
         <div class="trow"><span>Subtotal</span><span>VT ${Number(inv.subtotal || 0).toLocaleString()}</span></div>
@@ -4936,7 +4936,7 @@ function ViewInvoiceModal({ invoice, payments, onClose, onPay }) {
       ${invoice.notes ? '<div class="notes"><strong>Notes:</strong> ' + invoice.notes + '</div>' : ''}
       <table>
         <thead><tr><th>Date</th><th>Name</th><th>Description</th><th>Voucher #</th><th class="text-right">Qty</th><th class="text-right">Rate (VT)</th><th class="text-right">Amount (VT)</th></tr></thead>
-        <tbody>${(invoice.items || []).map(it => '<tr>' + (it.date ? '<td>' + it.date + '</td>' : '<td style="color:#ccc">-</td>') + (it.name ? '<td>' + it.name + '</td>' : '<td style="color:#ccc">-</td>') + '<td>' + (it.description || '') + '</td>' + (it.voucher ? '<td>' + it.voucher + '</td>' : '<td style="color:#ccc">-</td>') + '<td class="text-right">' + (it.qty || 0) + '</td><td class="text-right">VT ' + Number(it.rate || 0).toLocaleString() + '</td><td class="text-right">VT ' + Number(it.total || 0).toLocaleString() + '</td></tr>').join('')}</tbody>
+        <tbody>${(invoice.items || []).map(it => '<tr>' + (it.date ? '<td>' + it.date + '</td>' : '<td style="color:#ccc">-</td>') + (it.name ? '<td>' + it.name + '</td>' : '<td style="color:#ccc">-</td>') + '<td>' + (it.description || '') + '</td>' + (it.voucher ? '<td>' + it.voucher + '</td>' : '<td style="color:#ccc">-</td>') + '<td class="text-right">' + (it.qty || 0) + '</td><td class="text-right" style="white-space:nowrap">VT&nbsp;' + Number(it.rate || 0).toLocaleString() + '</td><td class="text-right" style="white-space:nowrap">VT&nbsp;' + Number(it.total || 0).toLocaleString() + '</td></tr>').join('')}</tbody>
       </table>
       <div class="totals">
         <div class="trow"><span>Subtotal</span><span>VT ${Number(invoice.subtotal || 0).toLocaleString()}</span></div>
@@ -5060,7 +5060,7 @@ function ViewInvoiceModal({ invoice, payments, onClose, onPay }) {
       ${invoice.notes ? '<div class="notes"><strong>Notes:</strong> ' + invoice.notes + '</div>' : ''}
       <table>
         <thead><tr><th>Date</th><th>Name</th><th>Description</th><th>Voucher #</th><th class="text-right">Qty</th><th class="text-right">Rate (VT)</th><th class="text-right">Amount (VT)</th></tr></thead>
-        <tbody>${(invoice.items || []).map(it => '<tr>' + (it.date ? '<td>' + it.date + '</td>' : '<td style="color:#ccc">-</td>') + (it.name ? '<td>' + it.name + '</td>' : '<td style="color:#ccc">-</td>') + '<td>' + (it.description || '') + '</td>' + (it.voucher ? '<td>' + it.voucher + '</td>' : '<td style="color:#ccc">-</td>') + '<td class="text-right">' + (it.qty || 0) + '</td><td class="text-right">VT ' + Number(it.rate || 0).toLocaleString() + '</td><td class="text-right">VT ' + Number(it.total || 0).toLocaleString() + '</td></tr>').join('')}</tbody>
+        <tbody>${(invoice.items || []).map(it => '<tr>' + (it.date ? '<td>' + it.date + '</td>' : '<td style="color:#ccc">-</td>') + (it.name ? '<td>' + it.name + '</td>' : '<td style="color:#ccc">-</td>') + '<td>' + (it.description || '') + '</td>' + (it.voucher ? '<td>' + it.voucher + '</td>' : '<td style="color:#ccc">-</td>') + '<td class="text-right">' + (it.qty || 0) + '</td><td class="text-right" style="white-space:nowrap">VT&nbsp;' + Number(it.rate || 0).toLocaleString() + '</td><td class="text-right" style="white-space:nowrap">VT&nbsp;' + Number(it.total || 0).toLocaleString() + '</td></tr>').join('')}</tbody>
       </table>
       <div class="totals">
         <div class="trow"><span>Subtotal</span><span>VT ${Number(invoice.subtotal || 0).toLocaleString()}</span></div>
