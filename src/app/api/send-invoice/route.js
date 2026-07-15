@@ -42,23 +42,19 @@ export async function POST(req) {
     const itemCount = (inv.items || []).length
 
     const html = `<!DOCTYPE html><html><body style="font-family:Arial,sans-serif;color:#222;max-width:600px;margin:0 auto;padding:20px;background:#FBF3E4">
-    <div style="background:linear-gradient(135deg,#6B4423,#8B5E34,#A67C42);padding:28px 32px;border-radius:8px 8px 0 0">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+    <div style="background:linear-gradient(135deg,#6B4423,#8B5E34,#A67C42);padding:14px 28px;border-radius:8px 8px 0 0">
+      <div style="display:flex;justify-content:space-between;align-items:center">
         <div>
-          <img src="https://malakesa-invoices.vercel.app/malakesa-logo.png" alt="Malakesa Transfers and Tours" style="width:220px;display:block;border-radius:4px" />
-          <div style="font-size:11px;color:rgba(255,255,255,0.75);margin-top:10px;line-height:1.9">
-            📍 Port Vila, Shefa Province, Vanuatu<br>
-            📞 +678 22712 &nbsp;|&nbsp; 📱 7798712<br>
-            ✉️ accounts@malakesa.vu
+          <img src="https://malakesa-invoices.vercel.app/malakesa-logo.png" alt="Malakesa Transfers and Tours" style="width:120px;display:block;border-radius:4px" />
+          <div style="font-size:9px;color:rgba(255,255,255,0.75);margin-top:3px">
+            📍 Port Vila, Vanuatu &nbsp;|&nbsp; 📞 +678 22712 &nbsp;|&nbsp; ✉️ accounts@malakesa.vu
           </div>
         </div>
         <div style="text-align:right">
-          <div style="font-size:16px;font-weight:700;color:rgba(255,255,255,0.85);letter-spacing:1.5px;margin-bottom:3px">TAX INVOICE</div>
-          <div style="font-size:14px;color:rgba(255,255,255,0.75);margin-bottom:4px">TIN # 445579</div>
-          <div style="font-size:28px;font-weight:700;color:#F5D98A">${inv.number}</div>
-          <div style="font-size:11px;color:rgba(255,255,255,0.8);margin-top:6px;line-height:1.9">
-            Issue: ${fmtDate(inv.date)}<br>
-            Due: <strong style="color:#F5D98A">${fmtDate(inv.due_date)}</strong>
+          <div style="font-size:10px;color:rgba(255,255,255,0.75);letter-spacing:1px">TAX INVOICE &nbsp;·&nbsp; TIN #445579</div>
+          <div style="font-size:19px;font-weight:700;color:#F5D98A">${inv.number}</div>
+          <div style="font-size:10px;color:rgba(255,255,255,0.8)">
+            Issue: ${fmtDate(inv.date)} &nbsp;·&nbsp; Due: <strong style="color:#F5D98A">${fmtDate(inv.due_date)}</strong>
           </div>
         </div>
       </div>

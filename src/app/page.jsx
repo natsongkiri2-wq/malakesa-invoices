@@ -4569,12 +4569,12 @@ function previewInvoice(inv) {
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: Arial, sans-serif; color: #222; font-size: 13px; background: #FBF3E4; }
     .page { max-width: 800px; margin: 20px auto; background: #fff; border-radius: 4px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.15); }
-    .header { background: linear-gradient(135deg, #6B4423 0%, #8B5E34 50%, #A67C42 100%); padding: 28px 40px; display: flex; justify-content: space-between; align-items: flex-start; }
-    .logo-contact { font-size: 10px; color: rgba(255,255,255,0.7); margin-top: 10px; line-height: 1.8; }
+    .header { background: linear-gradient(135deg, #6B4423 0%, #8B5E34 50%, #A67C42 100%); padding: 12px 28px; display: flex; justify-content: space-between; align-items: center; }
+    .logo-contact { font-size: 9px; color: rgba(255,255,255,0.7); margin-top: 3px; line-height: 1.4; }
     .inv-meta { text-align: right; color: #fff; }
-    .inv-num { font-size: 26px; font-weight: 700; color: #F5D98A; }
-    .inv-date { font-size: 11px; color: rgba(255,255,255,0.8); margin-top: 5px; line-height: 1.8; }
-    .draft-badge { display: inline-block; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); color: #F5D98A; padding: 3px 12px; border-radius: 99px; font-size: 10px; font-weight: 700; letter-spacing: 1px; margin-top: 8px; }
+    .inv-num { font-size: 19px; font-weight: 700; color: #F5D98A; }
+    .inv-date { font-size: 10px; color: rgba(255,255,255,0.8); margin-top: 2px; line-height: 1.4; }
+    .draft-badge { display: inline-block; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); color: #F5D98A; padding: 2px 10px; border-radius: 99px; font-size: 9px; font-weight: 700; letter-spacing: 1px; margin-top: 4px; }
     .body { padding: 32px 40px; }
     .bill-row { display: flex; justify-content: space-between; margin-bottom: 28px; gap: 20px; }
     .bill-label { font-size: 9px; font-weight: 800; color: #8B6914; text-transform: uppercase; letter-spacing: 2px; border-bottom: 2px solid #8B6914; padding-bottom: 3px; margin-bottom: 8px; display: inline-block; }
@@ -4622,20 +4622,13 @@ function previewInvoice(inv) {
   <div class="page">
     <div class="header">
       <div>
-        <img src="${MALAKESA_LOGO}" alt="Malakesa Transfers and Tours" style="width:220px;border-radius:6px;display:block" />
-        <div class="logo-contact">
-          📍 Port Vila, Shefa Province, Vanuatu<br>
-          📞 +678 22712 &nbsp;|&nbsp; 📱 +678 7798712 &nbsp;|&nbsp; ✉️ accounts@malakesa.vu
-        </div>
+        <img src="${MALAKESA_LOGO}" alt="Malakesa Transfers and Tours" style="width:120px;border-radius:4px;display:block" />
+        <div class="logo-contact">📍 Port Vila, Vanuatu &nbsp;|&nbsp; 📞 +678 22712 &nbsp;|&nbsp; ✉️ accounts@malakesa.vu</div>
       </div>
       <div class="inv-meta">
-        <div style="font-size:16px;font-weight:700;color:rgba(255,255,255,0.85);letter-spacing:1.5px;margin-bottom:3px">TAX INVOICE</div>
-        <div style="font-size:14px;color:rgba(255,255,255,0.75);margin-bottom:8px">TIN # 445579</div>
+        <div style="font-size:10px;color:rgba(255,255,255,0.75);letter-spacing:1px">TAX INVOICE &nbsp;·&nbsp; TIN #445579</div>
         <div class="inv-num">${inv.number || 'DRAFT'}</div>
-        <div class="inv-date">
-          Issue date: <strong>${inv.date || ''}</strong><br>
-          Due date: <strong>${inv.due_date || ''}</strong>
-        </div>
+        <div class="inv-date">Issue: <strong>${inv.date || ''}</strong> &nbsp;·&nbsp; Due: <strong>${inv.due_date || ''}</strong></div>
         <div class="draft-badge">PREVIEW</div>
       </div>
     </div>
@@ -4853,12 +4846,12 @@ function ViewInvoiceModal({ invoice, payments, onClose, onPay }) {
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: Arial, sans-serif; color: #222; font-size: 13px; background: #FBF3E4; }
     .page { max-width: 800px; margin: 20px auto; background: #fff; border-radius: 4px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.15); }
-    .header { background: linear-gradient(135deg, #6B4423 0%, #8B5E34 50%, #A67C42 100%); padding: 28px 40px; display: flex; justify-content: space-between; align-items: flex-start; }
-    .logo-contact { font-size: 10px; color: rgba(255,255,255,0.7); margin-top: 10px; line-height: 1.8; }
+    .header { background: linear-gradient(135deg, #6B4423 0%, #8B5E34 50%, #A67C42 100%); padding: 12px 28px; display: flex; justify-content: space-between; align-items: center; }
+    .logo-contact { font-size: 9px; color: rgba(255,255,255,0.7); margin-top: 3px; line-height: 1.4; }
     .inv-meta { text-align: right; color: #fff; }
-    .inv-num { font-size: 26px; font-weight: 700; color: #F5D98A; }
-    .inv-date { font-size: 11px; color: rgba(255,255,255,0.8); margin-top: 5px; line-height: 1.8; }
-    .status-badge { display: inline-block; padding: 3px 12px; border-radius: 99px; font-size: 10px; font-weight: 700; letter-spacing: 1px; margin-top: 8px; text-transform: uppercase; }
+    .inv-num { font-size: 19px; font-weight: 700; color: #F5D98A; }
+    .inv-date { font-size: 10px; color: rgba(255,255,255,0.8); margin-top: 2px; line-height: 1.4; }
+    .status-badge { display: inline-block; padding: 2px 10px; border-radius: 99px; font-size: 9px; font-weight: 700; letter-spacing: 1px; margin-top: 4px; text-transform: uppercase; }
     .body { padding: 32px 40px; }
     .bill-row { display: flex; justify-content: space-between; margin-bottom: 28px; gap: 20px; }
     .bill-label { font-size: 9px; font-weight: 800; color: #8B6914; text-transform: uppercase; letter-spacing: 2px; border-bottom: 2px solid #8B6914; padding-bottom: 3px; margin-bottom: 8px; display: inline-block; }
@@ -4911,20 +4904,13 @@ function ViewInvoiceModal({ invoice, payments, onClose, onPay }) {
   <div class="page">
     <div class="header">
       <div>
-        <img src="${MALAKESA_LOGO}" alt="Malakesa Transfers and Tours" style="width:220px;border-radius:6px;display:block" />
-        <div class="logo-contact">
-          📍 Port Vila, Shefa Province, Vanuatu<br>
-          📞 +678 22712 &nbsp;|&nbsp; 📱 +678 7798712 &nbsp;|&nbsp; ✉️ accounts@malakesa.vu
-        </div>
+        <img src="${MALAKESA_LOGO}" alt="Malakesa Transfers and Tours" style="width:120px;border-radius:4px;display:block" />
+        <div class="logo-contact">📍 Port Vila, Vanuatu &nbsp;|&nbsp; 📞 +678 22712 &nbsp;|&nbsp; ✉️ accounts@malakesa.vu</div>
       </div>
       <div class="inv-meta">
-        <div style="font-size:16px;font-weight:700;color:rgba(255,255,255,0.85);letter-spacing:1.5px;margin-bottom:3px">TAX INVOICE</div>
-        <div style="font-size:14px;color:rgba(255,255,255,0.75);margin-bottom:8px">TIN # 445579</div>
+        <div style="font-size:10px;color:rgba(255,255,255,0.75);letter-spacing:1px">TAX INVOICE &nbsp;·&nbsp; TIN #445579</div>
         <div class="inv-num">${invoice.number}</div>
-        <div class="inv-date">
-          Issue date: <strong>${fmtDate(invoice.date)}</strong><br>
-          Due date: <strong>${fmtDate(invoice.due_date)}</strong>
-        </div>
+        <div class="inv-date">Issue: <strong>${fmtDate(invoice.date)}</strong> &nbsp;·&nbsp; Due: <strong>${fmtDate(invoice.due_date)}</strong></div>
         <div class="status-badge" style="background:${statusBg[status] || '#F1EFE8'};color:${statusColors[status] || '#444441'}">${status}</div>
       </div>
     </div>
@@ -5007,12 +4993,12 @@ function ViewInvoiceModal({ invoice, payments, onClose, onPay }) {
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: Arial, sans-serif; color: #222; font-size: 13px; background: #fff; }
     .page { width: 800px; background: #fff; }
-    .header { background: linear-gradient(135deg, #6B4423 0%, #8B5E34 50%, #A67C42 100%); padding: 28px 40px; display: flex; justify-content: space-between; align-items: flex-start; }
-    .logo-contact { font-size: 10px; color: rgba(255,255,255,0.7); margin-top: 10px; line-height: 1.8; }
+    .header { background: linear-gradient(135deg, #6B4423 0%, #8B5E34 50%, #A67C42 100%); padding: 12px 28px; display: flex; justify-content: space-between; align-items: center; }
+    .logo-contact { font-size: 9px; color: rgba(255,255,255,0.7); margin-top: 3px; line-height: 1.4; }
     .inv-meta { text-align: right; color: #fff; }
-    .inv-num { font-size: 26px; font-weight: 700; color: #F5D98A; }
-    .inv-date { font-size: 11px; color: rgba(255,255,255,0.8); margin-top: 5px; line-height: 1.8; }
-    .status-badge { display: inline-block; padding: 3px 12px; border-radius: 99px; font-size: 10px; font-weight: 700; letter-spacing: 1px; margin-top: 8px; text-transform: uppercase; }
+    .inv-num { font-size: 19px; font-weight: 700; color: #F5D98A; }
+    .inv-date { font-size: 10px; color: rgba(255,255,255,0.8); margin-top: 2px; line-height: 1.4; }
+    .status-badge { display: inline-block; padding: 2px 10px; border-radius: 99px; font-size: 9px; font-weight: 700; letter-spacing: 1px; margin-top: 4px; text-transform: uppercase; }
     .body { padding: 32px 40px; }
     .bill-row { display: flex; justify-content: space-between; margin-bottom: 28px; gap: 20px; }
     .bill-label { font-size: 9px; font-weight: 800; color: #8B6914; text-transform: uppercase; letter-spacing: 2px; border-bottom: 2px solid #8B6914; padding-bottom: 3px; margin-bottom: 8px; display: inline-block; }
@@ -5040,20 +5026,13 @@ function ViewInvoiceModal({ invoice, payments, onClose, onPay }) {
   <div class="page">
     <div class="header">
       <div>
-        <img src="${MALAKESA_LOGO}" alt="Malakesa Transfers and Tours" style="width:220px;border-radius:6px;display:block" />
-        <div class="logo-contact">
-          📍 Port Vila, Shefa Province, Vanuatu<br>
-          📞 +678 22712 &nbsp;|&nbsp; 📱 +678 7798712 &nbsp;|&nbsp; ✉️ accounts@malakesa.vu
-        </div>
+        <img src="${MALAKESA_LOGO}" alt="Malakesa Transfers and Tours" style="width:120px;border-radius:4px;display:block" />
+        <div class="logo-contact">📍 Port Vila, Vanuatu &nbsp;|&nbsp; 📞 +678 22712 &nbsp;|&nbsp; ✉️ accounts@malakesa.vu</div>
       </div>
       <div class="inv-meta">
-        <div style="font-size:16px;font-weight:700;color:rgba(255,255,255,0.85);letter-spacing:1.5px;margin-bottom:3px">TAX INVOICE</div>
-        <div style="font-size:14px;color:rgba(255,255,255,0.75);margin-bottom:8px">TIN # 445579</div>
+        <div style="font-size:10px;color:rgba(255,255,255,0.75);letter-spacing:1px">TAX INVOICE &nbsp;·&nbsp; TIN #445579</div>
         <div class="inv-num">${invoice.number}</div>
-        <div class="inv-date">
-          Issue date: <strong>${fmtDate(invoice.date)}</strong><br>
-          Due date: <strong>${fmtDate(invoice.due_date)}</strong>
-        </div>
+        <div class="inv-date">Issue: <strong>${fmtDate(invoice.date)}</strong> &nbsp;·&nbsp; Due: <strong>${fmtDate(invoice.due_date)}</strong></div>
         <div class="status-badge" style="background:${statusBg[status] || '#F1EFE8'};color:${statusColors[status] || '#444441'}">${status}</div>
       </div>
     </div>
