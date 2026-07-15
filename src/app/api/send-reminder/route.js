@@ -84,6 +84,14 @@ export async function POST(req) {
         Invoice total: ${fmt(inv.total)}
         ${totalPaid > 0 ? `<br>Already paid: ${fmt(totalPaid)}` : ''}
       </div>
+      <div style="margin-bottom:16px;padding:14px 18px;border:1px solid #e0d5c0;border-radius:6px;font-size:12px;line-height:1.9;color:#444">
+        <div style="font-weight:700;color:#3D2214;margin-bottom:4px">Invoice Payment by Electronic Transfer to the following Account:</div>
+        <div>ANZ Vanuatu Ltd, Port Vila, Vanuatu</div>
+        <div><strong>ACCOUNT NAME:</strong> Malakesa Transfers &amp; Tours</div>
+        <div><strong>BRANCH BSB NO:</strong> 010982</div>
+        <div><strong>ACCOUNT NO:</strong> 1406817</div>
+        <div><strong>SWIFT CODE:</strong> ANZBVUVX</div>
+      </div>
       <p style="font-size:14px;line-height:1.6">Please arrange payment at your earliest convenience. If you have already made this payment, please disregard this notice.</p>
       <p style="text-align:center;font-size:13px;font-style:italic;color:#8B6914;margin:28px 0 16px">Thank you for choosing Malakesa Transfers &amp; Tours!</p>
       <div style="padding-top:16px;border-top:1px solid #FBF3E4;font-size:11px;color:#999;text-align:center;line-height:1.9">

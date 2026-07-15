@@ -4663,6 +4663,14 @@ function previewInvoice(inv) {
         <div class="trow"><span>${inv.tax > 0 ? 'VAT (15%)' : 'VAT'}</span><span>${inv.tax > 0 ? 'VT ' + Number(inv.tax).toLocaleString() : 'Not applicable'}</span></div>
         <div class="trow grand"><span>TOTAL DUE</span><span>VT ${Number(inv.total || 0).toLocaleString()}</span></div>
       </div>
+      <div style="margin-top:20px;padding:14px 18px;border:1px solid #ddd;border-radius:6px;font-size:12px;line-height:1.9;color:#444">
+        <div style="font-weight:700;color:#3D2214;margin-bottom:4px">Invoice Payment by Electronic Transfer to the following Account:</div>
+        <div>ANZ Vanuatu Ltd, Port Vila, Vanuatu</div>
+        <div><strong>ACCOUNT NAME:</strong> Malakesa Transfers &amp; Tours</div>
+        <div><strong>BRANCH BSB NO:</strong> 010982</div>
+        <div><strong>ACCOUNT NO:</strong> 1406817</div>
+        <div><strong>SWIFT CODE:</strong> ANZBVUVX</div>
+      </div>
       <div class="thankyou">Tankiu Tumas — Thank you for choosing Malakesa Transfers &amp; Tours!</div>
     </div>
     <div class="footer">
@@ -4673,7 +4681,6 @@ function previewInvoice(inv) {
       </div>
       <div class="footer-r">
         <div>Payment due: ${inv.due_date || ''}</div>
-        <div>Cash | Bank Transfer | Mobile Money</div>
         <div style="font-size:10px;color:rgba(255,215,0,0.6);margin-top:4px">Computer generated invoice</div>
       </div>
     </div>
@@ -4947,6 +4954,14 @@ function ViewInvoiceModal({ invoice, payments, onClose, onPay }) {
         <div class="trow balance" style="color:${balance > 0 ? '#D85A30' : '#3B6D11'}"><span>Balance due</span><span>VT ${Number(balance).toLocaleString()}</span></div>
       </div>
       ${invPayments.length > 0 ? `<div class="payments"><div class="payments-title">Payments received</div>${invPayments.map(p => `<div class="payrow"><span>${fmtDate(p.date)} — ${p.method}</span><span style="color:#3B6D11;font-weight:bold">VT ${Number(p.amount).toLocaleString()}</span></div>`).join('')}</div>` : ''}
+      ${balance > 0 ? `<div style="margin-top:20px;padding:14px 18px;border:1px solid #ddd;border-radius:6px;font-size:12px;line-height:1.9;color:#444">
+        <div style="font-weight:700;color:#3D2214;margin-bottom:4px">Invoice Payment by Electronic Transfer to the following Account:</div>
+        <div>ANZ Vanuatu Ltd, Port Vila, Vanuatu</div>
+        <div><strong>ACCOUNT NAME:</strong> Malakesa Transfers &amp; Tours</div>
+        <div><strong>BRANCH BSB NO:</strong> 010982</div>
+        <div><strong>ACCOUNT NO:</strong> 1406817</div>
+        <div><strong>SWIFT CODE:</strong> ANZBVUVX</div>
+      </div>` : ''}
       <div class="thankyou">Tankiu Tumas — Thank you for choosing Malakesa Transfers &amp; Tours!</div>
     </div>
     <div class="footer">
@@ -4957,7 +4972,6 @@ function ViewInvoiceModal({ invoice, payments, onClose, onPay }) {
       </div>
       <div class="footer-r">
         <div>Payment due: ${fmtDate(invoice.due_date)}</div>
-        <div>Cash | Bank Transfer | Mobile Money</div>
         <div style="opacity:0.7">Computer generated invoice</div>
       </div>
     </div>
@@ -5069,6 +5083,14 @@ function ViewInvoiceModal({ invoice, payments, onClose, onPay }) {
         <div class="trow balance" style="color:${balance > 0 ? '#D85A30' : '#3B6D11'}"><span>Balance due</span><span>VT ${Number(balance).toLocaleString()}</span></div>
       </div>
       ${invPayments.length > 0 ? `<div class="payments"><div class="payments-title">Payments received</div>${invPayments.map(p => `<div class="payrow"><span>${fmtDate(p.date)} — ${p.method}</span><span style="color:#3B6D11;font-weight:bold">VT ${Number(p.amount).toLocaleString()}</span></div>`).join('')}</div>` : ''}
+      ${balance > 0 ? `<div style="margin-top:20px;padding:14px 18px;border:1px solid #ddd;border-radius:6px;font-size:12px;line-height:1.9;color:#444">
+        <div style="font-weight:700;color:#3D2214;margin-bottom:4px">Invoice Payment by Electronic Transfer to the following Account:</div>
+        <div>ANZ Vanuatu Ltd, Port Vila, Vanuatu</div>
+        <div><strong>ACCOUNT NAME:</strong> Malakesa Transfers &amp; Tours</div>
+        <div><strong>BRANCH BSB NO:</strong> 010982</div>
+        <div><strong>ACCOUNT NO:</strong> 1406817</div>
+        <div><strong>SWIFT CODE:</strong> ANZBVUVX</div>
+      </div>` : ''}
       <div class="thankyou">Tankiu Tumas — Thank you for choosing Malakesa Transfers &amp; Tours!</div>
     </div>
     <div class="footer">
@@ -5079,7 +5101,6 @@ function ViewInvoiceModal({ invoice, payments, onClose, onPay }) {
       </div>
       <div class="footer-r">
         <div>Payment due: ${fmtDate(invoice.due_date)}</div>
-        <div>Cash | Bank Transfer | Mobile Money</div>
         <div style="opacity:0.7">Computer generated invoice</div>
       </div>
     </div>
