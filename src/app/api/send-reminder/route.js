@@ -52,8 +52,8 @@ export async function POST(req) {
       ? `<span style="color:#D85A30;font-weight:700">OVERDUE by ${daysOverdue} day${daysOverdue === 1 ? '' : 's'}</span>`
       : `Due ${fmtDate(inv.due_date)}`
 
-    const html = `<!DOCTYPE html><html><body style="font-family:Arial,sans-serif;color:#222;max-width:640px;margin:0 auto;padding:20px;background:#f0ebe0">
-    <div style="background:linear-gradient(135deg,#1A0D06,#3D2214,#5C3D0A);padding:28px 32px;border-radius:8px 8px 0 0">
+    const html = `<!DOCTYPE html><html><body style="font-family:Arial,sans-serif;color:#222;max-width:640px;margin:0 auto;padding:20px;background:#FBF3E4">
+    <div style="background:linear-gradient(135deg,#6B4423,#8B5E34,#A67C42);padding:28px 32px;border-radius:8px 8px 0 0">
       <div style="display:flex;justify-content:space-between;align-items:center">
         <div>
           <img src="https://malakesa-invoices.vercel.app/malakesa-logo.png" alt="Malakesa Transfers and Tours" style="width:220px;display:block;border-radius:4px" />
@@ -67,16 +67,16 @@ export async function POST(req) {
           <div style="font-size:16px;font-weight:700;color:rgba(255,255,255,0.85);letter-spacing:1.5px;margin-bottom:3px">TAX INVOICE</div>
           <div style="font-size:14px;color:rgba(255,255,255,0.75);margin-bottom:8px">TIN # 445579</div>
           <div style="font-size:10px;color:rgba(255,255,255,0.6);letter-spacing:2px;margin-bottom:4px">PAYMENT REMINDER</div>
-          <div style="font-size:28px;font-weight:700;color:#FFD700">${inv.number}</div>
+          <div style="font-size:28px;font-weight:700;color:#F5D98A">${inv.number}</div>
         </div>
       </div>
     </div>
     <div style="background:#fff;padding:28px 32px;border-radius:0 0 8px 8px;border:1px solid #e0d5c0;border-top:none">
       <p style="font-size:14px;line-height:1.6">Dear ${inv.client_name},</p>
       <p style="font-size:14px;line-height:1.6">This is a friendly reminder that invoice <strong>${inv.number}</strong> has an outstanding balance, ${statusLabel}.</p>
-      <div style="margin:20px 0;padding:16px 20px;background:linear-gradient(135deg,#3D2214,#8B6914);border-radius:6px;display:flex;justify-content:space-between;align-items:center">
+      <div style="margin:20px 0;padding:16px 20px;background:linear-gradient(135deg,#8B5E34,#8B6914);border-radius:6px;display:flex;justify-content:space-between;align-items:center">
         <span style="font-weight:700;color:#fff;font-size:15px">BALANCE DUE</span>
-        <span style="font-weight:700;color:#FFD700;font-size:20px">${fmt(balance)}</span>
+        <span style="font-weight:700;color:#F5D98A;font-size:20px">${fmt(balance)}</span>
       </div>
       <div style="font-size:13px;color:#888;margin-bottom:20px">
         Invoice date: ${fmtDate(inv.date)}<br>
@@ -86,7 +86,7 @@ export async function POST(req) {
       </div>
       <p style="font-size:14px;line-height:1.6">Please arrange payment at your earliest convenience. If you have already made this payment, please disregard this notice.</p>
       <p style="text-align:center;font-size:13px;font-style:italic;color:#8B6914;margin:28px 0 16px">Thank you for choosing Malakesa Transfers &amp; Tours!</p>
-      <div style="padding-top:16px;border-top:1px solid #f0ebe0;font-size:11px;color:#999;text-align:center;line-height:1.9">
+      <div style="padding-top:16px;border-top:1px solid #FBF3E4;font-size:11px;color:#999;text-align:center;line-height:1.9">
         Malakesa Transfers and Tours &nbsp;|&nbsp; Port Vila, Vanuatu<br>
         📞 +678 22712 &nbsp;|&nbsp; 📱 7798712 &nbsp;|&nbsp; ✉️ accounts@malakesa.vu
       </div>

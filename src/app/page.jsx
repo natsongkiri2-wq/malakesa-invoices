@@ -61,14 +61,14 @@ function LoginScreen({ onLogin }) {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg,#1A0D06 0%,#3D2214 40%,#5C3D0A 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg,#6B4423 0%,#8B5E34 40%,#A67C42 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
       <div style={{ width: '100%', maxWidth: 420 }}>
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
           <img src={MALAKESA_LOGO} alt="Malakesa" style={{ width: 240, borderRadius: 8, display: 'block', margin: '0 auto 16px' }} />
           <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12, letterSpacing: 2 }}>INVOICE & PURCHASES MANAGER</div>
         </div>
         <div style={{ background: 'rgba(255,255,255,0.05)', border: '0.5px solid rgba(255,215,0,0.2)', borderRadius: 16, padding: '32px 32px 28px' }}>
-          <h2 style={{ color: '#FFD700', fontSize: 20, fontWeight: 700, margin: '0 0 6px', textAlign: 'center' }}>Welcome back</h2>
+          <h2 style={{ color: '#F5D98A', fontSize: 20, fontWeight: 700, margin: '0 0 6px', textAlign: 'center' }}>Welcome back</h2>
           <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: 13, textAlign: 'center', margin: '0 0 24px' }}>Enter your password to continue</p>
           {error && (
             <div style={{ background: 'rgba(163,45,45,0.25)', border: '0.5px solid rgba(163,45,45,0.5)', borderRadius: 8, padding: '10px 14px', marginBottom: 16, fontSize: 13, color: '#ffaaaa', display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -159,10 +159,10 @@ export default function App() {
   if (!isLoggedIn) return <LoginScreen onLogin={() => { try { sessionStorage.setItem('malakesa_auth', 'yes') } catch(e) {}; setIsLoggedIn(true) }} />
 
   return (
-    <div style={{ display: 'flex', height: '100vh', fontFamily: '-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif', fontSize: 14, color: '#1a1a1a', background: '#E8D5A3' }}>
+    <div style={{ display: 'flex', height: '100vh', fontFamily: '-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif', fontSize: 14, color: '#1a1a1a', background: '#FBF3E4' }}>
       {/* Sidebar */}
-      <div style={{ width: 220, minWidth: 220, background: 'linear-gradient(180deg, #2C1810 0%, #3D2214 40%, #4A2D18 70%, #5C3D0A 100%)', display: 'flex', flexDirection: 'column', boxShadow: '4px 0 20px rgba(0,0,0,0.25)' }}>
-        <div style={{ padding: '16px 16px 12px', borderBottom: '1px solid rgba(255,215,0,0.15)', textAlign: 'center', background: 'linear-gradient(135deg, #1A0D06 0%, #3D2214 100%)' }}>
+      <div style={{ width: 220, minWidth: 220, background: 'linear-gradient(180deg, #6B4423 0%, #8B5E34 40%, #8F6D3D 70%, #A67C42 100%)', display: 'flex', flexDirection: 'column', boxShadow: '4px 0 20px rgba(0,0,0,0.25)' }}>
+        <div style={{ padding: '16px 16px 12px', borderBottom: '1px solid rgba(255,215,0,0.15)', textAlign: 'center', background: 'linear-gradient(135deg, #6B4423 0%, #8B5E34 100%)' }}>
           <img
             src={MALAKESA_LOGO}
             alt="Malakesa Transfers and Tours"
@@ -448,7 +448,7 @@ function Dashboard({ invoices, payments, purchases, loading, setPage, setModal }
                 <div style={{ fontSize: 20, fontWeight: 700, color: '#1a1a1a', lineHeight: 1.1 }}>{fmt(totalInvoiced)}</div>
                 <div style={{ fontSize: 11, color: '#888' }}>{invoices.length} invoice{invoices.length !== 1 ? 's' : ''} total</div>
                 <Trend t={trendInvoiced} goodDir="up" />
-                <button className="btn btn-sm" style={{ marginTop: 4, fontSize: 11, background: '#3D2214', color: '#FFD700', borderColor: '#3D2214', fontWeight: 600 }} onClick={() => setModal('newInvoice')}>
+                <button className="btn btn-sm" style={{ marginTop: 4, fontSize: 11, background: '#3D2214', color: '#F5D98A', borderColor: '#3D2214', fontWeight: 600 }} onClick={() => setModal('newInvoice')}>
                   <i className="ti ti-plus"></i> New Invoice
                 </button>
               </div>
@@ -520,7 +520,7 @@ function Dashboard({ invoices, payments, purchases, loading, setPage, setModal }
               </div>
               {recent.length === 0 ? <Empty icon="ti-file-off" msg="No invoices yet" /> : (
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-                  <thead><tr style={{ background: '#E8D5A3' }}><Th>Invoice #</Th><Th>Client</Th><Th>Date</Th><Th>Amount</Th><Th>Status</Th><Th></Th></tr></thead>
+                  <thead><tr style={{ background: '#FBF3E4' }}><Th>Invoice #</Th><Th>Client</Th><Th>Date</Th><Th>Amount</Th><Th>Status</Th><Th></Th></tr></thead>
                   <tbody>{recent.map(inv => (
                     <tr key={inv.id} style={{ borderBottom: '0.5px solid rgba(0,0,0,0.09)' }}>
                       <Td><strong>{inv.number}</strong></Td><Td>{inv.client_name}</Td><Td>{fmtDate(inv.date)}</Td><Td>{fmt(inv.total)}</Td>
@@ -539,12 +539,12 @@ function Dashboard({ invoices, payments, purchases, loading, setPage, setModal }
               </div>
               {recentPurchases.length === 0 ? <Empty icon="ti-shopping-cart-off" msg="No purchases yet" /> : (
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-                  <thead><tr style={{ background: '#E8D5A3' }}><Th>Date</Th><Th>Supplier</Th><Th>Category</Th><Th>Amount</Th><Th></Th></tr></thead>
+                  <thead><tr style={{ background: '#FBF3E4' }}><Th>Date</Th><Th>Supplier</Th><Th>Category</Th><Th>Amount</Th><Th></Th></tr></thead>
                   <tbody>{recentPurchases.map(p => (
                     <tr key={p.id} style={{ borderBottom: '0.5px solid rgba(0,0,0,0.09)' }}>
                       <Td>{fmtDate(p.date)}</Td>
                       <Td><strong>{p.supplier}</strong></Td>
-                      <Td><span style={{ background: '#E8D5A3', padding: '2px 8px', borderRadius: 99, fontSize: 11 }}>{p.category || 'Other'}</span></Td>
+                      <Td><span style={{ background: '#FBF3E4', padding: '2px 8px', borderRadius: 99, fontSize: 11 }}>{p.category || 'Other'}</span></Td>
                       <Td style={{ fontWeight: 500 }}>{fmt(p.amount)}</Td>
                       <Td><button className="btn btn-sm" onClick={() => setPage('purchases')}>View</button></Td>
                     </tr>
@@ -573,10 +573,10 @@ function ExportModal({ title, columns, onExport, onClose }) {
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
       <div style={{ background: '#fff', borderRadius: 12, width: '100%', maxWidth: 480, boxShadow: '0 8px 40px rgba(0,0,0,0.25)', overflow: 'hidden' }}>
         {/* Header */}
-        <div style={{ background: 'linear-gradient(135deg,#1A0D06,#3D2214,#5C3D0A)', padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ background: 'linear-gradient(135deg,#6B4423,#8B5E34,#A67C42)', padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
             <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: 10, letterSpacing: 2, textTransform: 'uppercase' }}>Export</div>
-            <div style={{ color: '#FFD700', fontSize: 16, fontWeight: 700, marginTop: 2 }}>{title}</div>
+            <div style={{ color: '#F5D98A', fontSize: 16, fontWeight: 700, marginTop: 2 }}>{title}</div>
           </div>
           <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#fff', fontSize: 22, cursor: 'pointer', opacity: 0.7 }}>&times;</button>
         </div>
@@ -620,7 +620,7 @@ function ExportModal({ title, columns, onExport, onClose }) {
           )}
 
           {format === 'pdf' && (
-            <div style={{ background: '#faf6ee', border: '0.5px solid #E8D5A3', borderRadius: 8, padding: '10px 14px', fontSize: 12, color: '#666', marginBottom: 18 }}>
+            <div style={{ background: '#faf6ee', border: '0.5px solid #FBF3E4', borderRadius: 8, padding: '10px 14px', fontSize: 12, color: '#666', marginBottom: 18 }}>
               <i className="ti ti-info-circle" style={{ color: '#8B6914', marginRight: 6 }}></i>
               Opens a print-ready PDF preview. In the print dialog, choose <strong>"Save as PDF"</strong> as the printer destination.
             </div>
@@ -830,7 +830,7 @@ function Invoices({ invoices, payments, reload, setModal, setSelected }) {
       body{font-family:Arial,sans-serif;color:#222;font-size:13px;margin:0}
       .rpt-hdr{display:none} @page{margin:18mm 14mm 20mm 14mm;size:A4}
       table{width:100%;border-collapse:collapse;font-size:12px}
-      thead{display:table-header-group} th{background:#E8D5A3;padding:8px 10px;text-align:left;font-size:11px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+      thead{display:table-header-group} th{background:#FBF3E4;padding:8px 10px;text-align:left;font-size:11px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
       td{padding:8px 10px;border-bottom:0.5px solid #eee} h1{color:#8B6914;font-size:18px;margin:0 0 4px} .sub{color:#888;font-size:12px;margin-bottom:20px}
       .noprint{background:#333;color:#fff;padding:10px 20px;display:flex;justify-content:space-between;align-items:center}
       .printbtn{background:#8B6914;color:#fff;border:none;padding:7px 18px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600}
@@ -843,7 +843,7 @@ function Invoices({ invoices, payments, reload, setModal, setSelected }) {
       <div class='sub'>Selected Invoices &nbsp;|&nbsp; ${invs.length} invoice(s) &nbsp;|&nbsp; ${now}<br>Total: VT ${Number(totalSel).toLocaleString()} &nbsp;|&nbsp; Outstanding: VT ${Number(totalBal).toLocaleString()}</div>
       <table><thead><tr><th>Invoice #</th><th>Issue Date</th><th>Due Date</th><th>Client</th><th style='text-align:right'>Total</th><th style='text-align:right'>Balance</th><th>Status</th></tr></thead>
       <tbody>${rows}</tbody>
-      <tr style='background:#E8D5A3;font-weight:700'><td colspan='4' style='padding:9px 10px'>TOTAL (${invs.length} invoices)</td><td style='padding:9px 10px;text-align:right'>VT ${Number(totalSel).toLocaleString()}</td><td style='padding:9px 10px;text-align:right'>VT ${Number(totalBal).toLocaleString()}</td><td></td></tr>
+      <tr style='background:#FBF3E4;font-weight:700'><td colspan='4' style='padding:9px 10px'>TOTAL (${invs.length} invoices)</td><td style='padding:9px 10px;text-align:right'>VT ${Number(totalSel).toLocaleString()}</td><td style='padding:9px 10px;text-align:right'>VT ${Number(totalBal).toLocaleString()}</td><td></td></tr>
       </table></div><script>window.onload=()=>window.print()<\/script></body></html>`)
     w.document.close()
   }
@@ -978,7 +978,7 @@ function Invoices({ invoices, payments, reload, setModal, setSelected }) {
         body{font-family:Arial,sans-serif;color:#222;font-size:13px;margin:0}
         .rpt-hdr{display:none} @page{margin:18mm 14mm 20mm 14mm;size:A4}
         table{width:100%;border-collapse:collapse;font-size:12px}
-        thead{display:table-header-group} th{background:#E8D5A3;padding:8px 10px;text-align:left;font-size:11px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+        thead{display:table-header-group} th{background:#FBF3E4;padding:8px 10px;text-align:left;font-size:11px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
         td{padding:8px 10px;border-bottom:0.5px solid #eee} h1{color:#8B6914;font-size:18px;margin:0 0 4px} .sub{color:#888;font-size:12px;margin-bottom:20px}
         .noprint{background:#333;color:#fff;padding:10px 20px;display:flex;justify-content:space-between;align-items:center}
         .printbtn{background:#8B6914;color:#fff;border:none;padding:7px 18px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600}
@@ -988,7 +988,7 @@ function Invoices({ invoices, payments, reload, setModal, setSelected }) {
       <div class='noprint'><span>Invoices Export — ${filterDesc}</span><button class='printbtn' onclick='window.print()'>🖨️ Print / Save PDF</button></div>
       <div style='padding:20px 40px'><h1>Malakesa Transfers &amp; Tours</h1><div class='sub'>Invoices Export &nbsp;|&nbsp; ${filterDesc} &nbsp;|&nbsp; ${now}<br>${filtered.length} invoice(s) &nbsp;|&nbsp; Total: VT ${Number(totalFiltered).toLocaleString()} &nbsp;|&nbsp; Outstanding: VT ${Number(totalBalance).toLocaleString()}</div>
       <table><thead><tr><th>Invoice #</th><th>Issue Date</th><th>Client</th><th style='text-align:right'>Subtotal</th><th style='text-align:right'>VAT</th><th style='text-align:right'>Total</th><th style='text-align:right'>Balance</th><th>Status</th></tr></thead><tbody>${rows}</tbody>
-      <tr style='background:#E8D5A3;font-weight:700'><td colspan='5' style='padding:9px 10px'>TOTAL (${filtered.length} invoices)</td><td style='padding:9px 10px;text-align:right'>VT ${Number(totalFiltered).toLocaleString()}</td><td style='padding:9px 10px;text-align:right'>VT ${Number(totalBalance).toLocaleString()} owing</td><td></td></tr>
+      <tr style='background:#FBF3E4;font-weight:700'><td colspan='5' style='padding:9px 10px'>TOTAL (${filtered.length} invoices)</td><td style='padding:9px 10px;text-align:right'>VT ${Number(totalFiltered).toLocaleString()}</td><td style='padding:9px 10px;text-align:right'>VT ${Number(totalBalance).toLocaleString()} owing</td><td></td></tr>
       </table></div><script>window.onload=()=>window.print()<\/script></body></html>`)
       w.document.close()
       return
@@ -1090,18 +1090,18 @@ function Invoices({ invoices, payments, reload, setModal, setSelected }) {
 
         {/* Bulk action bar */}
         {someSelected && (
-          <div style={{ background: 'linear-gradient(135deg,#1A0D06,#3D2214)', borderRadius: 10, padding: '12px 18px', marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+          <div style={{ background: 'linear-gradient(135deg,#6B4423,#8B5E34)', borderRadius: 10, padding: '12px 18px', marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <span style={{ color: '#FFD700', fontWeight: 700, fontSize: 15 }}>{selectedIds.size}</span>
+              <span style={{ color: '#F5D98A', fontWeight: 700, fontSize: 15 }}>{selectedIds.size}</span>
               <span style={{ color: 'rgba(255,255,255,0.8)', fontSize: 13 }}>invoice{selectedIds.size !== 1 ? 's' : ''} selected</span>
               <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 13 }}>|</span>
-              <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13 }}>Total: <strong style={{ color: '#FFD700' }}>{fmt(selectedInvoices.reduce((s,i)=>s+Number(i.total),0))}</strong></span>
+              <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13 }}>Total: <strong style={{ color: '#F5D98A' }}>{fmt(selectedInvoices.reduce((s,i)=>s+Number(i.total),0))}</strong></span>
             </div>
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
               <button className="btn btn-sm" style={{ background: '#8B6914', borderColor: '#6B5010', color: '#fff', fontWeight: 600 }} onClick={bulkPrint}><i className="ti ti-printer"></i> Print Selected</button>
               <button className="btn btn-sm" style={{ background: '#1D6F42', borderColor: '#155233', color: '#fff', fontWeight: 600 }} onClick={bulkExport}><i className="ti ti-download"></i> Export Selected</button>
               <button className="btn btn-sm" style={{ background: '#2563A8', borderColor: '#1a4a8a', color: '#fff', fontWeight: 600 }} onClick={bulkEmail}><i className="ti ti-mail"></i> Email Selected</button>
-              <button className="btn btn-sm" style={{ background: '#3D2214', borderColor: '#1A0D06', color: '#FFD700', fontWeight: 600 }} onClick={bulkEmailReminders}><i className="ti ti-mail"></i> Email Reminders</button>
+              <button className="btn btn-sm" style={{ background: '#8B5E34', borderColor: '#6B4423', color: '#F5D98A', fontWeight: 600 }} onClick={bulkEmailReminders}><i className="ti ti-mail"></i> Email Reminders</button>
               <button className="btn btn-sm" style={{ color: 'rgba(255,255,255,0.6)', borderColor: 'rgba(255,255,255,0.2)', background: 'none', fontSize: 11 }} onClick={() => setSelectedIds(new Set())}>Clear selection</button>
             </div>
           </div>
@@ -1116,7 +1116,7 @@ function Invoices({ invoices, payments, reload, setModal, setSelected }) {
             </div>
           ) : (
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-              <thead><tr style={{ background: '#E8D5A3' }}>
+              <thead><tr style={{ background: '#FBF3E4' }}>
                 <th style={{ padding: '9px 14px', width: 36 }}><input type="checkbox" checked={allSelected} onChange={toggleAll} style={{ cursor: 'pointer', width: 15, height: 15, accentColor: '#8B6914' }} /></th>
                 <Th>Invoice #</Th><Th>Client</Th><Th>Issue Date</Th><Th>Due Date</Th><Th>Amount</Th><Th>Balance</Th><Th>Status</Th><Th>Actions</Th>
               </tr></thead>
@@ -1177,22 +1177,22 @@ function Payments({ payments, invoices, reload, setModal, setSelected }) {
     w.document.write(`<!DOCTYPE html><html><head><title>${receiptNum}</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: Arial, sans-serif; background: #f0ebe0; }
+    body { font-family: Arial, sans-serif; background: #FBF3E4; }
     .page { max-width: 520px; margin: 20px auto; background: #fff; border-radius: 4px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.15); }
-    .header { background: linear-gradient(135deg, #1A0D06 0%, #3D2214 50%, #5C3D0A 100%); padding: 24px 32px; text-align: center; }
+    .header { background: linear-gradient(135deg, #6B4423 0%, #8B5E34 50%, #A67C42 100%); padding: 24px 32px; text-align: center; }
     .rec-label { font-size: 10px; color: rgba(255,255,255,0.6); letter-spacing: 3px; margin-top: 10px; }
-    .rec-num { font-size: 20px; font-weight: 700; color: #FFD700; margin-top: 2px; }
+    .rec-num { font-size: 20px; font-weight: 700; color: #F5D98A; margin-top: 2px; }
     .body { padding: 24px 32px; }
     .paid-stamp { text-align: center; margin: 16px 0; }
     .paid-box { display: inline-block; border: 3px solid #3B6D11; color: #3B6D11; font-size: 22px; font-weight: 900; letter-spacing: 6px; padding: 6px 24px; border-radius: 4px; transform: rotate(-3deg); }
     .section { margin: 16px 0; padding: 14px 16px; background: #faf6ee; border-radius: 6px; }
-    .row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #f0ebe0; font-size: 13px; }
+    .row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #FBF3E4; font-size: 13px; }
     .row:last-child { border-bottom: none; }
     .label { color: #888; }
     .val { font-weight: 600; color: #222; }
-    .amount-box { background: linear-gradient(135deg, #3D2214, #8B6914); border-radius: 6px; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; margin: 16px 0; }
+    .amount-box { background: linear-gradient(135deg, #8B5E34, #8B6914); border-radius: 6px; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; margin: 16px 0; }
     .thankyou { text-align: center; font-size: 13px; font-style: italic; color: #8B6914; margin: 16px 0 8px; }
-    .footer { background: linear-gradient(135deg, #1A0D06, #5C3D0A); padding: 14px 32px; text-align: center; color: rgba(255,255,255,0.7); font-size: 10px; line-height: 1.9; }
+    .footer { background: linear-gradient(135deg, #6B4423, #A67C42); padding: 14px 32px; text-align: center; color: rgba(255,255,255,0.7); font-size: 10px; line-height: 1.9; }
     .noprint { background: #333; color: #fff; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; }
     .printbtn { background: #8B6914; color: #fff; border: none; padding: 7px 18px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; }
     .rpt-hdr { display: none; }
@@ -1233,7 +1233,7 @@ function Payments({ payments, invoices, reload, setModal, setSelected }) {
       </div>
       <div class="amount-box">
         <span style="color:#fff;font-weight:700;font-size:15px">AMOUNT RECEIVED</span>
-        <span style="color:#FFD700;font-weight:700;font-size:22px">VT ${Number(payment.amount).toLocaleString()}</span>
+        <span style="color:#F5D98A;font-weight:700;font-size:22px">VT ${Number(payment.amount).toLocaleString()}</span>
       </div>
       <div class="thankyou">Tankiu Tumas \u2014 Thank you for your payment!</div>
     </div>
@@ -1290,7 +1290,7 @@ function Payments({ payments, invoices, reload, setModal, setSelected }) {
           <Card style={{ padding: 0, overflow: 'hidden', marginBottom: 16 }}>
             <div style={{ padding: '12px 20px', borderBottom: '0.5px solid rgba(0,0,0,0.09)', fontWeight: 500, fontSize: 13 }}>Unpaid invoices — click to record payment</div>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-              <thead><tr style={{ background: '#E8D5A3' }}><Th>Invoice #</Th><Th>Client</Th><Th>Due Date</Th><Th>Balance</Th><Th>Status</Th><Th></Th></tr></thead>
+              <thead><tr style={{ background: '#FBF3E4' }}><Th>Invoice #</Th><Th>Client</Th><Th>Due Date</Th><Th>Balance</Th><Th>Status</Th><Th></Th></tr></thead>
               <tbody>{unpaidInvoices.map(inv => (
                 <tr key={inv.id} style={{ borderBottom: '0.5px solid rgba(0,0,0,0.09)' }}>
                   <Td><strong>{inv.number}</strong></Td>
@@ -1316,7 +1316,7 @@ function Payments({ payments, invoices, reload, setModal, setSelected }) {
           </div>
           {payments.length === 0 ? <Empty icon="ti-cash-off" msg="No payments recorded yet" /> : (
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-              <thead><tr style={{ background: '#E8D5A3' }}><Th>Receipt #</Th><Th>Date</Th><Th>Invoice #</Th><Th>Client</Th><Th>Method</Th><Th>Amount</Th><Th>Inv. Total</Th><Th>Balance After</Th><Th>Note</Th><Th>Actions</Th></tr></thead>
+              <thead><tr style={{ background: '#FBF3E4' }}><Th>Receipt #</Th><Th>Date</Th><Th>Invoice #</Th><Th>Client</Th><Th>Method</Th><Th>Amount</Th><Th>Inv. Total</Th><Th>Balance After</Th><Th>Note</Th><Th>Actions</Th></tr></thead>
               <tbody>{[...payments].reverse().map(p => {
                 const inv = getInv(p.invoice_id)
                 // Calculate balance remaining after this payment
@@ -1328,7 +1328,7 @@ function Payments({ payments, invoices, reload, setModal, setSelected }) {
                 return (
                   <tr key={p.id} style={{ borderBottom: '0.5px solid rgba(0,0,0,0.09)' }}>
                     <Td style={{ color: '#8B6914', fontWeight: 500 }}>{p.receipt_number || '—'}</Td><Td>{fmtDate(p.date)}</Td><Td><strong>{inv?.number || '—'}</strong></Td><Td>{inv?.client_name || '—'}</Td>
-                    <Td><span style={{ background: '#E8D5A3', padding: '2px 8px', borderRadius: 99, fontSize: 11 }}>{p.method || 'Cash'}</span></Td>
+                    <Td><span style={{ background: '#FBF3E4', padding: '2px 8px', borderRadius: 99, fontSize: 11 }}>{p.method || 'Cash'}</span></Td>
                     <Td style={{ color: '#3B6D11', fontWeight: 500 }}>{fmt(p.amount)}</Td>
                     <Td style={{ color: '#666', fontSize: 12 }}>{inv?.total ? fmt(inv.total) : '—'}</Td>
                     <Td>
@@ -1477,7 +1477,7 @@ function Unpaid({ invoices, payments, reload, setModal, setSelected }) {
         <Card style={{ padding: 0, overflow: 'hidden' }}>
           {filtered.length === 0 ? <Empty icon="ti-circle-check" msg="All invoices are paid!" msgColor="#3B6D11" /> : (
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-              <thead><tr style={{ background: '#E8D5A3' }}><Th>Invoice #</Th><Th>Client</Th><Th>Due Date</Th><Th>Balance</Th><Th>Status</Th><Th>Actions</Th></tr></thead>
+              <thead><tr style={{ background: '#FBF3E4' }}><Th>Invoice #</Th><Th>Client</Th><Th>Due Date</Th><Th>Balance</Th><Th>Status</Th><Th>Actions</Th></tr></thead>
               <tbody>{filtered.map(inv => {
                 const st = getStatus(inv, payments)
                 return (
@@ -1615,12 +1615,12 @@ function Reports({ invoices, payments, purchases, salaryRecords }) {
     w.document.write(`<!DOCTYPE html><html><head><title>VAT Return — ${vatMonthLabel}</title>
     <style>
       *{box-sizing:border-box;margin:0;padding:0}
-      body{font-family:Arial,sans-serif;margin:0;color:#222;font-size:13px;background:#f0ebe0}
+      body{font-family:Arial,sans-serif;margin:0;color:#222;font-size:13px;background:#FBF3E4}
       .page{max-width:800px;margin:20px auto;background:#fff;border-radius:4px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.15)}
-      .header{background:linear-gradient(135deg,#1A0D06 0%,#3D2214 50%,#5C3D0A 100%);padding:24px 40px;display:flex;justify-content:space-between;align-items:flex-start}
+      .header{background:linear-gradient(135deg,#6B4423 0%,#8B5E34 50%,#A67C42 100%);padding:24px 40px;display:flex;justify-content:space-between;align-items:flex-start}
       .logo-contact{font-size:10px;color:rgba(255,255,255,0.7);margin-top:8px;line-height:1.8}
       .report-title{text-align:right;color:#fff}
-      .report-name{font-size:20px;font-weight:700;color:#FFD700}
+      .report-name{font-size:20px;font-weight:700;color:#F5D98A}
       .report-sub{font-size:11px;color:rgba(255,255,255,0.75);margin-top:4px;line-height:1.7}
       .body{padding:28px 40px}
       .vat-box{background:linear-gradient(135deg,#1A4D1A,#2E7D2E);border-radius:8px;padding:20px 28px;margin-bottom:24px;display:flex;gap:32px;flex-wrap:wrap}
@@ -1631,17 +1631,17 @@ function Reports({ invoices, payments, purchases, salaryRecords }) {
       .tin-box{background:#FAEEDA;border:1px solid #FAC775;border-radius:6px;padding:10px 16px;margin-bottom:20px;font-size:12px;color:#633806}
       h2{font-size:13px;font-weight:700;margin:20px 0 8px;color:#3D2214;border-bottom:2px solid #8B6914;padding-bottom:4px;text-transform:uppercase;letter-spacing:0.5px}
       table{width:100%;border-collapse:collapse;margin-bottom:20px;font-size:12px}
-      th{background:#E8D5A3;padding:8px 10px;text-align:left;font-size:10px;font-weight:700;color:#3D2214;text-transform:uppercase;letter-spacing:0.5px}
-      td{padding:8px 10px;border-bottom:1px solid #f0ebe0;vertical-align:top}
+      th{background:#FBF3E4;padding:8px 10px;text-align:left;font-size:10px;font-weight:700;color:#3D2214;text-transform:uppercase;letter-spacing:0.5px}
+      td{padding:8px 10px;border-bottom:1px solid #FBF3E4;vertical-align:top}
       tr:nth-child(even) td{background:#faf6ee}
       .right{text-align:right}
       .amt{font-weight:500}
       .vat-amt{color:#2E7D2E;font-weight:600}
       .zero{color:#888;font-style:italic}
-      .summary-row{background:#E8D5A3!important;font-weight:700}
-      .footer{background:linear-gradient(135deg,#1A0D06,#5C3D0A);padding:14px 40px;display:flex;justify-content:space-between;align-items:center;margin-top:0}
+      .summary-row{background:#FBF3E4!important;font-weight:700}
+      .footer{background:linear-gradient(135deg,#6B4423,#A67C42);padding:14px 40px;display:flex;justify-content:space-between;align-items:center;margin-top:0}
       .footer-l{color:rgba(255,255,255,0.8);font-size:10px;line-height:1.9}
-      .footer-r{text-align:right;color:#FFD700;font-size:10px;line-height:1.9}
+      .footer-r{text-align:right;color:#F5D98A;font-size:10px;line-height:1.9}
       .noprint{background:#333;color:#fff;padding:10px 20px;display:flex;justify-content:space-between;align-items:center;font-size:13px}
       .printbtn{background:#8B6914;color:#fff;border:none;padding:7px 18px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600}
       thead{display:table-header-group}
@@ -1659,7 +1659,7 @@ function Reports({ invoices, payments, purchases, salaryRecords }) {
         .rpt-hdr{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #8B6914;padding:6px 40px}
         .rpt-hdr{position:fixed;top:0;left:0;right:0;background:#fff;z-index:999}
         .page{padding-top:42px}
-        .rpt-footer-bar{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #E8D5A3;padding:4px 40px;display:flex;justify-content:space-between;font-size:10px;color:#888;z-index:999}
+        .rpt-footer-bar{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #FBF3E4;padding:4px 40px;display:flex;justify-content:space-between;font-size:10px;color:#888;z-index:999}
       }
     </style></head><body>
     <div class="rpt-hdr">
@@ -1701,7 +1701,7 @@ function Reports({ invoices, payments, purchases, salaryRecords }) {
           </div>
           <div class="vat-item">
             <div class="vat-label">Taxable Sales (ex-VAT)</div>
-            <div class="vat-value" style="color:#FFD700">VT ${Number(vatTotalSubtotal).toLocaleString()}</div>
+            <div class="vat-value" style="color:#F5D98A">VT ${Number(vatTotalSubtotal).toLocaleString()}</div>
             <div class="vat-sub">${vatStandard.length} standard-rated invoice${vatStandard.length !== 1 ? 's' : ''}</div>
           </div>
           <div class="vat-item">
@@ -1711,7 +1711,7 @@ function Reports({ invoices, payments, purchases, salaryRecords }) {
           </div>
           <div class="vat-item">
             <div class="vat-label">Total Invoiced</div>
-            <div class="vat-value" style="color:#FFD700">VT ${Number(vatTotalInv).toLocaleString()}</div>
+            <div class="vat-value" style="color:#F5D98A">VT ${Number(vatTotalInv).toLocaleString()}</div>
             <div class="vat-sub">${vatInvoices.length} invoice${vatInvoices.length !== 1 ? 's' : ''} total</div>
           </div>
         </div>
@@ -1742,10 +1742,10 @@ function Reports({ invoices, payments, purchases, salaryRecords }) {
             <tr><td>Total Sales (inc. VAT)</td><td class="right amt">VT ${Number(vatTotalInv).toLocaleString()}</td></tr>
             <tr><td>Taxable Sales (ex-VAT)</td><td class="right amt">VT ${Number(vatTotalSubtotal).toLocaleString()}</td></tr>
             <tr><td>Zero-Rated Sales</td><td class="right amt">VT ${Number(vatZeroRated.reduce((s,i)=>s+Number(i.total),0)).toLocaleString()}</td></tr>
-            <tr style="background:#E8D5A3;font-weight:700"><td>VAT Output Tax (Box 1)</td><td class="right" style="color:#2E7D2E">VT ${Number(vatTotalTax).toLocaleString()}</td></tr>
+            <tr style="background:#FBF3E4;font-weight:700"><td>VAT Output Tax (Box 1)</td><td class="right" style="color:#2E7D2E">VT ${Number(vatTotalTax).toLocaleString()}</td></tr>
             <tr style="background:#f9f9f9"><td>Total Purchases (inc. VAT)</td><td class="right amt">VT ${Number(vatPurchasesTotal).toLocaleString()}</td></tr>
             <tr style="background:#f9f9f9"><td>Purchases (ex-VAT)</td><td class="right amt">VT ${Number(vatPurchasesExVat).toLocaleString()}</td></tr>
-            <tr style="background:#E8D5A3;font-weight:700"><td>VAT Input Tax (Box 2)</td><td class="right" style="color:#1A4D1A">VT ${Number(vatInputTax).toLocaleString()}</td></tr>
+            <tr style="background:#FBF3E4;font-weight:700"><td>VAT Input Tax (Box 2)</td><td class="right" style="color:#1A4D1A">VT ${Number(vatInputTax).toLocaleString()}</td></tr>
             <tr style="background:#FAEEDA;font-weight:700;font-size:14px"><td>NET VAT PAYABLE (Box 1 − Box 2)</td><td class="right" style="color:#D85A30">VT ${Number(vatNetPayable).toLocaleString()}</td></tr>
           </tbody>
         </table>
@@ -1764,7 +1764,7 @@ function Reports({ invoices, payments, purchases, salaryRecords }) {
       </div>
       <div class="footer">
         <div class="footer-l">
-          <div><strong style="color:#FFD700">Malakesa Transfers &amp; Tours</strong></div>
+          <div><strong style="color:#F5D98A">Malakesa Transfers &amp; Tours</strong></div>
           <div>TIN: 445579 &nbsp;|&nbsp; Port Vila, Vanuatu</div>
           <div>VAT Period: ${vatMonthLabel}</div>
         </div>
@@ -1828,12 +1828,12 @@ function Reports({ invoices, payments, purchases, salaryRecords }) {
     w.document.write(`<!DOCTYPE html><html><head><title>${title}</title>
     <style>
       *{box-sizing:border-box;margin:0;padding:0}
-      body{font-family:Arial,sans-serif;margin:0;color:#222;font-size:13px;background:#f0ebe0}
+      body{font-family:Arial,sans-serif;margin:0;color:#222;font-size:13px;background:#FBF3E4}
       .page{max-width:800px;margin:20px auto;background:#fff;border-radius:4px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.15)}
-      .header{background:linear-gradient(135deg,#1A0D06 0%,#3D2214 50%,#5C3D0A 100%);padding:24px 40px;display:flex;justify-content:space-between;align-items:flex-start}
+      .header{background:linear-gradient(135deg,#6B4423 0%,#8B5E34 50%,#A67C42 100%);padding:24px 40px;display:flex;justify-content:space-between;align-items:flex-start}
       .logo-contact{font-size:10px;color:rgba(255,255,255,0.7);margin-top:8px;line-height:1.8}
       .report-title{text-align:right;color:#fff}
-      .report-name{font-size:20px;font-weight:700;color:#FFD700}
+      .report-name{font-size:20px;font-weight:700;color:#F5D98A}
       .report-sub{font-size:11px;color:rgba(255,255,255,0.75);margin-top:4px;line-height:1.7}
       .body{padding:28px 40px}
       .stats{display:flex;gap:20px;margin-bottom:24px;flex-wrap:wrap}
@@ -1842,15 +1842,15 @@ function Reports({ invoices, payments, purchases, salaryRecords }) {
       .stat-value{font-size:18px;font-weight:bold}
       h2{font-size:13px;font-weight:700;margin:20px 0 8px;color:#3D2214;border-bottom:2px solid #8B6914;padding-bottom:4px;text-transform:uppercase;letter-spacing:0.5px}
       table{width:100%;border-collapse:collapse;margin-bottom:20px;font-size:12px}
-      th{background:#E8D5A3;padding:8px 10px;text-align:left;font-size:10px;font-weight:700;color:#3D2214;text-transform:uppercase;letter-spacing:0.5px}
-      td{padding:8px 10px;border-bottom:1px solid #f0ebe0}
+      th{background:#FBF3E4;padding:8px 10px;text-align:left;font-size:10px;font-weight:700;color:#3D2214;text-transform:uppercase;letter-spacing:0.5px}
+      td{padding:8px 10px;border-bottom:1px solid #FBF3E4}
       tr:nth-child(even) td{background:#faf6ee}
       .right{text-align:right}
       .green{color:#2E7D2E;font-weight:500}
-      .summary-row{background:#E8D5A3!important;font-weight:700}
-      .footer{background:linear-gradient(135deg,#1A0D06,#5C3D0A);padding:14px 40px;display:flex;justify-content:space-between;align-items:center}
+      .summary-row{background:#FBF3E4!important;font-weight:700}
+      .footer{background:linear-gradient(135deg,#6B4423,#A67C42);padding:14px 40px;display:flex;justify-content:space-between;align-items:center}
       .footer-l{color:rgba(255,255,255,0.8);font-size:10px;line-height:1.9}
-      .footer-r{text-align:right;color:#FFD700;font-size:10px;line-height:1.9}
+      .footer-r{text-align:right;color:#F5D98A;font-size:10px;line-height:1.9}
       .noprint{background:#333;color:#fff;padding:10px 20px;display:flex;justify-content:space-between;align-items:center;font-size:13px}
       .printbtn{background:#8B6914;color:#fff;border:none;padding:7px 18px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600}
       thead{display:table-header-group}
@@ -1867,7 +1867,7 @@ function Reports({ invoices, payments, purchases, salaryRecords }) {
         .rpt-hdr{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #8B6914;padding:6px 40px}
         .rpt-hdr{position:fixed;top:0;left:0;right:0;background:#fff;z-index:999}
         .page{padding-top:42px}
-        .rpt-footer-bar{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #E8D5A3;padding:4px 40px;display:flex;justify-content:space-between;font-size:10px;color:#888;z-index:999}
+        .rpt-footer-bar{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #FBF3E4;padding:4px 40px;display:flex;justify-content:space-between;font-size:10px;color:#888;z-index:999}
       }
     </style></head><body>
     <div class="rpt-hdr">
@@ -1923,7 +1923,7 @@ function Reports({ invoices, payments, purchases, salaryRecords }) {
       </div>
       <div class="footer">
         <div class="footer-l">
-          <div><strong style="color:#FFD700">Malakesa Transfers &amp; Tours</strong></div>
+          <div><strong style="color:#F5D98A">Malakesa Transfers &amp; Tours</strong></div>
           <div>Port Vila, Vanuatu</div>
         </div>
         <div class="footer-r">
@@ -1964,7 +1964,7 @@ function Reports({ invoices, payments, purchases, salaryRecords }) {
         .rpt-hdr{position:fixed;top:0;left:0;right:0;background:#fff;z-index:999}
         body{padding-top:44px}
         .report-body{padding:0 0 40px}
-        .rpt-footer-bar{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #E8D5A3;padding:4px 40px;display:flex;justify-content:space-between;font-size:10px;color:#888;z-index:999}
+        .rpt-footer-bar{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #FBF3E4;padding:4px 40px;display:flex;justify-content:space-between;font-size:10px;color:#888;z-index:999}
       }
     </style></head><body>
     <div class="rpt-hdr">
@@ -2209,7 +2209,7 @@ function Reports({ invoices, payments, purchases, salaryRecords }) {
             {Object.keys(byMethod).length === 0 ? <div style={{ color: '#666', fontSize: 13 }}>No payments yet</div> : (
               <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
                 {Object.entries(byMethod).map(([m, a]) => (
-                  <div key={m} style={{ background: '#E8D5A3', borderRadius: 8, padding: '14px 18px', minWidth: 150 }}>
+                  <div key={m} style={{ background: '#FBF3E4', borderRadius: 8, padding: '14px 18px', minWidth: 150 }}>
                     <div style={{ fontSize: 12, color: '#666', marginBottom: 4 }}>{m}</div>
                     <div style={{ fontSize: 18, fontWeight: 500, color: '#3B6D11' }}>{fmt(a)}</div>
                     <div style={{ fontSize: 11, color: '#999', marginTop: 2 }}>{totalCol > 0 ? Math.round((a / totalCol) * 100) : 0}% of collected</div>
@@ -2237,7 +2237,7 @@ function Reports({ invoices, payments, purchases, salaryRecords }) {
                 Spend by Supplier — {supplierPeriodLabel}
               </div>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-                <thead><tr style={{ background: '#E8D5A3' }}>
+                <thead><tr style={{ background: '#FBF3E4' }}>
                   <Th>Supplier</Th><Th>Category</Th>
                   <Th style={{ textAlign: 'center' }}>Purchases</Th>
                   <Th style={{ textAlign: 'right' }}>Ex-VAT</Th>
@@ -2249,7 +2249,7 @@ function Reports({ invoices, payments, purchases, salaryRecords }) {
                   {supplierRows.map(s => (
                     <tr key={s.name} style={{ borderBottom: '0.5px solid rgba(0,0,0,0.09)' }}>
                       <Td><strong>{s.name}</strong></Td>
-                      <Td><span style={{ background: '#E8D5A3', padding: '2px 8px', borderRadius: 99, fontSize: 11 }}>{s.category || 'Other'}</span></Td>
+                      <Td><span style={{ background: '#FBF3E4', padding: '2px 8px', borderRadius: 99, fontSize: 11 }}>{s.category || 'Other'}</span></Td>
                       <Td style={{ textAlign: 'center' }}>{s.count}</Td>
                       <Td style={{ textAlign: 'right' }}>{fmt(s.exVat)}</Td>
                       <Td style={{ textAlign: 'right', color: s.vat > 0 ? '#2E7D2E' : '#999', fontWeight: s.vat > 0 ? 500 : 400 }}>
@@ -2259,7 +2259,7 @@ function Reports({ invoices, payments, purchases, salaryRecords }) {
                       <Td style={{ textAlign: 'right', color: '#666' }}>{supplierTotalSpend > 0 ? Math.round((s.total / supplierTotalSpend) * 100) : 0}%</Td>
                     </tr>
                   ))}
-                  <tr style={{ background: '#E8D5A3', fontWeight: 700 }}>
+                  <tr style={{ background: '#FBF3E4', fontWeight: 700 }}>
                     <td colSpan={2} style={{ padding: '9px 14px', fontSize: 13 }}>TOTAL</td>
                     <td style={{ padding: '9px 14px', textAlign: 'center', fontSize: 13 }}>{fPurchases.length}</td>
                     <td style={{ padding: '9px 14px', textAlign: 'right', fontSize: 13 }}>{fmt(supplierTotalExVat)}</td>
@@ -2340,7 +2340,7 @@ function Reports({ invoices, payments, purchases, salaryRecords }) {
               body{font-family:Arial,sans-serif;color:#222;font-size:13px}
               h1{color:#8B6914;font-size:20px;margin:0 0 4px} .sub{color:#888;font-size:12px;margin-bottom:20px}
               table{width:100%;border-collapse:collapse} thead{display:table-header-group}
-              th{background:#E8D5A3;padding:9px 12px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.4px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+              th{background:#FBF3E4;padding:9px 12px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.4px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
               .noprint{background:#333;color:#fff;padding:10px 20px;display:flex;justify-content:space-between;align-items:center}
               .printbtn{background:#8B6914;color:#fff;border:none;padding:7px 18px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600}
               .rpt-hdr{display:none} @page{margin:18mm 14mm 20mm 14mm;size:A4}
@@ -2359,7 +2359,7 @@ function Reports({ invoices, payments, purchases, salaryRecords }) {
               <table><thead><tr>
                 <th>Month</th><th style='text-align:right'>Money In (Receipts)</th><th style='text-align:right'>Purchases</th><th style='text-align:right'>Salaries</th><th style='text-align:right'>Total Out</th><th style='text-align:right'>Net Cash Flow</th>
               </tr></thead><tbody>${rows}
-              <tr style='background:#E8D5A3;font-weight:700'>
+              <tr style='background:#FBF3E4;font-weight:700'>
                 <td style='padding:9px 12px'>TOTAL (12 months)</td>
                 <td style='padding:9px 12px;text-align:right;color:#3B6D11'>VT ${Number(totalIn).toLocaleString()}</td>
                 <td style='padding:9px 12px;text-align:right'>VT ${Number(totalPurchases).toLocaleString()}</td>
@@ -2398,7 +2398,7 @@ function Reports({ invoices, payments, purchases, salaryRecords }) {
               {/* Visual bar chart */}
               <Card style={{ padding: '20px 20px 16px', marginBottom: 16 }}>
                 <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 16 }}>Monthly cash flow — last 12 months</div>
-                <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, height: 160, borderBottom: '1px solid #E8D5A3', paddingBottom: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, height: 160, borderBottom: '1px solid #FBF3E4', paddingBottom: 8 }}>
                   {cashFlow.map(m => {
                     const inH = Math.round((m.in / maxVal) * 140)
                     const outH = Math.round((m.out / maxVal) * 140)
@@ -2432,7 +2432,7 @@ function Reports({ invoices, payments, purchases, salaryRecords }) {
                   </div>
                 </div>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-                  <thead><tr style={{ background: '#E8D5A3' }}>
+                  <thead><tr style={{ background: '#FBF3E4' }}>
                     <Th>Month</Th>
                     <Th style={{ textAlign: 'right', color: '#3B6D11' }}>Money In</Th>
                     <Th style={{ textAlign: 'right' }}>Purchases</Th>
@@ -2455,7 +2455,7 @@ function Reports({ invoices, payments, purchases, salaryRecords }) {
                         </Td>
                       </tr>
                     ))}
-                    <tr style={{ background: '#E8D5A3', fontWeight: 700 }}>
+                    <tr style={{ background: '#FBF3E4', fontWeight: 700 }}>
                       <td style={{ padding: '9px 14px', fontSize: 13 }}>TOTAL (12 months)</td>
                       <td style={{ padding: '9px 14px', textAlign: 'right', fontSize: 13, color: '#3B6D11' }}>{fmt(totalIn)}</td>
                       <td style={{ padding: '9px 14px', textAlign: 'right', fontSize: 13 }}>{fmt(totalPurchases)}</td>
@@ -2598,17 +2598,17 @@ function VatPage({ invoices, payments, purchases }) {
     <style>
       body{font-family:Arial,sans-serif;color:#222;font-size:13px}
       .page{max-width:800px;margin:20px auto;background:#fff;border-radius:6px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.15)}
-      .header{background:linear-gradient(135deg,#1A0D06,#3D2214,#5C3D0A);padding:20px 32px;display:flex;justify-content:space-between;align-items:flex-start}
+      .header{background:linear-gradient(135deg,#6B4423,#8B5E34,#A67C42);padding:20px 32px;display:flex;justify-content:space-between;align-items:flex-start}
       .body{padding:24px 32px}
-      h2{font-size:14px;font-weight:700;color:#8B6914;border-bottom:2px solid #E8D5A3;padding-bottom:4px;margin:20px 0 10px}
+      h2{font-size:14px;font-weight:700;color:#8B6914;border-bottom:2px solid #FBF3E4;padding-bottom:4px;margin:20px 0 10px}
       table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:16px}
       thead{display:table-header-group}
-      th{background:#E8D5A3;padding:7px 10px;text-align:left;font-size:11px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+      th{background:#FBF3E4;padding:7px 10px;text-align:left;font-size:11px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
       td{padding:7px 10px;border-bottom:.5px solid #eee}
       .summary{background:#f9f6f0;border-radius:8px;padding:16px;display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}
       .sum-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:.5px solid #eee;font-size:13px}
       .net{display:flex;justify-content:space-between;padding:10px 0;font-size:16px;font-weight:700;color:#D85A30;border-top:2px solid #D85A30;margin-top:4px}
-      .footer{background:linear-gradient(135deg,#1A0D06,#5C3D0A);padding:12px 32px;color:rgba(255,255,255,.7);font-size:10px;display:flex;justify-content:space-between}
+      .footer{background:linear-gradient(135deg,#6B4423,#A67C42);padding:12px 32px;color:rgba(255,255,255,.7);font-size:10px;display:flex;justify-content:space-between}
       .noprint{background:#333;color:#fff;padding:10px 20px;display:flex;justify-content:space-between;align-items:center}
       .printbtn{background:#8B6914;color:#fff;border:none;padding:7px 18px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600}
       .rpt-hdr{display:none}
@@ -2632,7 +2632,7 @@ function VatPage({ invoices, payments, purchases }) {
         </div>
         <div style='text-align:right;color:#fff'>
           <div style='font-size:10px;letter-spacing:3px;color:rgba(255,255,255,.6);text-transform:uppercase'>VAT Return</div>
-          <div style='font-size:20px;font-weight:700;color:#FFD700;margin-top:2px'>${vatMonthLabel}</div>
+          <div style='font-size:20px;font-weight:700;color:#F5D98A;margin-top:2px'>${vatMonthLabel}</div>
           <div style='font-size:11px;color:rgba(255,255,255,.7);margin-top:4px'>Filed: ${new Date().toLocaleDateString('en-AU',{day:'2-digit',month:'short',year:'numeric'})}</div>
         </div>
       </div>
@@ -2720,7 +2720,7 @@ function VatPage({ invoices, payments, purchases }) {
             </div>
             {vatStandard.length === 0 ? <div style={{ padding: 20, color: '#999', fontSize: 13, textAlign: 'center' }}>No standard-rated invoices this month</div> : (
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-                <thead><tr style={{ background: '#E8D5A3' }}><Th>Invoice #</Th><Th>Date</Th><Th>Client</Th><Th style={{ textAlign: 'right' }}>Subtotal (ex-VAT)</Th><Th style={{ textAlign: 'right' }}>VAT 15%</Th><Th style={{ textAlign: 'right' }}>Total</Th></tr></thead>
+                <thead><tr style={{ background: '#FBF3E4' }}><Th>Invoice #</Th><Th>Date</Th><Th>Client</Th><Th style={{ textAlign: 'right' }}>Subtotal (ex-VAT)</Th><Th style={{ textAlign: 'right' }}>VAT 15%</Th><Th style={{ textAlign: 'right' }}>Total</Th></tr></thead>
                 <tbody>
                   {vatStandard.map(inv => (
                     <tr key={inv.id} style={{ borderBottom: '0.5px solid rgba(0,0,0,0.09)' }}>
@@ -2730,7 +2730,7 @@ function VatPage({ invoices, payments, purchases }) {
                       <Td style={{ textAlign: 'right', fontWeight: 500 }}>{fmt(inv.total)}</Td>
                     </tr>
                   ))}
-                  <tr style={{ background: '#E8D5A3', fontWeight: 700 }}>
+                  <tr style={{ background: '#FBF3E4', fontWeight: 700 }}>
                     <td colSpan={3} style={{ padding: '9px 14px', fontSize: 13 }}>SUBTOTAL</td>
                     <td style={{ padding: '9px 14px', textAlign: 'right', fontSize: 13 }}>{fmt(vatStandard.reduce((s,i)=>s+Number(i.subtotal||0),0))}</td>
                     <td style={{ padding: '9px 14px', textAlign: 'right', fontSize: 13, color: '#2E7D2E' }}>{fmt(vatStandard.reduce((s,i)=>s+Number(i.tax||0),0))}</td>
@@ -2748,7 +2748,7 @@ function VatPage({ invoices, payments, purchases }) {
             </div>
             {vatZeroRated.length === 0 ? <div style={{ padding: 20, color: '#999', fontSize: 13, textAlign: 'center' }}>No zero-rated invoices this month</div> : (
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-                <thead><tr style={{ background: '#E8D5A3' }}><Th>Invoice #</Th><Th>Date</Th><Th>Client</Th><Th style={{ textAlign: 'right' }}>Amount</Th><Th style={{ textAlign: 'right' }}>VAT</Th></tr></thead>
+                <thead><tr style={{ background: '#FBF3E4' }}><Th>Invoice #</Th><Th>Date</Th><Th>Client</Th><Th style={{ textAlign: 'right' }}>Amount</Th><Th style={{ textAlign: 'right' }}>VAT</Th></tr></thead>
                 <tbody>
                   {vatZeroRated.map(inv => (
                     <tr key={inv.id} style={{ borderBottom: '0.5px solid rgba(0,0,0,0.09)' }}>
@@ -2757,7 +2757,7 @@ function VatPage({ invoices, payments, purchases }) {
                       <Td style={{ textAlign: 'right', color: '#999', fontStyle: 'italic' }}>Nil</Td>
                     </tr>
                   ))}
-                  <tr style={{ background: '#E8D5A3', fontWeight: 700 }}>
+                  <tr style={{ background: '#FBF3E4', fontWeight: 700 }}>
                     <td colSpan={3} style={{ padding: '9px 14px', fontSize: 13 }}>SUBTOTAL</td>
                     <td style={{ padding: '9px 14px', textAlign: 'right', fontSize: 13 }}>{fmt(vatZeroRated.reduce((s,i)=>s+Number(i.total),0))}</td>
                     <td style={{ padding: '9px 14px', textAlign: 'right', fontSize: 13, color: '#999', fontStyle: 'italic' }}>Nil</td>
@@ -2878,13 +2878,13 @@ function Purchases({ purchases, suppliers, customCategories, reload, setModal })
       if (!w) { alert('Please allow popups.'); return }
       const now = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
       const rows = filtered.map(p =>
-        `<tr><td>${fmtDate(p.date)}</td><td><strong>${p.supplier}</strong></td><td style='color:#555'>${p.description||'—'}</td><td><span style='background:#E8D5A320;padding:2px 7px;border-radius:99px;font-size:11px'>${p.category||'Other'}</span></td><td style='text-align:right'>${fmt(p.amount_ex_vat||0)}</td><td style='text-align:right;color:#2E7D2E'>${Number(p.vat)>0?fmt(p.vat):'Nil'}</td><td style='text-align:right;font-weight:600'>${fmt(p.amount)}</td><td style='color:#999;font-size:12px'>${p.ref||'—'}</td></tr>`
+        `<tr><td>${fmtDate(p.date)}</td><td><strong>${p.supplier}</strong></td><td style='color:#555'>${p.description||'—'}</td><td><span style='background:#FBF3E420;padding:2px 7px;border-radius:99px;font-size:11px'>${p.category||'Other'}</span></td><td style='text-align:right'>${fmt(p.amount_ex_vat||0)}</td><td style='text-align:right;color:#2E7D2E'>${Number(p.vat)>0?fmt(p.vat):'Nil'}</td><td style='text-align:right;font-weight:600'>${fmt(p.amount)}</td><td style='color:#999;font-size:12px'>${p.ref||'—'}</td></tr>`
       ).join('')
       w.document.write(`<!DOCTYPE html><html><head><title>Purchases Export</title><style>
         body{font-family:Arial,sans-serif;color:#222;font-size:12px;margin:0}
         .rpt-hdr{display:none} @page{margin:15mm 10mm 18mm 10mm;size:A4 landscape}
         table{width:100%;border-collapse:collapse} thead{display:table-header-group}
-        th{background:#E8D5A3;padding:7px 8px;text-align:left;font-size:10px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+        th{background:#FBF3E4;padding:7px 8px;text-align:left;font-size:10px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
         td{padding:7px 8px;border-bottom:0.5px solid #eee;font-size:11px}
         h1{color:#8B6914;font-size:18px;margin:0 0 4px} .sub{color:#888;font-size:12px;margin-bottom:20px}
         .noprint{background:#333;color:#fff;padding:10px 20px;display:flex;justify-content:space-between;align-items:center}
@@ -2896,7 +2896,7 @@ function Purchases({ purchases, suppliers, customCategories, reload, setModal })
       <div style='padding:20px 30px'><h1>Malakesa Transfers &amp; Tours</h1>
       <div class='sub'>Purchases Export &nbsp;|&nbsp; ${filterDesc} &nbsp;|&nbsp; ${now}<br>${filtered.length} purchase(s) &nbsp;|&nbsp; Total: VT ${Number(totalAmount).toLocaleString()} &nbsp;|&nbsp; Input VAT: VT ${Number(totalVat).toLocaleString()}</div>
       <table><thead><tr><th>Date</th><th>Supplier</th><th>Description</th><th>Category</th><th style='text-align:right'>Ex-VAT</th><th style='text-align:right'>VAT</th><th style='text-align:right'>Total</th><th>Ref</th></tr></thead><tbody>${rows}</tbody>
-      <tr style='background:#E8D5A3;font-weight:700'><td colspan='4' style='padding:8px'>TOTAL (${filtered.length})</td><td style='padding:8px;text-align:right'>VT ${Number(totalExVat).toLocaleString()}</td><td style='padding:8px;text-align:right;color:#2E7D2E'>VT ${Number(totalVat).toLocaleString()}</td><td style='padding:8px;text-align:right'>VT ${Number(totalAmount).toLocaleString()}</td><td></td></tr>
+      <tr style='background:#FBF3E4;font-weight:700'><td colspan='4' style='padding:8px'>TOTAL (${filtered.length})</td><td style='padding:8px;text-align:right'>VT ${Number(totalExVat).toLocaleString()}</td><td style='padding:8px;text-align:right;color:#2E7D2E'>VT ${Number(totalVat).toLocaleString()}</td><td style='padding:8px;text-align:right'>VT ${Number(totalAmount).toLocaleString()}</td><td></td></tr>
       </table></div><script>window.onload=()=>window.print()<\/script></body></html>`)
       w.document.close()
       return
@@ -2975,7 +2975,7 @@ function Purchases({ purchases, suppliers, customCategories, reload, setModal })
                         <span style={{ color: barColor, fontWeight: 600 }}>{fmt(spent)} spent</span>
                         <span style={{ color: '#999' }}>of {fmt(budget)}</span>
                       </div>
-                      <div style={{ height: 10, background: '#f0ebe0', borderRadius: 99, overflow: 'hidden', marginBottom: 6 }}>
+                      <div style={{ height: 10, background: '#FBF3E4', borderRadius: 99, overflow: 'hidden', marginBottom: 6 }}>
                         <div style={{ height: '100%', width: pct + '%', background: isOver ? 'linear-gradient(90deg,#A32D2D,#D85A30)' : isWarn ? '#D85A30' : 'linear-gradient(90deg,#3B6D11,#5A9A1A)', borderRadius: 99, transition: 'width 0.4s ease' }}></div>
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
@@ -3016,7 +3016,7 @@ function Purchases({ purchases, suppliers, customCategories, reload, setModal })
             </div>
           ) : (
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-              <thead><tr style={{ background: '#E8D5A3' }}>
+              <thead><tr style={{ background: '#FBF3E4' }}>
                 <Th>Date</Th><Th>Supplier</Th><Th>Description</Th><Th>Category</Th>
                 <Th style={{ textAlign: 'right' }}>Ex-VAT</Th>
                 <Th style={{ textAlign: 'right' }}>VAT</Th>
@@ -3029,7 +3029,7 @@ function Purchases({ purchases, suppliers, customCategories, reload, setModal })
                     <Td>{fmtDate(p.date)}</Td>
                     <Td><strong>{p.supplier}</strong></Td>
                     <Td style={{ color: '#555' }}>{p.description || '—'}</Td>
-                    <Td><span style={{ background: '#E8D5A3', padding: '2px 8px', borderRadius: 99, fontSize: 11, whiteSpace: 'nowrap' }}>{p.category || 'Other'}</span></Td>
+                    <Td><span style={{ background: '#FBF3E4', padding: '2px 8px', borderRadius: 99, fontSize: 11, whiteSpace: 'nowrap' }}>{p.category || 'Other'}</span></Td>
                     <Td style={{ textAlign: 'right' }}>{fmt(p.amount_ex_vat || 0)}</Td>
                     <Td style={{ textAlign: 'right', color: Number(p.vat) > 0 ? '#2E7D2E' : '#999', fontWeight: Number(p.vat) > 0 ? 500 : 400 }}>
                       {Number(p.vat) > 0 ? fmt(p.vat) : <span style={{ fontStyle: 'italic', fontSize: 11 }}>Nil</span>}
@@ -3041,7 +3041,7 @@ function Purchases({ purchases, suppliers, customCategories, reload, setModal })
                     </Td>
                   </tr>
                 ))}
-                <tr style={{ background: '#E8D5A3', fontWeight: 700 }}>
+                <tr style={{ background: '#FBF3E4', fontWeight: 700 }}>
                   <td colSpan={4} style={{ padding: '9px 14px', fontSize: 13 }}>TOTAL ({filtered.length} purchases)</td>
                   <td style={{ padding: '9px 14px', textAlign: 'right', fontSize: 13 }}>{fmt(totalExVat)}</td>
                   <td style={{ padding: '9px 14px', textAlign: 'right', fontSize: 13, color: '#2E7D2E' }}>{fmt(totalVat)}</td>
@@ -3297,7 +3297,7 @@ function ManageCategoriesModal({ customCategories, onClose, onSave }) {
         <div style={{ fontSize: 12, color: '#666', fontWeight: 500, marginBottom: 8 }}>Built-in categories</div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
           {builtIns.map(c => (
-            <span key={c} style={{ background: '#E8D5A3', padding: '4px 10px', borderRadius: 99, fontSize: 12, color: '#3D2214' }}>{c}</span>
+            <span key={c} style={{ background: '#FBF3E4', padding: '4px 10px', borderRadius: 99, fontSize: 12, color: '#3D2214' }}>{c}</span>
           ))}
           <span style={{ background: '#f1f1f1', padding: '4px 10px', borderRadius: 99, fontSize: 12, color: '#888' }}>Other</span>
         </div>
@@ -3406,7 +3406,7 @@ function Suppliers({ suppliers, purchases, reload, setModal }) {
           ) : (
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
               <thead>
-                <tr style={{ background: '#E8D5A3' }}>
+                <tr style={{ background: '#FBF3E4' }}>
                   <Th>Name</Th><Th>Category</Th><Th>Phone</Th><Th>Email</Th><Th>Address</Th>
                   <Th style={{ textAlign: 'center' }}>Purchases</Th>
                   <Th style={{ textAlign: 'right' }}>Total Spent</Th>
@@ -3446,7 +3446,7 @@ function Suppliers({ suppliers, purchases, reload, setModal }) {
                   ) : (
                     <tr key={s.id} style={{ borderBottom: '0.5px solid rgba(0,0,0,0.09)' }}>
                       <td style={{ padding: '11px 14px' }}><strong>{s.name}</strong></td>
-                      <td style={{ padding: '11px 14px' }}><span style={{ background: '#E8D5A3', padding: '2px 8px', borderRadius: 99, fontSize: 11 }}>{s.category || 'Other'}</span></td>
+                      <td style={{ padding: '11px 14px' }}><span style={{ background: '#FBF3E4', padding: '2px 8px', borderRadius: 99, fontSize: 11 }}>{s.category || 'Other'}</span></td>
                       <td style={{ padding: '11px 14px', color: '#666' }}>{s.phone || '—'}</td>
                       <td style={{ padding: '11px 14px', color: '#666' }}>{s.email || '—'}</td>
                       <td style={{ padding: '11px 14px', color: '#666' }}>{s.address || '—'}</td>
@@ -3560,12 +3560,12 @@ function VNPF({ employees, salaryRecords, reload, setModal, setSelected }) {
   const buildScheduleHtml = () => `<!DOCTYPE html><html><head><title>VNPF Contribution Schedule — ${monthLabel}</title>
     <style>
       *{box-sizing:border-box;margin:0;padding:0}
-      body{font-family:Arial,sans-serif;margin:0;color:#222;font-size:13px;background:#f0ebe0}
+      body{font-family:Arial,sans-serif;margin:0;color:#222;font-size:13px;background:#FBF3E4}
       .page{max-width:850px;margin:20px auto;background:#fff;border-radius:4px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.15)}
-      .header{background:linear-gradient(135deg,#1A0D06 0%,#3D2214 50%,#5C3D0A 100%);padding:24px 40px;display:flex;justify-content:space-between;align-items:flex-start}
+      .header{background:linear-gradient(135deg,#6B4423 0%,#8B5E34 50%,#A67C42 100%);padding:24px 40px;display:flex;justify-content:space-between;align-items:flex-start}
       .logo-contact{font-size:10px;color:rgba(255,255,255,0.7);margin-top:8px;line-height:1.8}
       .report-title{text-align:right;color:#fff}
-      .report-name{font-size:20px;font-weight:700;color:#FFD700}
+      .report-name{font-size:20px;font-weight:700;color:#F5D98A}
       .report-sub{font-size:11px;color:rgba(255,255,255,0.75);margin-top:4px;line-height:1.7}
       .body{padding:28px 40px}
       .info-box{background:#FAEEDA;border:1px solid #FAC775;border-radius:6px;padding:10px 16px;margin-bottom:20px;font-size:12px;color:#633806}
@@ -3574,15 +3574,15 @@ function VNPF({ employees, salaryRecords, reload, setModal, setSelected }) {
       .stat-label{font-size:11px;color:#666;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.4px}
       .stat-value{font-size:18px;font-weight:bold}
       table{width:100%;border-collapse:collapse;margin-bottom:20px;font-size:12px}
-      th{background:#E8D5A3;padding:8px 10px;text-align:left;font-size:10px;font-weight:700;color:#3D2214;text-transform:uppercase;letter-spacing:0.5px}
-      td{padding:9px 10px;border-bottom:1px solid #f0ebe0}
+      th{background:#FBF3E4;padding:8px 10px;text-align:left;font-size:10px;font-weight:700;color:#3D2214;text-transform:uppercase;letter-spacing:0.5px}
+      td{padding:9px 10px;border-bottom:1px solid #FBF3E4}
       tr:nth-child(even) td{background:#faf6ee}
       .right{text-align:right}
       .green{color:#2E7D2E;font-weight:500}
-      .summary-row{background:#E8D5A3!important;font-weight:700}
-      .footer{background:linear-gradient(135deg,#1A0D06,#5C3D0A);padding:14px 40px;display:flex;justify-content:space-between;align-items:center}
+      .summary-row{background:#FBF3E4!important;font-weight:700}
+      .footer{background:linear-gradient(135deg,#6B4423,#A67C42);padding:14px 40px;display:flex;justify-content:space-between;align-items:center}
       .footer-l{color:rgba(255,255,255,0.8);font-size:10px;line-height:1.9}
-      .footer-r{text-align:right;color:#FFD700;font-size:10px;line-height:1.9}
+      .footer-r{text-align:right;color:#F5D98A;font-size:10px;line-height:1.9}
       .noprint{background:#333;color:#fff;padding:10px 20px;display:flex;justify-content:space-between;align-items:center;font-size:13px}
       .printbtn{background:#8B6914;color:#fff;border:none;padding:7px 18px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600}
       thead{display:table-header-group}
@@ -3603,7 +3603,7 @@ function VNPF({ employees, salaryRecords, reload, setModal, setSelected }) {
         .rpt-hdr{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #8B6914;padding-bottom:6px}
         .rpt-hdr{position:fixed;top:0;left:0;right:0;background:#fff;z-index:999;padding:6px 40px}
         .page{padding-top:42px}
-        .rpt-footer{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #E8D5A3;padding:4px 40px;display:flex;justify-content:space-between;font-size:10px;color:#888;z-index:999}
+        .rpt-footer{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #FBF3E4;padding:4px 40px;display:flex;justify-content:space-between;font-size:10px;color:#888;z-index:999}
         .page-body{padding-bottom:28px}
       }
     </style></head><body>
@@ -3664,7 +3664,7 @@ function VNPF({ employees, salaryRecords, reload, setModal, setSelected }) {
       </div>
       <div class="footer">
         <div class="footer-l">
-          <div><strong style="color:#FFD700">Malakesa Transfers &amp; Tours</strong></div>
+          <div><strong style="color:#F5D98A">Malakesa Transfers &amp; Tours</strong></div>
           <div>TIN: 445579 &nbsp;|&nbsp; Port Vila, Vanuatu</div>
           <div>Period: ${monthLabel}</div>
         </div>
@@ -3798,7 +3798,7 @@ function VNPFContributions({ rows, totalSalary, totalEmployee, totalEmployer, to
         const allMonths = [...new Set((salaryRecords||[]).map(r => r.month))].sort().reverse()
         const monthsNotCurrent = allMonths.filter(m => m !== vnpfMonth)
         return monthsNotCurrent.length > 0 ? (
-          <div style={{ background: '#FFF8E1', border: '0.5px solid #FFD700', borderRadius: 8, padding: '8px 14px', marginBottom: 12, fontSize: 12, color: '#8B6914', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ background: '#FFF8E1', border: '0.5px solid #F5D98A', borderRadius: 8, padding: '8px 14px', marginBottom: 12, fontSize: 12, color: '#8B6914', display: 'flex', alignItems: 'center', gap: 8 }}>
             <i className="ti ti-info-circle"></i>
             <span>Pay runs also exist for: {monthsNotCurrent.join(', ')}. Use the month picker above to view those schedules.</span>
           </div>
@@ -3824,7 +3824,7 @@ function VNPFContributions({ rows, totalSalary, totalEmployee, totalEmployer, to
           </div>
         ) : (
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-            <thead><tr style={{ background: '#E8D5A3' }}>
+            <thead><tr style={{ background: '#FBF3E4' }}>
               <Th>Name</Th><Th>Job Title</Th><Th>VNPF Number</Th>
               <Th style={{ textAlign: 'center' }}>Pay Runs</Th>
               <Th style={{ textAlign: 'right' }}>Gross Salary</Th>
@@ -3854,7 +3854,7 @@ function VNPFContributions({ rows, totalSalary, totalEmployee, totalEmployer, to
                   </Td>
                 </tr>
               ))}
-              <tr style={{ background: '#E8D5A3', fontWeight: 700 }}>
+              <tr style={{ background: '#FBF3E4', fontWeight: 700 }}>
                 <td colSpan={4} style={{ padding: '9px 14px', fontSize: 13 }}>TOTAL {hasProcessed ? '(from processed payroll)' : '(estimated)'}</td>
                 <td style={{ padding: '9px 14px', textAlign: 'right', fontSize: 13 }}>{fmt(hasProcessed ? schedTotalSalary : totalSalary)}</td>
                 <td style={{ padding: '9px 14px', textAlign: 'right', fontSize: 13 }}>{fmt(hasProcessed ? schedTotalEmp : totalEmployee)}</td>
@@ -3929,33 +3929,33 @@ function SalariesTab({ employees, salaryRecords, reload, fmt }) {
 
     w.document.write(`<!DOCTYPE html><html><head><title>Payslip - ${emp.name} - ${mLabel}</title><style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:Arial,sans-serif;background:#f0ebe0;color:#222;font-size:13px}
+body{font-family:Arial,sans-serif;background:#FBF3E4;color:#222;font-size:13px}
 .page{max-width:680px;margin:20px auto;background:#fff;border-radius:4px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.15)}
-.hdr{background:linear-gradient(135deg,#1A0D06 0%,#3D2214 50%,#5C3D0A 100%);padding:24px 36px;display:flex;justify-content:space-between;align-items:flex-start}
+.hdr{background:linear-gradient(135deg,#6B4423 0%,#8B5E34 50%,#A67C42 100%);padding:24px 36px;display:flex;justify-content:space-between;align-items:flex-start}
 .hdr-r{text-align:right;color:#fff}
 .ps-title{font-size:10px;letter-spacing:3px;color:rgba(255,255,255,.6);text-transform:uppercase;margin-top:10px}
-.ps-period{font-size:18px;font-weight:700;color:#FFD700;margin-top:3px}
+.ps-period{font-size:18px;font-weight:700;color:#F5D98A;margin-top:3px}
 .ps-date{font-size:11px;color:rgba(255,255,255,.7);margin-top:4px}
 .emp-bar{background:#3D2214;padding:12px 36px;display:flex;justify-content:space-between;align-items:center}
-.emp-name{color:#FFD700;font-weight:700;font-size:16px}
+.emp-name{color:#F5D98A;font-weight:700;font-size:16px}
 .emp-det{color:rgba(255,255,255,.75);font-size:11px;margin-top:3px}
 .emp-r{text-align:right;color:rgba(255,255,255,.75);font-size:11px}
 .body{padding:24px 36px}
-.sec{font-size:10px;font-weight:800;color:#8B6914;text-transform:uppercase;letter-spacing:2px;border-bottom:2px solid #E8D5A3;padding-bottom:4px;margin:20px 0 10px}
-.row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:.5px solid #f0ebe0;font-size:13px}
+.sec{font-size:10px;font-weight:800;color:#8B6914;text-transform:uppercase;letter-spacing:2px;border-bottom:2px solid #FBF3E4;padding-bottom:4px;margin:20px 0 10px}
+.row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:.5px solid #FBF3E4;font-size:13px}
 .row:last-child{border-bottom:none}
 .lbl{color:#555}
 .amt{font-weight:500}
 .grn{color:#2E7D2E}
 .red{color:#A32D2D}
 .bold{font-weight:700}
-.net-box{background:linear-gradient(135deg,#1A0D06,#3D2214);border-radius:8px;padding:16px 24px;margin:20px 0;display:flex;justify-content:space-between;align-items:center}
+.net-box{background:linear-gradient(135deg,#6B4423,#8B5E34);border-radius:8px;padding:16px 24px;margin:20px 0;display:flex;justify-content:space-between;align-items:center}
 .net-lbl{color:rgba(255,255,255,.8);font-size:13px;font-weight:600}
-.net-amt{color:#FFD700;font-size:26px;font-weight:900}
+.net-amt{color:#F5D98A;font-size:26px;font-weight:900}
 .notes{background:#faf6ee;border-left:4px solid #8B6914;padding:10px 14px;border-radius:0 6px 6px 0;font-size:12px;color:#555;margin-top:8px}
 .sigs{display:flex;justify-content:space-between;margin-top:32px;gap:40px}
 .sig{flex:1;border-top:1px solid #ccc;padding-top:6px;font-size:11px;color:#888;text-align:center}
-.ftr{background:linear-gradient(135deg,#1A0D06,#5C3D0A);padding:14px 36px;display:flex;justify-content:space-between;color:rgba(255,255,255,.7);font-size:10px;line-height:1.9}
+.ftr{background:linear-gradient(135deg,#6B4423,#A67C42);padding:14px 36px;display:flex;justify-content:space-between;color:rgba(255,255,255,.7);font-size:10px;line-height:1.9}
 .noprint{background:#333;color:#fff;padding:10px 20px;display:flex;justify-content:space-between;align-items:center;font-size:13px}
 .printbtn{background:#8B6914;color:#fff;border:none;padding:7px 18px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600}
 .rpt-hdr{display:none}
@@ -3997,7 +3997,7 @@ body{background:#fff}
       <div class='emp-det'>${emp.job_title || 'Employee'} | VNPF: ${emp.vnpf_number || 'N/A'}</div>
     </div>
     <div class='emp-r'>
-      <div>Pay Period: <strong style='color:#FFD700'>${mLabel}</strong></div>
+      <div>Pay Period: <strong style='color:#F5D98A'>${mLabel}</strong></div>
       <div>Pay Date: ${issued}</div>
     </div>
   </div>
@@ -4020,7 +4020,7 @@ body{background:#fff}
     </div>
   </div>
   <div class='ftr'>
-    <div><strong style='color:#FFD700'>Malakesa Transfers &amp; Tours</strong><br>Port Vila, Shefa Province, Vanuatu<br>TIN: 445579 | PO Box 823</div>
+    <div><strong style='color:#F5D98A'>Malakesa Transfers &amp; Tours</strong><br>Port Vila, Shefa Province, Vanuatu<br>TIN: 445579 | PO Box 823</div>
     <div style='text-align:right'>Tel: +678 22712 | Mob: +678 7798712<br>Email: accounts@malakesa.vu<br><span style='opacity:.6'>Computer generated payslip</span></div>
   </div>
 </div>
@@ -4065,7 +4065,7 @@ body{background:#fff}
                 {/* Employee header row */}
                 <div style={{ padding: '14px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: sum.runs > 0 ? '#f6fbf0' : '#fff', borderBottom: sum.runs > 0 ? '0.5px solid #C0DD97' : 'none' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'linear-gradient(135deg,#3D2214,#8B6914)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#FFD700', fontWeight: 700, fontSize: 16 }}>{emp.name?.charAt(0)}</div>
+                    <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'linear-gradient(135deg,#8B5E34,#8B6914)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#F5D98A', fontWeight: 700, fontSize: 16 }}>{emp.name?.charAt(0)}</div>
                     <div>
                       <div style={{ fontWeight: 700, fontSize: 15 }}>{emp.name}</div>
                       <div style={{ fontSize: 12, color: '#666' }}>{emp.job_title || 'Employee'}{emp.vnpf_number ? ` | VNPF: ${emp.vnpf_number}` : ''}</div>
@@ -4098,7 +4098,7 @@ body{background:#fff}
                   <div style={{ padding: '0' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
                       <thead>
-                        <tr style={{ background: '#E8D5A3' }}>
+                        <tr style={{ background: '#FBF3E4' }}>
                           <Th style={{ fontSize: 11 }}>Pay Date</Th>
                           <Th style={{ fontSize: 11, textAlign: 'right' }}>Gross</Th>
                           <Th style={{ fontSize: 11, textAlign: 'right' }}>Allowances</Th>
@@ -4131,7 +4131,7 @@ body{background:#fff}
                             </tr>
                           )
                         })}
-                        <tr style={{ background: '#f0ebe0', fontWeight: 700, fontSize: 12 }}>
+                        <tr style={{ background: '#FBF3E4', fontWeight: 700, fontSize: 12 }}>
                           <td style={{ padding: '7px 14px' }}>TOTAL ({sum.runs} run{sum.runs!==1?'s':''})</td>
                           <td style={{ padding: '7px 14px', textAlign: 'right' }}>{fmt(sum.totalGross)}</td>
                           <td style={{ padding: '7px 14px', textAlign: 'right', color: '#2E7D2E' }}>{fmt(sum.totalAllowances)}</td>
@@ -4234,10 +4234,10 @@ function PayRunModal({ emp, defaultMonth, onClose, onSave, fmt }) {
       <div style={{ background: '#fff', borderRadius: 12, width: '100%', maxWidth: 660, maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 8px 40px rgba(0,0,0,0.25)' }}>
 
         {/* Modal Header */}
-        <div style={{ background: 'linear-gradient(135deg,#1A0D06,#3D2214,#5C3D0A)', padding: '18px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ background: 'linear-gradient(135deg,#6B4423,#8B5E34,#A67C42)', padding: '18px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
             <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase' }}>New Pay Run</div>
-            <div style={{ color: '#FFD700', fontSize: 18, fontWeight: 700, marginTop: 2 }}>{emp.name}</div>
+            <div style={{ color: '#F5D98A', fontSize: 18, fontWeight: 700, marginTop: 2 }}>{emp.name}</div>
             <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: 12, marginTop: 2 }}>{emp.job_title || 'Employee'} | Base salary: {fmt(emp.salary)}</div>
           </div>
           <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#fff', fontSize: 22, cursor: 'pointer', opacity: 0.7 }}>&times;</button>
@@ -4263,7 +4263,7 @@ function PayRunModal({ emp, defaultMonth, onClose, onSave, fmt }) {
           </div>
 
           {/* Gross Salary */}
-          <div style={{ background: '#faf6ee', border: '1.5px solid #E8D5A3', borderRadius: 8, padding: '14px 16px', marginBottom: 18 }}>
+          <div style={{ background: '#faf6ee', border: '1.5px solid #FBF3E4', borderRadius: 8, padding: '14px 16px', marginBottom: 18 }}>
             <Field label={`Gross salary for this pay run (VT) * — base: ${fmt(emp.salary)}`}>
               <input type="number" value={form.gross} onChange={e => setF('gross', e.target.value)} placeholder={String(emp.salary || 0)} style={{ ...inputStyle, fontSize: 16, fontWeight: 600 }} />
             </Field>
@@ -4285,7 +4285,7 @@ function PayRunModal({ emp, defaultMonth, onClose, onSave, fmt }) {
 
             <div>
               <div style={{ fontWeight: 600, fontSize: 13, color: '#A32D2D', marginBottom: 10 }}>— Deductions</div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', fontSize: 13, borderBottom: '0.5px solid #f0ebe0', marginBottom: 6 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', fontSize: 13, borderBottom: '0.5px solid #FBF3E4', marginBottom: 6 }}>
                 <span style={{ color: '#555' }}>VNPF Employee Contribution (6%)</span>
                 <span style={{ fontWeight: 600, color: '#A32D2D' }}>{fmt(vnpfDeduction)}</span>
               </div>
@@ -4306,14 +4306,14 @@ function PayRunModal({ emp, defaultMonth, onClose, onSave, fmt }) {
           </Field>
 
           {/* Live Pay Summary */}
-          <div style={{ background: 'linear-gradient(135deg,#1A0D06,#3D2214)', borderRadius: 10, padding: '16px 20px', marginTop: 18 }}>
+          <div style={{ background: 'linear-gradient(135deg,#6B4423,#8B5E34)', borderRadius: 10, padding: '16px 20px', marginTop: 18 }}>
             <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 12 }}>Pay Summary — {monthLabel}</div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12 }}>
               {[
                 ['Gross', fmt(gross), '#fff'],
                 ['+ Allowances', fmt(totalAllowances), '#86d86a'],
                 ['— Deductions', fmt(totalDeductions), '#ff8a8a'],
-                ['Net Pay', fmt(netPay), '#FFD700'],
+                ['Net Pay', fmt(netPay), '#F5D98A'],
               ].map(([label, value, color]) => (
                 <div key={label} style={{ textAlign: 'center' }}>
                   <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11, marginBottom: 4 }}>{label}</div>
@@ -4324,7 +4324,7 @@ function PayRunModal({ emp, defaultMonth, onClose, onSave, fmt }) {
             <div style={{ marginTop: 12, padding: '8px 12px', background: 'rgba(255,255,255,0.08)', borderRadius: 6, fontSize: 12, color: 'rgba(255,255,255,0.7)', display: 'flex', justifyContent: 'space-between' }}>
               <span>VNPF Employee (6%): <strong style={{ color: '#ff8a8a' }}>{fmt(vnpfDeduction)}</strong></span>
               <span>VNPF Employer (6%): <strong style={{ color: '#ff8a8a' }}>{fmt(Math.round(gross * 0.06))}</strong></span>
-              <span>Total VNPF contribution: <strong style={{ color: '#FFD700' }}>{fmt(Math.round(gross * 0.12))}</strong></span>
+              <span>Total VNPF contribution: <strong style={{ color: '#F5D98A' }}>{fmt(Math.round(gross * 0.12))}</strong></span>
             </div>
           </div>
         </div>
@@ -4348,10 +4348,10 @@ function ReminderPreviewModal({ inv, subject, body, bal, onSend, onClose, fmt, f
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
       <div style={{ background: '#fff', borderRadius: 12, width: '100%', maxWidth: 640, maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 8px 40px rgba(0,0,0,0.25)' }}>
-        <div style={{ background: 'linear-gradient(135deg,#1A0D06,#3D2214,#5C3D0A)', padding: '16px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ background: 'linear-gradient(135deg,#6B4423,#8B5E34,#A67C42)', padding: '16px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
             <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase' }}>Payment Reminder Preview</div>
-            <div style={{ color: '#FFD700', fontSize: 16, fontWeight: 700, marginTop: 2 }}>{inv.client_name} — {inv.number}</div>
+            <div style={{ color: '#F5D98A', fontSize: 16, fontWeight: 700, marginTop: 2 }}>{inv.client_name} — {inv.number}</div>
           </div>
           <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#fff', fontSize: 22, cursor: 'pointer', opacity: 0.7 }}>&times;</button>
         </div>
@@ -4505,7 +4505,7 @@ function Clients({ clients, invoices, reload, setModal }) {
           ) : (
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
               <thead>
-                <tr style={{ background: '#E8D5A3' }}>
+                <tr style={{ background: '#FBF3E4' }}>
                   <Th>Name</Th><Th>Email</Th><Th>Phone</Th><Th>Address</Th><Th style={{ textAlign: 'center' }}>Invoices</Th><Th style={{ textAlign: 'center' }}>Actions</Th>
                 </tr>
               </thead>
@@ -4567,23 +4567,23 @@ function previewInvoice(inv) {
   w.document.write(`<!DOCTYPE html><html><head><title>Invoice Preview</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: Arial, sans-serif; color: #222; font-size: 13px; background: #f0ebe0; }
+    body { font-family: Arial, sans-serif; color: #222; font-size: 13px; background: #FBF3E4; }
     .page { max-width: 800px; margin: 20px auto; background: #fff; border-radius: 4px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.15); }
-    .header { background: linear-gradient(135deg, #1A0D06 0%, #3D2214 50%, #5C3D0A 100%); padding: 28px 40px; display: flex; justify-content: space-between; align-items: flex-start; }
+    .header { background: linear-gradient(135deg, #6B4423 0%, #8B5E34 50%, #A67C42 100%); padding: 28px 40px; display: flex; justify-content: space-between; align-items: flex-start; }
     .logo-contact { font-size: 10px; color: rgba(255,255,255,0.7); margin-top: 10px; line-height: 1.8; }
     .inv-meta { text-align: right; color: #fff; }
-    .inv-num { font-size: 26px; font-weight: 700; color: #FFD700; }
+    .inv-num { font-size: 26px; font-weight: 700; color: #F5D98A; }
     .inv-date { font-size: 11px; color: rgba(255,255,255,0.8); margin-top: 5px; line-height: 1.8; }
-    .draft-badge { display: inline-block; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); color: #FFD700; padding: 3px 12px; border-radius: 99px; font-size: 10px; font-weight: 700; letter-spacing: 1px; margin-top: 8px; }
+    .draft-badge { display: inline-block; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); color: #F5D98A; padding: 3px 12px; border-radius: 99px; font-size: 10px; font-weight: 700; letter-spacing: 1px; margin-top: 8px; }
     .body { padding: 32px 40px; }
     .bill-row { display: flex; justify-content: space-between; margin-bottom: 28px; gap: 20px; }
     .bill-label { font-size: 9px; font-weight: 800; color: #8B6914; text-transform: uppercase; letter-spacing: 2px; border-bottom: 2px solid #8B6914; padding-bottom: 3px; margin-bottom: 8px; display: inline-block; }
     .bill-name { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
     .bill-detail { font-size: 12px; color: #555; line-height: 1.7; }
     table { width: 100%; border-collapse: collapse; margin: 16px 0; }
-    thead tr { background: linear-gradient(135deg, #3D2214, #8B6914); }
-    th { padding: 10px 14px; text-align: left; font-size: 10px; font-weight: 700; color: #FFD700; letter-spacing: 1px; text-transform: uppercase; }
-    td { padding: 11px 14px; border-bottom: 1px solid #f0ebe0; font-size: 13px; }
+    thead tr { background: linear-gradient(135deg, #8B5E34, #8B6914); }
+    th { padding: 10px 14px; text-align: left; font-size: 10px; font-weight: 700; color: #F5D98A; letter-spacing: 1px; text-transform: uppercase; }
+    td { padding: 11px 14px; border-bottom: 1px solid #FBF3E4; font-size: 13px; }
     tr:nth-child(even) td { background: #faf6ee; }
     .text-right { text-align: right; }
     .totals { margin-left: auto; width: 280px; margin-top: 12px; }
@@ -4591,9 +4591,9 @@ function previewInvoice(inv) {
     .trow.grand { border-bottom: none; font-size: 17px; font-weight: 800; color: #3D2214; padding-top: 12px; }
     .notes { background: #faf6ee; border-left: 4px solid #8B6914; padding: 12px 16px; border-radius: 0 6px 6px 0; margin-top: 20px; font-size: 12px; color: #555; }
     .thankyou { text-align: center; font-size: 14px; font-weight: 600; color: #8B6914; margin: 24px 0 16px; font-style: italic; }
-    .footer { background: linear-gradient(135deg, #1A0D06, #5C3D0A); padding: 18px 40px; display: flex; justify-content: space-between; align-items: center; }
+    .footer { background: linear-gradient(135deg, #6B4423, #A67C42); padding: 18px 40px; display: flex; justify-content: space-between; align-items: center; }
     .footer-l { color: rgba(255,255,255,0.85); font-size: 11px; line-height: 1.9; }
-    .footer-r { text-align: right; color: #FFD700; font-size: 11px; line-height: 1.9; }
+    .footer-r { text-align: right; color: #F5D98A; font-size: 11px; line-height: 1.9; }
     .noprint { background: #333; color: #fff; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; }
     .printbtn { background: #8B6914; color: #fff; border: none; padding: 7px 18px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; }
     .rpt-hdr { display: none; }
@@ -4667,7 +4667,7 @@ function previewInvoice(inv) {
     </div>
     <div class="footer">
       <div class="footer-l">
-        <div><strong style="color:#FFD700">Malakesa Transfers &amp; Tours</strong></div>
+        <div><strong style="color:#F5D98A">Malakesa Transfers &amp; Tours</strong></div>
         <div>Port Vila, Shefa Province, Vanuatu</div>
         <div>📞 +678 22712 &nbsp;|&nbsp; 📱 +678 7798712 &nbsp;|&nbsp; ✉️ accounts@malakesa.vu</div>
       </div>
@@ -4736,7 +4736,7 @@ function NewInvoiceModal({ clients, invoice, onClose, onSave }) {
         <Field label="Invoice date"><input type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} style={inputStyle} /></Field>
         <Field label="Due date"><input type="date" value={form.due_date} onChange={e => setForm(f => ({ ...f, due_date: e.target.value }))} style={inputStyle} /></Field>
         <Field label="Notes / trip details" style={{ gridColumn: '1/-1' }}><textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} style={{ ...inputStyle, minHeight: 60, resize: 'vertical' }} placeholder="Route, pickup time, special instructions..." /></Field>
-        <div style={{ gridColumn: '1/-1', background: '#faf6ee', borderRadius: 8, border: '0.5px solid #E8D5A3', padding: '12px 14px' }}>
+        <div style={{ gridColumn: '1/-1', background: '#faf6ee', borderRadius: 8, border: '0.5px solid #FBF3E4', padding: '12px 14px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: applyVat ? 10 : 0 }}>
             <input type="checkbox" id="vatcheck" checked={applyVat} onChange={e => setApplyVat(e.target.checked)} style={{ width: 18, height: 18, cursor: 'pointer', accentColor: '#8B6914' }} />
             <label htmlFor="vatcheck" style={{ cursor: 'pointer', fontSize: 13, fontWeight: 600, color: applyVat ? '#27500A' : '#666', userSelect: 'none' }}>
@@ -4753,7 +4753,7 @@ function NewInvoiceModal({ clients, invoice, onClose, onSave }) {
       </div>
       <div style={{ fontWeight: 500, marginBottom: 10 }}>Line items</div>
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, marginBottom: 8 }}>
-        <thead><tr style={{ background: '#E8D5A3' }}><Th style={{ width: '10%' }}>Date</Th><Th style={{ width: '12%' }}>Name</Th><Th style={{ width: '20%' }}>Description</Th><Th style={{ width: '10%' }}>Voucher #</Th><Th style={{ width: '8%' }}>Qty</Th><Th style={{ width: '14%' }}>{applyVat ? 'Rate (VT incl. VAT)' : 'Rate (VT)'}</Th><Th style={{ width: '12%' }}>Total</Th><Th style={{ width: '6%' }}></Th></tr></thead>
+        <thead><tr style={{ background: '#FBF3E4' }}><Th style={{ width: '10%' }}>Date</Th><Th style={{ width: '12%' }}>Name</Th><Th style={{ width: '20%' }}>Description</Th><Th style={{ width: '10%' }}>Voucher #</Th><Th style={{ width: '8%' }}>Qty</Th><Th style={{ width: '14%' }}>{applyVat ? 'Rate (VT incl. VAT)' : 'Rate (VT)'}</Th><Th style={{ width: '12%' }}>Total</Th><Th style={{ width: '6%' }}></Th></tr></thead>
         <tbody>{items.map(item => (
           <tr key={item.id}>
             <td style={{ padding: '4px 4px' }}><input type="text" value={item.date || ''} onChange={e => updateItem(item.id, 'date', e.target.value)} style={inputStyle} placeholder="e.g. 10JUL" /></td>
@@ -4844,12 +4844,12 @@ function ViewInvoiceModal({ invoice, payments, onClose, onPay }) {
     w.document.write(`<!DOCTYPE html><html><head><title>${invoice.number}</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: Arial, sans-serif; color: #222; font-size: 13px; background: #f0ebe0; }
+    body { font-family: Arial, sans-serif; color: #222; font-size: 13px; background: #FBF3E4; }
     .page { max-width: 800px; margin: 20px auto; background: #fff; border-radius: 4px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.15); }
-    .header { background: linear-gradient(135deg, #1A0D06 0%, #3D2214 50%, #5C3D0A 100%); padding: 28px 40px; display: flex; justify-content: space-between; align-items: flex-start; }
+    .header { background: linear-gradient(135deg, #6B4423 0%, #8B5E34 50%, #A67C42 100%); padding: 28px 40px; display: flex; justify-content: space-between; align-items: flex-start; }
     .logo-contact { font-size: 10px; color: rgba(255,255,255,0.7); margin-top: 10px; line-height: 1.8; }
     .inv-meta { text-align: right; color: #fff; }
-    .inv-num { font-size: 26px; font-weight: 700; color: #FFD700; }
+    .inv-num { font-size: 26px; font-weight: 700; color: #F5D98A; }
     .inv-date { font-size: 11px; color: rgba(255,255,255,0.8); margin-top: 5px; line-height: 1.8; }
     .status-badge { display: inline-block; padding: 3px 12px; border-radius: 99px; font-size: 10px; font-weight: 700; letter-spacing: 1px; margin-top: 8px; text-transform: uppercase; }
     .body { padding: 32px 40px; }
@@ -4858,9 +4858,9 @@ function ViewInvoiceModal({ invoice, payments, onClose, onPay }) {
     .bill-name { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
     .bill-detail { font-size: 12px; color: #555; line-height: 1.7; }
     table { width: 100%; border-collapse: collapse; margin: 16px 0; }
-    thead tr { background: linear-gradient(135deg, #3D2214, #8B6914); }
-    th { padding: 10px 14px; text-align: left; font-size: 10px; font-weight: 700; color: #FFD700; letter-spacing: 1px; text-transform: uppercase; }
-    td { padding: 11px 14px; border-bottom: 1px solid #f0ebe0; font-size: 13px; }
+    thead tr { background: linear-gradient(135deg, #8B5E34, #8B6914); }
+    th { padding: 10px 14px; text-align: left; font-size: 10px; font-weight: 700; color: #F5D98A; letter-spacing: 1px; text-transform: uppercase; }
+    td { padding: 11px 14px; border-bottom: 1px solid #FBF3E4; font-size: 13px; }
     tr:nth-child(even) td { background: #faf6ee; }
     .text-right { text-align: right; }
     .totals { margin-left: auto; width: 280px; margin-top: 12px; }
@@ -4870,11 +4870,11 @@ function ViewInvoiceModal({ invoice, payments, onClose, onPay }) {
     .notes { background: #faf6ee; border-left: 4px solid #8B6914; padding: 12px 16px; border-radius: 0 6px 6px 0; margin-top: 20px; font-size: 12px; color: #555; }
     .payments { margin-top: 20px; }
     .payments-title { font-size: 12px; font-weight: 700; color: #3D2214; margin-bottom: 6px; }
-    .payrow { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #f0ebe0; font-size: 12px; }
+    .payrow { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #FBF3E4; font-size: 12px; }
     .thankyou { text-align: center; font-size: 14px; font-weight: 600; color: #8B6914; margin: 24px 0 16px; font-style: italic; }
-    .footer { background: linear-gradient(135deg, #1A0D06, #5C3D0A); padding: 18px 40px; display: flex; justify-content: space-between; align-items: center; }
+    .footer { background: linear-gradient(135deg, #6B4423, #A67C42); padding: 18px 40px; display: flex; justify-content: space-between; align-items: center; }
     .footer-l { color: rgba(255,255,255,0.85); font-size: 11px; line-height: 1.9; }
-    .footer-r { text-align: right; color: #FFD700; font-size: 11px; line-height: 1.9; }
+    .footer-r { text-align: right; color: #F5D98A; font-size: 11px; line-height: 1.9; }
     .noprint { background: #333; color: #fff; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; }
     .printbtn { background: #8B6914; color: #fff; border: none; padding: 7px 18px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; }
     .rpt-hdr { display: none; }
@@ -4951,7 +4951,7 @@ function ViewInvoiceModal({ invoice, payments, onClose, onPay }) {
     </div>
     <div class="footer">
       <div class="footer-l">
-        <div><strong style="color:#FFD700">Malakesa Transfers &amp; Tours</strong></div>
+        <div><strong style="color:#F5D98A">Malakesa Transfers &amp; Tours</strong></div>
         <div>Port Vila, Shefa Province, Vanuatu</div>
         <div>📞 +678 22712 &nbsp;|&nbsp; 📱 +678 7798712 &nbsp;|&nbsp; ✉️ accounts@malakesa.vu</div>
       </div>
@@ -4993,10 +4993,10 @@ function ViewInvoiceModal({ invoice, payments, onClose, onPay }) {
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: Arial, sans-serif; color: #222; font-size: 13px; background: #fff; }
     .page { width: 800px; background: #fff; }
-    .header { background: linear-gradient(135deg, #1A0D06 0%, #3D2214 50%, #5C3D0A 100%); padding: 28px 40px; display: flex; justify-content: space-between; align-items: flex-start; }
+    .header { background: linear-gradient(135deg, #6B4423 0%, #8B5E34 50%, #A67C42 100%); padding: 28px 40px; display: flex; justify-content: space-between; align-items: flex-start; }
     .logo-contact { font-size: 10px; color: rgba(255,255,255,0.7); margin-top: 10px; line-height: 1.8; }
     .inv-meta { text-align: right; color: #fff; }
-    .inv-num { font-size: 26px; font-weight: 700; color: #FFD700; }
+    .inv-num { font-size: 26px; font-weight: 700; color: #F5D98A; }
     .inv-date { font-size: 11px; color: rgba(255,255,255,0.8); margin-top: 5px; line-height: 1.8; }
     .status-badge { display: inline-block; padding: 3px 12px; border-radius: 99px; font-size: 10px; font-weight: 700; letter-spacing: 1px; margin-top: 8px; text-transform: uppercase; }
     .body { padding: 32px 40px; }
@@ -5005,9 +5005,9 @@ function ViewInvoiceModal({ invoice, payments, onClose, onPay }) {
     .bill-name { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
     .bill-detail { font-size: 12px; color: #555; line-height: 1.7; }
     table { width: 100%; border-collapse: collapse; margin: 16px 0; }
-    thead tr { background: linear-gradient(135deg, #3D2214, #8B6914); }
-    th { padding: 10px 14px; text-align: left; font-size: 10px; font-weight: 700; color: #FFD700; letter-spacing: 1px; text-transform: uppercase; }
-    td { padding: 11px 14px; border-bottom: 1px solid #f0ebe0; font-size: 13px; }
+    thead tr { background: linear-gradient(135deg, #8B5E34, #8B6914); }
+    th { padding: 10px 14px; text-align: left; font-size: 10px; font-weight: 700; color: #F5D98A; letter-spacing: 1px; text-transform: uppercase; }
+    td { padding: 11px 14px; border-bottom: 1px solid #FBF3E4; font-size: 13px; }
     tr:nth-child(even) td { background: #faf6ee; }
     .text-right { text-align: right; }
     .totals { margin-left: auto; width: 280px; margin-top: 12px; }
@@ -5017,11 +5017,11 @@ function ViewInvoiceModal({ invoice, payments, onClose, onPay }) {
     .notes { background: #faf6ee; border-left: 4px solid #8B6914; padding: 12px 16px; border-radius: 0 6px 6px 0; margin-top: 20px; font-size: 12px; color: #555; }
     .payments { margin-top: 20px; }
     .payments-title { font-size: 12px; font-weight: 700; color: #3D2214; margin-bottom: 6px; }
-    .payrow { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #f0ebe0; font-size: 12px; }
+    .payrow { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #FBF3E4; font-size: 12px; }
     .thankyou { text-align: center; font-size: 14px; font-weight: 600; color: #8B6914; margin: 24px 0 16px; font-style: italic; }
-    .footer { background: linear-gradient(135deg, #1A0D06, #5C3D0A); padding: 18px 40px; display: flex; justify-content: space-between; align-items: center; }
+    .footer { background: linear-gradient(135deg, #6B4423, #A67C42); padding: 18px 40px; display: flex; justify-content: space-between; align-items: center; }
     .footer-l { color: rgba(255,255,255,0.85); font-size: 11px; line-height: 1.9; }
-    .footer-r { text-align: right; color: #FFD700; font-size: 11px; line-height: 1.9; }
+    .footer-r { text-align: right; color: #F5D98A; font-size: 11px; line-height: 1.9; }
   </style></head><body>
   <div class="page">
     <div class="header">
@@ -5073,7 +5073,7 @@ function ViewInvoiceModal({ invoice, payments, onClose, onPay }) {
     </div>
     <div class="footer">
       <div class="footer-l">
-        <div><strong style="color:#FFD700">Malakesa Transfers &amp; Tours</strong></div>
+        <div><strong style="color:#F5D98A">Malakesa Transfers &amp; Tours</strong></div>
         <div>Port Vila, Shefa Province, Vanuatu</div>
         <div>📞 +678 22712 &nbsp;|&nbsp; 📱 +678 7798712 &nbsp;|&nbsp; ✉️ accounts@malakesa.vu</div>
       </div>
@@ -5136,22 +5136,22 @@ function ViewInvoiceModal({ invoice, payments, onClose, onPay }) {
     w.document.write(`<!DOCTYPE html><html><head><title>${receiptNum}</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: Arial, sans-serif; background: #f0ebe0; }
+    body { font-family: Arial, sans-serif; background: #FBF3E4; }
     .page { max-width: 520px; margin: 20px auto; background: #fff; border-radius: 4px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.15); }
-    .header { background: linear-gradient(135deg, #1A0D06 0%, #3D2214 50%, #5C3D0A 100%); padding: 24px 32px; text-align: center; }
+    .header { background: linear-gradient(135deg, #6B4423 0%, #8B5E34 50%, #A67C42 100%); padding: 24px 32px; text-align: center; }
     .rec-label { font-size: 10px; color: rgba(255,255,255,0.6); letter-spacing: 3px; margin-top: 10px; }
-    .rec-num { font-size: 20px; font-weight: 700; color: #FFD700; margin-top: 2px; }
+    .rec-num { font-size: 20px; font-weight: 700; color: #F5D98A; margin-top: 2px; }
     .body { padding: 24px 32px; }
     .paid-stamp { text-align: center; margin: 16px 0; }
     .paid-box { display: inline-block; border: 3px solid #3B6D11; color: #3B6D11; font-size: 22px; font-weight: 900; letter-spacing: 6px; padding: 6px 24px; border-radius: 4px; transform: rotate(-3deg); }
     .section { margin: 16px 0; padding: 14px 16px; background: #faf6ee; border-radius: 6px; }
-    .row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #f0ebe0; font-size: 13px; }
+    .row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #FBF3E4; font-size: 13px; }
     .row:last-child { border-bottom: none; }
     .label { color: #888; }
     .val { font-weight: 600; color: #222; }
-    .amount-box { background: linear-gradient(135deg, #3D2214, #8B6914); border-radius: 6px; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; margin: 16px 0; }
+    .amount-box { background: linear-gradient(135deg, #8B5E34, #8B6914); border-radius: 6px; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; margin: 16px 0; }
     .thankyou { text-align: center; font-size: 13px; font-style: italic; color: #8B6914; margin: 16px 0 8px; }
-    .footer { background: linear-gradient(135deg, #1A0D06, #5C3D0A); padding: 14px 32px; text-align: center; color: rgba(255,255,255,0.7); font-size: 10px; line-height: 1.9; }
+    .footer { background: linear-gradient(135deg, #6B4423, #A67C42); padding: 14px 32px; text-align: center; color: rgba(255,255,255,0.7); font-size: 10px; line-height: 1.9; }
     .noprint { background: #333; color: #fff; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; }
     .printbtn { background: #8B6914; color: #fff; border: none; padding: 7px 18px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; }
     .rpt-hdr { display: none; }
@@ -5192,7 +5192,7 @@ function ViewInvoiceModal({ invoice, payments, onClose, onPay }) {
       </div>
       <div class="amount-box">
         <span style="color:#fff;font-weight:700;font-size:15px">AMOUNT RECEIVED</span>
-        <span style="color:#FFD700;font-weight:700;font-size:22px">VT ${Number(payment.amount).toLocaleString()}</span>
+        <span style="color:#F5D98A;font-weight:700;font-size:22px">VT ${Number(payment.amount).toLocaleString()}</span>
       </div>
       <div class="thankyou">Tankiu Tumas — Thank you for your payment!</div>
     </div>
@@ -5293,9 +5293,9 @@ function ViewInvoiceModal({ invoice, payments, onClose, onPay }) {
         <div><div style={{ fontSize: 12, color: '#666' }}>Bill to</div><div style={{ fontWeight: 500 }}>{invoice.client_name}</div><div style={{ fontSize: 12, color: '#666' }}>{invoice.client_email}</div></div>
         <div style={{ textAlign: 'right' }}><div style={{ fontSize: 12, color: '#666' }}>Issue date</div><div>{fmtDate(invoice.date)}</div><div style={{ fontSize: 12, color: '#666', marginTop: 6 }}>Due date</div><div style={status === 'overdue' ? { color: '#A32D2D', fontWeight: 500 } : {}}>{fmtDate(invoice.due_date)}</div></div>
       </div>
-      {invoice.notes && <div style={{ marginTop: 4, marginBottom: 12, padding: '10px 14px', background: '#E8D5A3', borderRadius: 8, fontSize: 13, color: '#666' }}>{invoice.notes}</div>}
+      {invoice.notes && <div style={{ marginTop: 4, marginBottom: 12, padding: '10px 14px', background: '#FBF3E4', borderRadius: 8, fontSize: 13, color: '#666' }}>{invoice.notes}</div>}
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, marginBottom: 12 }}>
-        <thead><tr style={{ background: '#E8D5A3' }}><Th>Date</Th><Th>Name</Th><Th>Description</Th><Th>Voucher #</Th><Th style={{ textAlign: 'center' }}>Qty</Th><Th style={{ textAlign: 'right' }}>Rate</Th><Th style={{ textAlign: 'right' }}>Total</Th></tr></thead>
+        <thead><tr style={{ background: '#FBF3E4' }}><Th>Date</Th><Th>Name</Th><Th>Description</Th><Th>Voucher #</Th><Th style={{ textAlign: 'center' }}>Qty</Th><Th style={{ textAlign: 'right' }}>Rate</Th><Th style={{ textAlign: 'right' }}>Total</Th></tr></thead>
         <tbody>{(invoice.items || []).map((it, i) => <tr key={i} style={{ borderBottom: '0.5px solid rgba(0,0,0,0.09)' }}><Td>{it.date || ''}</Td><Td>{it.name || ''}</Td><Td>{it.description}</Td><Td style={{ color: '#555' }}>{it.voucher || ''}</Td><Td style={{ textAlign: 'center' }}>{it.qty}</Td><Td style={{ textAlign: 'right' }}>{fmt(it.rate)}</Td><Td style={{ textAlign: 'right', fontWeight: 500 }}>{fmt(it.total)}</Td></tr>)}</tbody>
       </table>
       <div style={{ marginLeft: 'auto', width: 260 }}>
@@ -5307,7 +5307,7 @@ function ViewInvoiceModal({ invoice, payments, onClose, onPay }) {
           <div style={{ fontWeight: 500, marginBottom: 8 }}>Payments received</div>
           {invPayments.map(p => (
             <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '7px 0', borderBottom: '0.5px solid rgba(0,0,0,0.09)', fontSize: 13, gap: 8 }}>
-              <span><span style={{ color: '#8B6914', fontWeight: 600, marginRight: 6 }}>{p.receipt_number || '—'}</span>{fmtDate(p.date)} — <span style={{ background: '#E8D5A3', padding: '1px 8px', borderRadius: 99, fontSize: 11 }}>{p.method}</span>{p.note ? ` · ${p.note}` : ''}</span>
+              <span><span style={{ color: '#8B6914', fontWeight: 600, marginRight: 6 }}>{p.receipt_number || '—'}</span>{fmtDate(p.date)} — <span style={{ background: '#FBF3E4', padding: '1px 8px', borderRadius: 99, fontSize: 11 }}>{p.method}</span>{p.note ? ` · ${p.note}` : ''}</span>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <span style={{ color: '#3B6D11', fontWeight: 500 }}>{fmt(p.amount)}</span>
                 <button className="btn btn-sm" style={{ fontSize: 11, padding: '2px 8px' }} onClick={() => printReceipt(p)}><i className="ti ti-printer"></i> Receipt</button>
@@ -5398,7 +5398,7 @@ function Card({ children, style }) {
 
 function StatCard({ label, value, sub, color, style }) {
   return (
-    <div style={{ background: '#E8D5A3', borderRadius: 8, padding: '14px 16px', ...style }}>
+    <div style={{ background: '#FBF3E4', borderRadius: 8, padding: '14px 16px', ...style }}>
       <div style={{ fontSize: 12, color: '#666', marginBottom: 4 }}>{label}</div>
       <div style={{ fontSize: 20, fontWeight: 500, color: color || '#1a1a1a' }}>{value}</div>
       {sub && <div style={{ fontSize: 11, color: '#999', marginTop: 2 }}>{sub}</div>}
