@@ -169,13 +169,13 @@ export default function App() {
             style={{ width: '100%', maxWidth: 188, borderRadius: 6, display: 'block', margin: '0 auto 4px' }}
           />
           <div style={{ marginTop: 8, background: 'rgba(255,215,0,0.1)', border: '0.5px solid rgba(255,215,0,0.3)', borderRadius: 4, padding: '3px 8px', display: 'inline-block' }}>
-            <div style={{ fontSize: 8, color: 'rgba(255,215,0,0.8)', letterSpacing: '2.5px', fontWeight: 700 }}>INVOICE &amp; PURCHASES MANAGER</div>
+            <div style={{ fontSize: 8, color: '#1a1a1a', letterSpacing: '2.5px', fontWeight: 700 }}>INVOICE &amp; PURCHASES MANAGER</div>
           </div>
         </div>
         <nav style={{ flex: 1, padding: '8px 0' }}>
           {nav.map(item => (
             <div key={item.id} onClick={() => setPage(item.id)}
-              style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 16px', fontSize: 13, color: page === item.id ? '#1a1a1a' : '#C9A84C', cursor: 'pointer', borderLeft: page === item.id ? '2px solid #8B6914' : '2px solid transparent', background: page === item.id ? '#EDD9A3' : 'transparent', fontWeight: page === item.id ? 500 : 400 }}>
+              style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 16px', fontSize: 13, color: '#1a1a1a', cursor: 'pointer', borderLeft: page === item.id ? '2px solid #8B6914' : '2px solid transparent', background: page === item.id ? '#EDD9A3' : 'transparent', fontWeight: page === item.id ? 500 : 400 }}>
               <i className={`ti ${item.icon}`} style={{ fontSize: 16 }}></i>
               {item.label}
             </div>
@@ -186,7 +186,7 @@ export default function App() {
             <i className="ti ti-logout" style={{ fontSize: 14 }}></i> Log out
           </button>
         </div>
-        <div style={{ padding: '14px 16px', borderTop: '1px solid rgba(255,215,0,0.2)', fontSize: 11, color: '#C9A84C', fontWeight: 600, textAlign: 'center', letterSpacing: '1.5px' }}>📍 PORT VILA, VANUATU</div>
+        <div style={{ padding: '14px 16px', borderTop: '1px solid rgba(255,215,0,0.2)', fontSize: 11, color: '#1a1a1a', fontWeight: 600, textAlign: 'center', letterSpacing: '1.5px' }}>📍 PORT VILA, VANUATU</div>
       </div>
 
       {/* Main */}
