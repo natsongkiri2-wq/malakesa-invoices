@@ -4691,7 +4691,7 @@ function NewInvoiceModal({ clients, invoice, onClose, onSave }) {
   const [items, setItems] = useState(isEdit && invoice.items && invoice.items.length
     ? invoice.items.map(it => ({ id: uid(), date: it.date || '', description: it.description || '', name: it.name || '', voucher: it.voucher || '', qty: it.qty || 1, rate: it.rate || '', total: it.total || 0 }))
     : [{ id: uid(), date: '', description: '', name: '', voucher: '', qty: 1, rate: '', total: 0 }, { id: uid(), date: '', description: '', name: '', voucher: '', qty: 1, rate: '', total: 0 }])
-  const [applyVat, setApplyVat] = useState(isEdit ? (invoice.vat_applied !== undefined ? invoice.vat_applied : Number(invoice.tax) > 0) : true)
+  const [applyVat, setApplyVat] = useState(isEdit ? (typeof invoice.vat_applied === 'boolean' ? invoice.vat_applied : Number(invoice.tax) > 0) : true)
   const vatInclusive = true // Rates are always VAT-inclusive at Malakesa
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
