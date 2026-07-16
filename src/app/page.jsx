@@ -5299,7 +5299,7 @@ function ViewInvoiceModal({ invoice, payments, onClose, onPay }) {
         <tbody>{(invoice.items || []).map((it, i) => <tr key={i} style={{ borderBottom: '0.5px solid rgba(0,0,0,0.09)' }}><Td>{it.date || ''}</Td><Td>{it.name || ''}</Td><Td>{it.description}</Td><Td style={{ color: '#555' }}>{it.voucher || ''}</Td><Td style={{ textAlign: 'center' }}>{it.qty}</Td><Td style={{ textAlign: 'right' }}>{fmt(it.rate)}</Td><Td style={{ textAlign: 'right', fontWeight: 500 }}>{fmt(it.total)}</Td></tr>)}</tbody>
       </table>
       <div style={{ marginLeft: 'auto', width: 260 }}>
-        {[['Subtotal', fmt(invoice.subtotal)], ['VAT (15%)', fmt(Math.round(Number(invoice.subtotal)*0.15))], ['Total', fmt(invoice.total)]].map(([l, v], i) => <div key={l} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: i < 2 ? '0.5px solid rgba(0,0,0,0.09)' : 'none', fontWeight: i === 2 ? 500 : 400 }}><span style={{ color: i < 2 ? '#666' : 'inherit' }}>{l}</span><span>{v}</span></div>)}
+        {[['Subtotal', fmt(invoice.subtotal)], [Number(invoice.tax) > 0 ? 'VAT (15%)' : 'VAT', Number(invoice.tax) > 0 ? fmt(invoice.tax) : 'Not applicable'], ['Total', fmt(invoice.total)]].map(([l, v], i) => <div key={l} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: i < 2 ? '0.5px solid rgba(0,0,0,0.09)' : 'none', fontWeight: i === 2 ? 500 : 400 }}><span style={{ color: i < 2 ? '#666' : 'inherit' }}>{l}</span><span>{v}</span></div>)}
         <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', fontWeight: 500, color: balance > 0 ? '#D85A30' : '#3B6D11' }}><span>Balance due</span><span>{fmt(balance)}</span></div>
       </div>
       {invPayments.length > 0 && (
