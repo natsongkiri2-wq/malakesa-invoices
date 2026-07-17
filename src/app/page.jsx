@@ -2169,6 +2169,7 @@ function Reports({ invoices, payments, purchases, salaryRecords }) {
           <button style={tabStyle(tab === 'revenue')} onClick={() => setTab('revenue')}><i className="ti ti-chart-bar" style={{ marginRight: 5 }}></i>Revenue</button>
           <button style={tabStyle(tab === 'suppliers')} onClick={() => setTab('suppliers')}><i className="ti ti-truck" style={{ marginRight: 5 }}></i>By Supplier</button>
           <button style={tabStyle(tab === 'cashflow')} onClick={() => setTab('cashflow')}><i className="ti ti-arrows-exchange" style={{ marginRight: 5 }}></i>Cash Flow</button>
+          <button style={tabStyle(tab === 'aging')} onClick={() => setTab('aging')}><i className="ti ti-hourglass" style={{ marginRight: 5 }}></i>Aging</button>
         </div>
       </Topbar>
       <div style={{ padding: '14px 20px 0' }}>
@@ -2545,6 +2546,151 @@ function Reports({ invoices, payments, purchases, salaryRecords }) {
                     </tr>
                   </tbody>
                 </table>
+              </Card>
+            </div>
+          )
+        })()}
+
+        {tab === 'aging' && (() => {
+          const today = new Date(todayStr() + 'T00:00:00')
+          const bucketOrder = ['Current', '1-30 days', '31-60 days', '61-90 days', '90+ days']
+          const bucketColors = { 'Current': '#3B6D11', '1-30 days': '#8B6914', '31-60 days': '#D85A30', '61-90 days': '#A32D2D', '90+ days': '#791F1F' }
+
+          const agingRows = invoices
+            .map(inv => {
+              const bal = getBalance(inv, payments)
+              if (bal <= 0) return null
+              const due = new Date((inv.due_date || inv.date) + 'T00:00:00')
+              const daysOverdue = Math.floor((today - due) / 86400000)
+              let bucket
+              if (daysOverdue <= 0) bucket = 'Current'
+              else if (daysOverdue <= 30) bucket = '1-30 days'
+              else if (daysOverdue <= 60) bucket = '31-60 days'
+              else if (daysOverdue <= 90) bucket = '61-90 days'
+              else bucket = '90+ days'
+              return { ...inv, balance: bal, daysOverdue, bucket }
+            })
+            .filter(Boolean)
+            .sort((a, b) => b.daysOverdue - a.daysOverdue)
+
+          const bucketTotals = Object.fromEntries(bucketOrder.map(b => [b, { count: 0, total: 0 }]))
+          agingRows.forEach(r => { bucketTotals[r.bucket].count++; bucketTotals[r.bucket].total += r.balance })
+          const grandTotal = agingRows.reduce((s, r) => s + r.balance, 0)
+
+          const printAging = () => {
+            const w = window.open('', '_blank')
+            if (!w) return
+            const dateStr = new Date().toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' })
+            const rows = agingRows.map(r => `
+              <tr style='border-bottom:0.5px solid #eee'>
+                <td style='padding:8px 12px'>${r.number}</td>
+                <td style='padding:8px 12px'>${r.client_name}</td>
+                <td style='padding:8px 12px'>${fmtDate(r.due_date)}</td>
+                <td style='padding:8px 12px;text-align:center'>${r.daysOverdue > 0 ? r.daysOverdue : 0}</td>
+                <td style='padding:8px 12px'>${r.bucket}</td>
+                <td style='padding:8px 12px;text-align:right;font-weight:600'>VT ${Number(r.balance).toLocaleString()}</td>
+              </tr>`).join('')
+            const bucketRows = bucketOrder.map(b => `
+              <tr>
+                <td style='padding:8px 12px;font-weight:600'>${b}</td>
+                <td style='padding:8px 12px' colspan='3'>${bucketTotals[b].count} invoice${bucketTotals[b].count === 1 ? '' : 's'}</td>
+                <td style='padding:8px 12px;text-align:right;font-weight:600' colspan='2'>VT ${Number(bucketTotals[b].total).toLocaleString()}</td>
+              </tr>`).join('')
+            w.document.write(`<!DOCTYPE html><html><head><title>Aged Receivables Report</title><style>
+              body{font-family:Arial,sans-serif;color:#222;font-size:13px}
+              h1{color:#8B6914;font-size:20px;margin:0 0 4px} .sub{color:#888;font-size:12px;margin-bottom:20px}
+              table{width:100%;border-collapse:collapse;margin-bottom:24px} thead{display:table-header-group}
+              th{background:#FBF3E4;padding:9px 12px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.4px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+              .noprint{background:#333;color:#fff;padding:10px 20px;display:flex;justify-content:space-between;align-items:center}
+              .printbtn{background:#8B6914;color:#fff;border:none;padding:7px 18px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600}
+              .rpt-hdr{display:none} @page{margin:18mm 14mm 20mm 14mm;size:A4}
+              @media print{.noprint{display:none}.rpt-hdr{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #8B6914;padding:6px 40px;position:fixed;top:0;left:0;right:0;background:#fff;z-index:999} body{padding-top:42px 0 0 40px}}
+            </style></head><body>
+            <div class='rpt-hdr'><span style='font-size:12px;font-weight:700;color:#3D2214'>Malakesa Transfers &amp; Tours — Aged Receivables Report</span><span style='font-size:10px;color:#888'>${dateStr}</span></div>
+            <div class='noprint'><span>Aged Receivables Report</span><button class='printbtn' onclick='window.print()'>🖨️ Print / Save PDF</button></div>
+            <div style='padding:20px 40px'>
+              <h1>Malakesa Transfers &amp; Tours</h1>
+              <div class='sub'>Aged Receivables Report &nbsp;|&nbsp; Generated ${dateStr}</div>
+              <div style='display:flex;gap:16px;margin-bottom:20px;flex-wrap:wrap'>
+                <div style='background:${grandTotal > 0 ? '#FCEBEB' : '#EAF3DE'};padding:12px 18px;border-radius:6px'><div style='font-size:11px;color:#555;margin-bottom:4px'>Total Outstanding</div><div style='font-size:18px;font-weight:700;color:${grandTotal > 0 ? '#A32D2D' : '#3B6D11'}'>VT ${Number(grandTotal).toLocaleString()}</div></div>
+              </div>
+              <h2 style='font-size:14px;color:#3D2214;margin-bottom:8px'>Summary by age</h2>
+              <table><thead><tr><th>Bucket</th><th colspan='3'>Invoices</th><th colspan='2' style='text-align:right'>Balance</th></tr></thead><tbody>${bucketRows}</tbody></table>
+              <h2 style='font-size:14px;color:#3D2214;margin-bottom:8px'>Invoice detail</h2>
+              <table><thead><tr>
+                <th>Invoice #</th><th>Client</th><th>Due Date</th><th style='text-align:center'>Days Overdue</th><th>Bucket</th><th style='text-align:right'>Balance</th>
+              </tr></thead><tbody>${rows}
+              <tr style='background:#FBF3E4;font-weight:700'>
+                <td style='padding:9px 12px' colspan='5'>TOTAL OUTSTANDING</td>
+                <td style='padding:9px 12px;text-align:right'>VT ${Number(grandTotal).toLocaleString()}</td>
+              </tr></tbody></table>
+            </div>
+              <script>window.onload=()=>window.print()<\/script></body></html>`)
+            w.document.close()
+          }
+
+          const exportAging = () => {
+            const rows = [
+              ['Malakesa Transfers and Tours - Aged Receivables Report'],
+              ['Generated:', new Date().toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' })],
+              [],
+              ['Summary by age'],
+              ['Bucket', 'Invoices', 'Balance (VT)'],
+              ...bucketOrder.map(b => [b, bucketTotals[b].count, bucketTotals[b].total]),
+              [],
+              ['Invoice detail'],
+              ['Invoice #', 'Client', 'Due Date', 'Days Overdue', 'Bucket', 'Balance (VT)'],
+              ...agingRows.map(r => [r.number, r.client_name, r.due_date, r.daysOverdue > 0 ? r.daysOverdue : 0, r.bucket, r.balance]),
+              [],
+              ['TOTAL OUTSTANDING', '', '', '', '', grandTotal]
+            ]
+            downloadCSV('Malakesa_Aged_Receivables.csv', rows)
+          }
+
+          return (
+            <div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: 12, marginBottom: 16 }}>
+                {bucketOrder.map(b => (
+                  <StatCard key={b} label={b} value={fmt(bucketTotals[b].total)} color={bucketColors[b]} sub={`${bucketTotals[b].count} invoice${bucketTotals[b].count === 1 ? '' : 's'}`} />
+                ))}
+              </div>
+
+              <Card style={{ padding: 0, overflow: 'hidden' }}>
+                <div style={{ padding: '12px 20px', borderBottom: '0.5px solid rgba(0,0,0,0.09)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontWeight: 600, fontSize: 13 }}>Outstanding invoices by age ({agingRows.length})</span>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button className="btn btn-sm" style={{ background: '#8B6914', borderColor: '#6B5010', color: '#fff', fontWeight: 500 }} onClick={printAging}><i className="ti ti-printer"></i> PDF</button>
+                    <button className="btn btn-sm" style={{ background: '#1D6F42', borderColor: '#155233', color: '#fff', fontWeight: 500 }} onClick={exportAging}><i className="ti ti-download"></i> Export</button>
+                  </div>
+                </div>
+                {agingRows.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '40px 20px', color: '#666' }}>
+                    <i className="ti ti-circle-check" style={{ fontSize: 32, display: 'block', marginBottom: 10, color: '#3B6D11' }}></i>
+                    Nothing outstanding — all invoices are paid up.
+                  </div>
+                ) : (
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                    <thead><tr style={{ background: '#FBF3E4' }}>
+                      <Th>Invoice #</Th><Th>Client</Th><Th>Due Date</Th><Th style={{ textAlign: 'center' }}>Days Overdue</Th><Th>Status</Th><Th style={{ textAlign: 'right' }}>Balance</Th>
+                    </tr></thead>
+                    <tbody>
+                      {agingRows.map(r => (
+                        <tr key={r.id} style={{ borderBottom: '0.5px solid rgba(0,0,0,0.07)' }}>
+                          <Td style={{ fontWeight: 500 }}>{r.number}</Td>
+                          <Td>{r.client_name}</Td>
+                          <Td>{fmtDate(r.due_date)}</Td>
+                          <Td style={{ textAlign: 'center' }}>{r.daysOverdue > 0 ? r.daysOverdue : '—'}</Td>
+                          <Td><span style={{ background: bucketColors[r.bucket] + '22', color: bucketColors[r.bucket], padding: '2px 9px', borderRadius: 99, fontSize: 11, fontWeight: 600 }}>{r.bucket}</span></Td>
+                          <Td style={{ textAlign: 'right', fontWeight: 600 }}>{fmt(r.balance)}</Td>
+                        </tr>
+                      ))}
+                      <tr style={{ background: '#FBF3E4', fontWeight: 700 }}>
+                        <td colSpan="5" style={{ padding: '9px 14px', fontSize: 13 }}>TOTAL OUTSTANDING</td>
+                        <td style={{ padding: '9px 14px', textAlign: 'right', fontSize: 13 }}>{fmt(grandTotal)}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                )}
               </Card>
             </div>
           )
