@@ -208,7 +208,7 @@ export default function App() {
             {page === 'dashboard' && <Dashboard invoices={invoices} payments={payments} purchases={purchases} loading={loading} setPage={setPage} setModal={setModal} />}
             {page === 'invoices' && <Invoices invoices={invoices} payments={payments} reload={reload} setModal={setModal} setSelected={setSelected} />}
             {page === 'payments' && <Payments payments={payments} invoices={invoices} reload={reload} setModal={setModal} setSelected={setSelected} />}
-            {page === 'purchases' && <Purchases purchases={purchases} suppliers={suppliers} customCategories={customCategories} reload={reload} setModal={setModal} />}
+            {page === 'purchases' && <Purchases purchases={purchases} suppliers={suppliers} customCategories={customCategories} reload={reload} setModal={setModal} setSelected={setSelected} />}
             {page === 'suppliers' && <Suppliers suppliers={suppliers} purchases={purchases} reload={reload} setModal={setModal} />}
             {page === 'vnpf' && <VNPF employees={employees} salaryRecords={salaryRecords} reload={reload} setModal={setModal} setSelected={setSelected} />}
             {page === 'reports' && <Reports invoices={invoices} payments={payments} purchases={purchases} salaryRecords={salaryRecords} />}
@@ -225,6 +225,7 @@ export default function App() {
       {modal === 'newClient' && <NewClientModal onClose={() => setModal(null)} onSave={() => { setModal(null); reload() }} />}
       {modal === 'newSupplier' && <NewSupplierModal onClose={() => setModal(null)} onSave={() => { setModal(null); reload() }} />}
       {modal === 'newPurchase' && <NewPurchaseModal suppliers={suppliers} customCategories={customCategories} onClose={() => setModal(null)} onSave={() => { setModal(null); reload() }} />}
+      {modal === 'editPurchase' && selected && <NewPurchaseModal suppliers={suppliers} customCategories={customCategories} purchase={selected} onClose={() => { setModal(null); setSelected(null) }} onSave={() => { setModal(null); setSelected(null); reload() }} />}
       {modal === 'manageCategories' && <ManageCategoriesModal customCategories={customCategories} onClose={() => setModal(null)} onSave={reload} />}
       {modal === 'newEmployee' && <NewEmployeeModal onClose={() => setModal(null)} onSave={() => { setModal(null); reload() }} />}
       {modal === 'editEmployee' && selected && <NewEmployeeModal employee={selected} onClose={() => { setModal(null); setSelected(null) }} onSave={() => { setModal(null); setSelected(null); reload() }} />}
@@ -2105,6 +2106,45 @@ function Reports({ invoices, payments, purchases, salaryRecords }) {
   }
 
 
+  const [backingUp, setBackingUp] = useState(false)
+  const downloadFullBackup = async () => {
+    setBackingUp(true)
+    try {
+      const [invRes, pmtRes, clRes, purRes, supRes, empRes, catRes, salRes] = await Promise.all([
+        fetch('/api/invoices'), fetch('/api/payments'), fetch('/api/clients'), fetch('/api/purchases'), fetch('/api/suppliers'), fetch('/api/employees'), fetch('/api/purchase-categories'), fetch('/api/salary-records')
+      ])
+      if ([invRes, pmtRes, clRes, purRes, supRes, empRes, catRes, salRes].some(r => !r.ok)) {
+        alert('Could not fetch all data — please make sure you are logged in and try again.')
+        setBackingUp(false)
+        return
+      }
+      const [invoicesData, paymentsData, clientsData, purchasesData, suppliersData, employeesData, purchaseCategoriesData, salaryRecordsData] =
+        await Promise.all([invRes.json(), pmtRes.json(), clRes.json(), purRes.json(), supRes.json(), empRes.json(), catRes.json(), salRes.json()])
+      const backup = {
+        company: 'Malakesa Transfers and Tours',
+        exported_at: new Date().toISOString(),
+        invoices: invoicesData,
+        payments: paymentsData,
+        clients: clientsData,
+        purchases: purchasesData,
+        suppliers: suppliersData,
+        employees: employeesData,
+        purchase_categories: purchaseCategoriesData,
+        salary_records: salaryRecordsData,
+      }
+      const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `Malakesa_Full_Backup_${new Date().toISOString().slice(0, 10)}.json`
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch (e) {
+      alert('Backup failed: ' + e.message)
+    }
+    setBackingUp(false)
+  }
+
   return (
     <>
       <Topbar title="Reports">
@@ -2115,6 +2155,15 @@ function Reports({ invoices, payments, purchases, salaryRecords }) {
         </div>
       </Topbar>
       <div style={{ padding: '14px 20px 0' }}>
+        <div style={{ background: '#fff', border: '0.5px solid rgba(139,105,20,0.2)', borderRadius: 12, padding: '14px 16px', marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
+          <div>
+            <div style={{ fontWeight: 600, fontSize: 13, color: '#3D2214', display: 'flex', alignItems: 'center', gap: 6 }}><i className="ti ti-database-export"></i> Full Data Backup</div>
+            <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>Download every invoice, client, payment, purchase, supplier, employee and salary record as one file — a safety copy independent of Supabase.</div>
+          </div>
+          <button className="btn" style={{ background: '#1D6F42', borderColor: '#155233', color: '#fff', fontWeight: 500, whiteSpace: 'nowrap' }} onClick={downloadFullBackup} disabled={backingUp}>
+            <i className="ti ti-download"></i> {backingUp ? 'Preparing...' : 'Download Full Backup'}
+          </button>
+        </div>
         <div style={{ background: '#fff', border: '0.5px solid rgba(139,105,20,0.2)', borderRadius: 12, padding: '10px 16px', marginBottom: 16, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
           {tab === 'revenue' && <>
             <select value={filterClient} onChange={e => setFilterClient(e.target.value)} style={{ padding: '6px 10px', borderRadius: 8, border: '0.5px solid #8B6914', fontSize: 13, fontFamily: 'inherit', background: '#8B6914', color: '#fff', fontWeight: 500, cursor: 'pointer' }}>
@@ -2836,7 +2885,7 @@ function VatPage({ invoices, payments, purchases }) {
   )
 }
 
-function Purchases({ purchases, suppliers, customCategories, reload, setModal }) {
+function Purchases({ purchases, suppliers, customCategories, reload, setModal, setSelected }) {
   const [filterMonth, setFilterMonth] = useState('')
   const [filterCategory, setFilterCategory] = useState('')
   const [search, setSearch] = useState('')
@@ -3047,6 +3096,7 @@ function Purchases({ purchases, suppliers, customCategories, reload, setModal })
                     <Td style={{ textAlign: 'right', fontWeight: 500 }}>{fmt(p.amount)}</Td>
                     <Td style={{ color: '#999', fontSize: 12 }}>{p.ref || '—'}</Td>
                     <Td>
+                      <button className="btn btn-sm" style={{ borderColor: '#2563A8', color: '#2563A8', marginRight: 5 }} onClick={() => { setSelected(p); setModal('editPurchase') }} title="Edit"><i className="ti ti-edit"></i></button>
                       <button className="btn btn-sm" style={{ borderColor: '#A32D2D', color: '#A32D2D' }} onClick={() => handleDelete(p.id)} title="Delete"><i className="ti ti-trash"></i></button>
                     </Td>
                   </tr>
@@ -3068,13 +3118,13 @@ function Purchases({ purchases, suppliers, customCategories, reload, setModal })
   )
 }
 
-function NewPurchaseModal({ suppliers, customCategories, onClose, onSave }) {
+function NewPurchaseModal({ suppliers, customCategories, purchase, onClose, onSave }) {
+  const isEdit = !!purchase
   const allCategories = [...PURCHASE_CATEGORIES.slice(0, -1), ...(customCategories || []).map(c => c.name), 'Other']
-  const [form, setForm] = useState({
-    date: todayStr(), supplier_id: '', supplier: '', description: '', category: 'Other',
-    amount: '', vat: '', ref: ''
-  })
-  const [vatMode, setVatMode] = useState('calc15')
+  const [form, setForm] = useState(isEdit
+    ? { date: purchase.date || todayStr(), supplier_id: purchase.supplier_id || '', supplier: purchase.supplier || '', description: purchase.description || '', category: purchase.category || 'Other', amount: purchase.amount ?? '', vat: purchase.vat ?? '', ref: purchase.ref || '' }
+    : { date: todayStr(), supplier_id: '', supplier: '', description: '', category: 'Other', amount: '', vat: '', ref: '' })
+  const [vatMode, setVatMode] = useState(isEdit ? (Number(purchase.vat) > 0 ? 'manual' : 'none') : 'calc15')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
@@ -3125,8 +3175,10 @@ function NewPurchaseModal({ suppliers, customCategories, onClose, onSave }) {
     if (!form.date) { setError('Date is required'); return }
     setSaving(true)
     try {
-      const res = await fetch('/api/purchases', {
-        method: 'POST',
+      const url = isEdit ? `/api/purchases/${purchase.id}` : '/api/purchases'
+      const method = isEdit ? 'PUT' : 'POST'
+      const res = await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...form, amount, vat, amount_ex_vat: amountExVat })
       })
@@ -3136,7 +3188,7 @@ function NewPurchaseModal({ suppliers, customCategories, onClose, onSave }) {
   }
 
   return (
-    <Modal title="Add Purchase" onClose={onClose} wide>
+    <Modal title={isEdit ? 'Edit Purchase' : 'Add Purchase'} onClose={onClose} wide>
       {error && <Alert type="danger">{error}</Alert>}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
         <Field label="Date *"><input type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} style={inputStyle} /></Field>
@@ -3246,7 +3298,7 @@ function NewPurchaseModal({ suppliers, customCategories, onClose, onSave }) {
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <button className="btn" onClick={onClose}>Cancel</button>
-          <button className="btn btn-primary" onClick={handleSave} disabled={saving}><i className="ti ti-check"></i> {saving ? 'Saving...' : 'Save Purchase'}</button>
+          <button className="btn btn-primary" onClick={handleSave} disabled={saving}><i className="ti ti-check"></i> {saving ? (isEdit ? 'Updating...' : 'Saving...') : (isEdit ? 'Update Purchase' : 'Save Purchase')}</button>
         </div>
       </div>
     </Modal>
