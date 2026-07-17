@@ -3111,7 +3111,10 @@ function Purchases({ purchases, suppliers, customCategories, reload, setModal, s
                       {Number(p.vat) > 0 ? fmt(p.vat) : <span style={{ fontStyle: 'italic', fontSize: 11 }}>Nil</span>}
                     </Td>
                     <Td style={{ textAlign: 'right', fontWeight: 500 }}>{fmt(p.amount)}</Td>
-                    <Td style={{ color: '#999', fontSize: 12 }}>{p.ref || '—'}</Td>
+                    <Td style={{ color: '#999', fontSize: 12 }}>
+                      {p.ref || '—'}
+                      {p.receipt_url && <a href={p.receipt_url} target="_blank" rel="noopener noreferrer" title="View attached receipt" style={{ marginLeft: 6, color: '#8B6914' }}><i className="ti ti-paperclip"></i></a>}
+                    </Td>
                     <Td>
                       <button className="btn btn-sm" style={{ borderColor: '#2563A8', color: '#2563A8', marginRight: 5 }} onClick={() => { setSelected(p); setModal('editPurchase') }} title="Edit"><i className="ti ti-edit"></i></button>
                       <button className="btn btn-sm" style={{ borderColor: '#A32D2D', color: '#A32D2D' }} onClick={() => handleDelete(p.id)} title="Delete"><i className="ti ti-trash"></i></button>
@@ -3144,6 +3147,27 @@ function NewPurchaseModal({ suppliers, customCategories, purchase, onClose, onSa
   const [vatMode, setVatMode] = useState(isEdit ? (Number(purchase.vat) > 0 ? 'manual' : 'none') : 'calc15')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [receiptUrl, setReceiptUrl] = useState(isEdit ? (purchase.receipt_url || '') : '')
+  const [uploadingReceipt, setUploadingReceipt] = useState(false)
+  const [receiptError, setReceiptError] = useState('')
+
+  const handleReceiptUpload = async (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    setUploadingReceipt(true)
+    setReceiptError('')
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      const res = await fetch('/api/upload-receipt', { method: 'POST', body: fd })
+      const data = await res.json()
+      if (!res.ok) { setReceiptError(data.error || 'Upload failed'); setUploadingReceipt(false); return }
+      setReceiptUrl(data.url)
+    } catch (err) {
+      setReceiptError('Upload failed — please check your connection and try again')
+    }
+    setUploadingReceipt(false)
+  }
 
   // Inline add-supplier state
   const [showAddSupplier, setShowAddSupplier] = useState(false)
@@ -3197,7 +3221,7 @@ function NewPurchaseModal({ suppliers, customCategories, purchase, onClose, onSa
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, amount, vat, amount_ex_vat: amountExVat })
+        body: JSON.stringify({ ...form, amount, vat, amount_ex_vat: amountExVat, receipt_url: receiptUrl || null })
       })
       if (!res.ok) { const d = await res.json(); setError(d.error || 'Failed to save'); setSaving(false); return }
       onSave()
@@ -3276,6 +3300,21 @@ function NewPurchaseModal({ suppliers, customCategories, purchase, onClose, onSa
         </div>
 
         <Field label="Receipt / Reference"><input type="text" value={form.ref} onChange={e => setForm(f => ({ ...f, ref: e.target.value }))} style={inputStyle} placeholder="Receipt #, invoice ref..." /></Field>
+        <Field label="Attach Receipt (photo or PDF)" style={{ gridColumn: '1/-1' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            <label className="btn btn-sm" style={{ cursor: 'pointer' }}>
+              <i className="ti ti-paperclip"></i> {uploadingReceipt ? 'Uploading...' : (receiptUrl ? 'Replace file' : 'Choose file')}
+              <input type="file" accept="image/jpeg,image/png,image/webp,image/heic,application/pdf" onChange={handleReceiptUpload} disabled={uploadingReceipt} style={{ display: 'none' }} />
+            </label>
+            {receiptUrl && (
+              <>
+                <a href={receiptUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, color: '#2563A8', display: 'flex', alignItems: 'center', gap: 4 }}><i className="ti ti-file-check"></i> View attached receipt</a>
+                <button type="button" className="btn btn-sm" style={{ borderColor: '#A32D2D', color: '#A32D2D' }} onClick={() => setReceiptUrl('')}><i className="ti ti-x"></i> Remove</button>
+              </>
+            )}
+          </div>
+          {receiptError && <div style={{ color: '#A32D2D', fontSize: 12, marginTop: 4 }}>{receiptError}</div>}
+        </Field>
         <Field label="Description" style={{ gridColumn: '1/-1' }}><input type="text" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} style={inputStyle} placeholder="What was purchased..." /></Field>
         <Field label="Total Amount (VT inc. VAT) *"><input type="number" value={form.amount} min="0" onChange={e => setForm(f => ({ ...f, amount: e.target.value }))} style={inputStyle} placeholder="0" /></Field>
         <Field label="VAT Treatment">
@@ -3315,7 +3354,7 @@ function NewPurchaseModal({ suppliers, customCategories, purchase, onClose, onSa
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <button className="btn" onClick={onClose}>Cancel</button>
-          <button className="btn btn-primary" onClick={handleSave} disabled={saving}><i className="ti ti-check"></i> {saving ? (isEdit ? 'Updating...' : 'Saving...') : (isEdit ? 'Update Purchase' : 'Save Purchase')}</button>
+          <button className="btn btn-primary" onClick={handleSave} disabled={saving || uploadingReceipt}><i className="ti ti-check"></i> {saving ? (isEdit ? 'Updating...' : 'Saving...') : (isEdit ? 'Update Purchase' : 'Save Purchase')}</button>
         </div>
       </div>
     </Modal>

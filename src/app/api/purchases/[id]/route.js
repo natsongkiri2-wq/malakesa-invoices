@@ -17,6 +17,7 @@ export async function PUT(req, { params }) {
       vat: body.vat || 0,
       amount_ex_vat: body.amount_ex_vat || 0,
       ref: body.ref || null,
+      receipt_url: body.receipt_url ?? null,
     })
     .eq('id', id)
     .select()
