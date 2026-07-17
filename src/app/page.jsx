@@ -115,6 +115,8 @@ export default function App() {
     try { return sessionStorage.getItem('malakesa_auth') === 'yes' } catch(e) { return false }
   })
   const [page, setPage] = useState('dashboard')
+  const [invoiceFilterHint, setInvoiceFilterHint] = useState('')
+  const [overdueBannerDismissed, setOverdueBannerDismissed] = useState(false)
   const [invoices, setInvoices] = useState([])
   const [payments, setPayments] = useState([])
   const [clients, setClients] = useState([])
@@ -168,6 +170,9 @@ export default function App() {
 
   if (!isLoggedIn) return <LoginScreen onLogin={() => { try { sessionStorage.setItem('malakesa_auth', 'yes') } catch(e) {}; setIsLoggedIn(true) }} />
 
+  const overdueInvoices = invoices.filter(i => getStatus(i, payments) === 'overdue')
+  const overdueTotal = overdueInvoices.reduce((s, i) => s + getBalance(i, payments), 0)
+
   return (
     <div style={{ display: 'flex', height: '100vh', fontFamily: '-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif', fontSize: 14, color: '#1a1a1a', background: '#FBF3E4' }}>
       {/* Sidebar */}
@@ -201,19 +206,31 @@ export default function App() {
 
       {/* Main */}
       <div style={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
+        {overdueInvoices.length > 0 && !overdueBannerDismissed && (
+          <div style={{ background: '#FCEBEB', borderBottom: '1px solid #E8B4B4', padding: '10px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#791F1F' }}>
+              <i className="ti ti-alert-triangle" style={{ fontSize: 16 }}></i>
+              <span><strong>{overdueInvoices.length} invoice{overdueInvoices.length === 1 ? '' : 's'}</strong> overdue, VT {overdueTotal.toLocaleString()} outstanding — needs a reminder</span>
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button className="btn btn-sm" style={{ borderColor: '#791F1F', color: '#791F1F', background: '#fff' }} onClick={() => { setInvoiceFilterHint('overdue'); setPage('invoices') }}>Review &amp; Send Reminders</button>
+              <button className="btn btn-sm" style={{ borderColor: 'transparent', color: '#791F1F', background: 'transparent' }} onClick={() => setOverdueBannerDismissed(true)} title="Dismiss for this session"><i className="ti ti-x"></i></button>
+            </div>
+          </div>
+        )}
         {loading && page !== 'dashboard' ? (
           <div style={{ padding: 40, textAlign: 'center', color: '#666' }}>Loading...</div>
         ) : (
           <>
             {page === 'dashboard' && <Dashboard invoices={invoices} payments={payments} purchases={purchases} loading={loading} setPage={setPage} setModal={setModal} />}
-            {page === 'invoices' && <Invoices invoices={invoices} payments={payments} reload={reload} setModal={setModal} setSelected={setSelected} />}
+            {page === 'invoices' && <Invoices invoices={invoices} payments={payments} reload={reload} setModal={setModal} setSelected={setSelected} initialStatus={invoiceFilterHint} />}
             {page === 'payments' && <Payments payments={payments} invoices={invoices} reload={reload} setModal={setModal} setSelected={setSelected} />}
             {page === 'purchases' && <Purchases purchases={purchases} suppliers={suppliers} customCategories={customCategories} reload={reload} setModal={setModal} setSelected={setSelected} />}
             {page === 'suppliers' && <Suppliers suppliers={suppliers} purchases={purchases} reload={reload} setModal={setModal} />}
             {page === 'vnpf' && <VNPF employees={employees} salaryRecords={salaryRecords} reload={reload} setModal={setModal} setSelected={setSelected} />}
             {page === 'reports' && <Reports invoices={invoices} payments={payments} purchases={purchases} salaryRecords={salaryRecords} />}
             {page === 'vat' && <VatPage invoices={invoices} payments={payments} purchases={purchases} />}
-            {page === 'clients' && <Clients clients={clients} invoices={invoices} reload={reload} setModal={setModal} />}
+            {page === 'clients' && <Clients clients={clients} invoices={invoices} payments={payments} reload={reload} setModal={setModal} />}
           </>
         )}
       </div>
@@ -652,9 +669,9 @@ function ExportModal({ title, columns, onExport, onClose }) {
 }
 
 
-function Invoices({ invoices, payments, reload, setModal, setSelected }) {
+function Invoices({ invoices, payments, reload, setModal, setSelected, initialStatus }) {
   const [filterClient, setFilterClient] = useState('')
-  const [filterStatus, setFilterStatus] = useState('')
+  const [filterStatus, setFilterStatus] = useState(initialStatus || '')
   const [filterMonth, setFilterMonth] = useState('')
   const [search, setSearch] = useState('')
   const [sending, setSending] = useState(null)
@@ -4519,7 +4536,7 @@ function NewEmployeeModal({ employee, onClose, onSave }) {
 }
 
 // ── Clients ───────────────────────────────────────────────
-function Clients({ clients, invoices, reload, setModal }) {
+function Clients({ clients, invoices, payments, reload, setModal }) {
   const [editingClient, setEditingClient] = useState(null)
   const [editForm, setEditForm] = useState({})
   const [saving, setSaving] = useState(false)
@@ -4535,6 +4552,103 @@ function Clients({ clients, invoices, reload, setModal }) {
   }
 
   const cancelEdit = () => { setEditingClient(null); setEditForm({}) }
+
+  const printStatement = (client) => {
+    const w = window.open('', '_blank')
+    if (!w) { alert('Please allow popups to print statements.'); return }
+
+    const clientInvoices = invoices.filter(i => i.client_id === client.id).sort((a, b) => a.date > b.date ? 1 : -1)
+    const invoiceIds = new Set(clientInvoices.map(i => i.id))
+    const clientPayments = (payments || []).filter(p => invoiceIds.has(p.invoice_id)).sort((a, b) => a.date > b.date ? 1 : -1)
+    const invById = Object.fromEntries(clientInvoices.map(i => [i.id, i]))
+
+    const totalInvoiced = clientInvoices.reduce((s, i) => s + Number(i.total || 0), 0)
+    const totalPaid = clientPayments.reduce((s, p) => s + Number(p.amount || 0), 0)
+    const balance = totalInvoiced - totalPaid
+
+    const rows = clientInvoices.map(i => {
+      const paidForThis = clientPayments.filter(p => p.invoice_id === i.id).reduce((s, p) => s + Number(p.amount), 0)
+      const bal = Number(i.total || 0) - paidForThis
+      return `<tr>
+        <td>${i.number}</td>
+        <td>${fmtDate(i.date)}</td>
+        <td>${fmtDate(i.due_date)}</td>
+        <td class="text-right">VT ${Number(i.total || 0).toLocaleString()}</td>
+        <td class="text-right">VT ${paidForThis.toLocaleString()}</td>
+        <td class="text-right" style="color:${bal > 0 ? '#D85A30' : '#3B6D11'};font-weight:600">VT ${bal.toLocaleString()}</td>
+      </tr>`
+    }).join('')
+
+    const paymentRows = clientPayments.map(p => `<tr>
+        <td>${fmtDate(p.date)}</td>
+        <td>${invById[p.invoice_id]?.number || '—'}</td>
+        <td>${p.method || '—'}</td>
+        <td class="text-right">VT ${Number(p.amount || 0).toLocaleString()}</td>
+      </tr>`).join('')
+
+    w.document.write(`<!DOCTYPE html><html><head><title>Statement — ${client.name}</title><style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; color: #222; font-size: 13px; }
+    .page { max-width: 800px; margin: 0 auto; }
+    .header { background: linear-gradient(135deg, #6B4423 0%, #8B5E34 50%, #A67C42 100%); padding: 14px 28px; display: flex; justify-content: space-between; align-items: center; }
+    .logo-contact { font-size: 9px; color: rgba(255,255,255,0.7); margin-top: 3px; line-height: 1.4; }
+    .meta { text-align: right; color: #fff; }
+    .body { padding: 24px 32px; }
+    .bill-label { font-size: 9px; font-weight: 800; color: #8B6914; text-transform: uppercase; letter-spacing: 2px; border-bottom: 2px solid #8B6914; padding-bottom: 3px; margin-bottom: 8px; display: inline-block; }
+    table { width: 100%; border-collapse: collapse; margin: 10px 0 24px; }
+    thead tr { background: linear-gradient(135deg, #3D2214, #8B6914); }
+    th { padding: 8px 12px; text-align: left; font-size: 10px; font-weight: 700; color: #FFD700; letter-spacing: 1px; text-transform: uppercase; }
+    td { padding: 9px 12px; border-bottom: 1px solid #f0ebe0; }
+    .text-right { text-align: right; }
+    .summary { margin-left: auto; width: 280px; }
+    .srow { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid #eee; font-size: 13px; color: #555; }
+    .srow.grand { border-bottom: none; font-size: 17px; font-weight: 800; color: #3D2214; padding-top: 12px; }
+    h2 { font-size: 14px; color: #3D2214; margin-bottom: 4px; }
+    @media print { .header { -webkit-print-color-adjust: exact; print-color-adjust: exact; } thead tr { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+    </style></head><body>
+    <div class="page">
+      <div class="header">
+        <div>
+          <img src="${MALAKESA_LOGO}" alt="Malakesa Transfers and Tours" style="width:120px;border-radius:4px;display:block" />
+          <div class="logo-contact">📍 Port Vila, Vanuatu &nbsp;|&nbsp; 📞 +678 22712 &nbsp;|&nbsp; ✉️ accounts@malakesa.vu</div>
+        </div>
+        <div class="meta">
+          <div style="font-size:10px;color:rgba(255,255,255,0.75);letter-spacing:1px">STATEMENT OF ACCOUNT</div>
+          <div style="font-size:19px;font-weight:700;color:#F5D98A">${client.name}</div>
+          <div style="font-size:10px;color:rgba(255,255,255,0.8)">As at ${fmtDate(todayStr())}</div>
+        </div>
+      </div>
+      <div class="body">
+        <div class="bill-label">Client details</div>
+        <div style="margin-bottom:20px;color:#555">
+          <div><strong>${client.name}</strong></div>
+          <div>${[client.email, client.email2, client.email3].filter(Boolean).join(', ') || ''}</div>
+          <div>${client.phone || ''}</div>
+          <div>${client.address || ''}</div>
+        </div>
+
+        <h2>Invoices</h2>
+        <table>
+          <thead><tr><th>Invoice #</th><th>Issue Date</th><th>Due Date</th><th class="text-right">Total</th><th class="text-right">Paid</th><th class="text-right">Balance</th></tr></thead>
+          <tbody>${rows || '<tr><td colspan="6" style="text-align:center;color:#999">No invoices</td></tr>'}</tbody>
+        </table>
+
+        ${paymentRows ? `<h2>Payments received</h2>
+        <table>
+          <thead><tr><th>Date</th><th>Invoice #</th><th>Method</th><th class="text-right">Amount</th></tr></thead>
+          <tbody>${paymentRows}</tbody>
+        </table>` : ''}
+
+        <div class="summary">
+          <div class="srow"><span>Total invoiced</span><span>VT ${totalInvoiced.toLocaleString()}</span></div>
+          <div class="srow"><span>Total paid</span><span>VT ${totalPaid.toLocaleString()}</span></div>
+          <div class="srow grand"><span>Balance due</span><span style="color:${balance > 0 ? '#D85A30' : '#3B6D11'}">VT ${balance.toLocaleString()}</span></div>
+        </div>
+      </div>
+    </div>
+    <script>window.onload=()=>window.print()<\/script></body></html>`)
+    w.document.close()
+  }
 
   const saveEdit = async (id) => {
     if (!editForm.name.trim()) return
@@ -4607,6 +4721,7 @@ function Clients({ clients, invoices, reload, setModal }) {
                       <td style={{ padding: '11px 14px' }}>
                         <div style={{ display: 'flex', gap: 5, justifyContent: 'center' }}>
                           <button className="btn btn-sm" onClick={() => startEdit(c)}><i className="ti ti-pencil"></i> Edit</button>
+                          <button className="btn btn-sm" style={{ borderColor: '#8B6914', color: '#8B6914' }} onClick={() => printStatement(c)}><i className="ti ti-file-text"></i> Statement</button>
                           <button className="btn btn-sm" style={{ borderColor: '#A32D2D', color: '#A32D2D' }} onClick={() => handleDelete(c.id)}><i className="ti ti-trash"></i></button>
                         </div>
                       </td>
