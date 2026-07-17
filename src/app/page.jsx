@@ -46,18 +46,22 @@ function LoginScreen({ onLogin }) {
   const [show, setShow] = useState(false)
   const [busy, setBusy] = useState(false)
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     setBusy(true)
-    setTimeout(() => {
-      if (pw === 'Malakesa2024!') {
+    try {
+      const res = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: pw }) })
+      if (res.ok) {
         setError('')
         onLogin()
-      } else {
-        setError('Incorrect password. Please try again.')
-        setPw('')
-        setBusy(false)
+        return
       }
-    }, 400)
+      const data = await res.json().catch(() => ({}))
+      setError(data.error || 'Incorrect password. Please try again.')
+      setPw('')
+    } catch (e) {
+      setError('Could not reach the server. Check your connection and try again.')
+    }
+    setBusy(false)
   }
 
   return (
@@ -129,6 +133,12 @@ export default function App() {
       const [invRes, pmtRes, clRes, purRes, supRes, empRes, catRes, salRes] = await Promise.all([
         fetch('/api/invoices'), fetch('/api/payments'), fetch('/api/clients'), fetch('/api/purchases'), fetch('/api/suppliers'), fetch('/api/employees'), fetch('/api/purchase-categories'), fetch('/api/salary-records')
       ])
+      if ([invRes, pmtRes, clRes, purRes, supRes, empRes, catRes, salRes].some(r => r.status === 401)) {
+        try { sessionStorage.removeItem('malakesa_auth') } catch(e) {}
+        setIsLoggedIn(false)
+        setLoading(false)
+        return
+      }
       const [invs, pmts, cls, purs, sups, emps, cats, sals] = await Promise.all([invRes.json(), pmtRes.json(), clRes.json(), purRes.json(), supRes.json(), empRes.json(), catRes.json(), salRes.json()])
       setInvoices(Array.isArray(invs) ? invs : [])
       setPayments(Array.isArray(pmts) ? pmts : [])
@@ -182,7 +192,7 @@ export default function App() {
           ))}
         </nav>
         <div style={{ padding: '10px 16px', borderTop: '1px solid rgba(255,215,0,0.15)' }}>
-          <button onClick={() => { try { sessionStorage.removeItem('malakesa_auth') } catch(e) {}; setIsLoggedIn(false) }} style={{ width: '100%', background: 'rgba(255,255,255,0.07)', border: '0.5px solid rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.65)', borderRadius: 8, padding: '7px 12px', fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center' }}>
+          <button onClick={async () => { try { await fetch('/api/logout', { method: 'POST' }) } catch(e) {}; try { sessionStorage.removeItem('malakesa_auth') } catch(e) {}; setIsLoggedIn(false) }} style={{ width: '100%', background: 'rgba(255,255,255,0.07)', border: '0.5px solid rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.65)', borderRadius: 8, padding: '7px 12px', fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center' }}>
             <i className="ti ti-logout" style={{ fontSize: 14 }}></i> Log out
           </button>
         </div>
