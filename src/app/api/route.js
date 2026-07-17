@@ -1,30 +1,25 @@
-import { createClient } from '@supabase/supabase-js'
+import { NextResponse } from 'next/server'
 
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_KEY
-)
+const SESSION_COOKIE = 'malakesa_session'
 
-export async function GET() {
-  const { data, error } = await supabase
-    .from('purchases')
-    .select('*')
-    .order('date', { ascending: false })
-  if (error) return Response.json({ error: error.message }, { status: 500 })
-  return Response.json(data || [])
+export function middleware(req) {
+  const { pathname } = req.nextUrl
+
+  // Let the login/logout routes themselves through untouched
+  if (pathname === '/api/login' || pathname === '/api/logout' || pathname === '/api/debug-session') {
+    return NextResponse.next()
+  }
+
+  const cookie = req.cookies.get(SESSION_COOKIE)?.value
+  const expected = process.env.SESSION_SECRET
+
+  if (!expected || cookie !== expected) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  return NextResponse.next()
 }
 
-export async function POST(request) {
-  const body = await request.json()
-  const { date, supplier, description, category, amount, vat, amount_ex_vat, ref } = body
-  if (!supplier || !date || !amount) {
-    return Response.json({ error: 'supplier, date and amount are required' }, { status: 400 })
-  }
-  const { data, error } = await supabase
-    .from('purchases')
-    .insert([{ date, supplier, description, category, amount: Number(amount), vat: Number(vat || 0), amount_ex_vat: Number(amount_ex_vat || 0), ref }])
-    .select()
-    .single()
-  if (error) return Response.json({ error: error.message }, { status: 500 })
-  return Response.json(data, { status: 201 })
+export const config = {
+  matcher: '/api/:path*',
 }
