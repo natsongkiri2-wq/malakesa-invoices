@@ -1549,6 +1549,11 @@ function Reports({ invoices, payments, purchases, salaryRecords }) {
   const [supplierMonth, setSupplierMonth] = useState(nowD.toISOString().slice(0, 7))
   const [supplierSort, setSupplierSort] = useState('spend') // 'spend' | 'count' | 'name'
 
+  // Cash flow tab date range
+  const [cashflowRange, setCashflowRange] = useState('12months') // '12months' | 'quarter' | 'year' | 'custom'
+  const [cashflowStart, setCashflowStart] = useState('')
+  const [cashflowEnd, setCashflowEnd] = useState('')
+
   const allClients = [...new Set(invoices.map(i => i.client_name))].sort()
 
   // Build month options for VAT selector (last 24 months)
@@ -2218,6 +2223,21 @@ function Reports({ invoices, payments, purchases, salaryRecords }) {
             </select>
             <button className="btn btn-sm" style={{ background: '#1D6F42', borderColor: '#155233', color: '#fff', fontWeight: 500, marginLeft: 'auto' }} onClick={() => setShowExport('suppliers')}><i className="ti ti-download"></i> Export</button>
           </>}
+          {tab === 'cashflow' && <>
+            <select value={cashflowRange} onChange={e => setCashflowRange(e.target.value)} style={{ padding: '6px 10px', borderRadius: 8, border: '0.5px solid #8B6914', fontSize: 13, fontFamily: 'inherit', background: '#8B6914', color: '#fff', fontWeight: 500, cursor: 'pointer' }}>
+              <option value="12months">Last 12 months</option>
+              <option value="quarter">This quarter</option>
+              <option value="year">This year</option>
+              <option value="custom">Custom range...</option>
+            </select>
+            {cashflowRange === 'custom' && (
+              <>
+                <input type="month" value={cashflowStart} onChange={e => setCashflowStart(e.target.value)} style={{ padding: '6px 10px', borderRadius: 8, border: '0.5px solid #8B6914', fontSize: 13, fontFamily: 'inherit' }} />
+                <span style={{ fontSize: 13, color: '#888' }}>to</span>
+                <input type="month" value={cashflowEnd} onChange={e => setCashflowEnd(e.target.value)} style={{ padding: '6px 10px', borderRadius: 8, border: '0.5px solid #8B6914', fontSize: 13, fontFamily: 'inherit' }} />
+              </>
+            )}
+          </>}
         </div>
       </div>
 
@@ -2356,19 +2376,108 @@ function Reports({ invoices, payments, purchases, salaryRecords }) {
                 colors={['#A32D2D','#8B6914','#D85A30','#5C3D0A','#633806','#C9744A','#3B6D11','#1A4D1A']}
               />
             </Card>
+
+            {(() => {
+              // Category trends over the last 6 months, regardless of the period filter above
+              const trendNow = new Date()
+              const trendMonths = Array.from({ length: 6 }, (_, i) => {
+                const d = new Date(trendNow.getFullYear(), trendNow.getMonth() - 5 + i, 1)
+                return { key: d.toISOString().slice(0, 7), label: d.toLocaleDateString('en-AU', { month: 'short' }) }
+              })
+              const topCategories = Object.entries(byCategory).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([cat]) => cat)
+              const trendColors = ['#A32D2D', '#8B6914', '#3B6D11', '#2563A8', '#633806']
+              const trendData = topCategories.map((cat, idx) => ({
+                category: cat,
+                color: trendColors[idx % trendColors.length],
+                points: trendMonths.map(m => (purchases || []).filter(p => p.category === cat && (p.date || '').startsWith(m.key)).reduce((s, p) => s + Number(p.amount || 0), 0))
+              }))
+              const maxTrendVal = Math.max(...trendData.flatMap(t => t.points), 1)
+
+              return (
+                <Card style={{ marginTop: 16 }}>
+                  <div style={{ fontWeight: 500, marginBottom: 4 }}>Purchase Trends by Category</div>
+                  <div style={{ fontSize: 12, color: '#888', marginBottom: 16 }}>Top 5 categories, last 6 months — spot creeping costs or one-off spikes</div>
+                  {topCategories.length === 0 ? (
+                    <div style={{ color: '#666', fontSize: 13 }}>No purchase data yet</div>
+                  ) : (
+                    <>
+                      <svg viewBox="0 0 600 200" style={{ width: '100%', height: 200 }}>
+                        {[0, 1, 2, 3, 4].map(i => (
+                          <line key={i} x1="40" y1={20 + i * 36} x2="580" y2={20 + i * 36} stroke="#f0ebe0" strokeWidth="1" />
+                        ))}
+                        {trendData.map((t, ti) => {
+                          const pts = t.points.map((v, i) => {
+                            const x = 40 + (i / (trendMonths.length - 1)) * 540
+                            const y = 164 - (v / maxTrendVal) * 144
+                            return `${x},${y}`
+                          }).join(' ')
+                          return <polyline key={t.category} points={pts} fill="none" stroke={t.color} strokeWidth="2.5" />
+                        })}
+                        {trendData.map(t => t.points.map((v, i) => {
+                          const x = 40 + (i / (trendMonths.length - 1)) * 540
+                          const y = 164 - (v / maxTrendVal) * 144
+                          return <circle key={t.category + i} cx={x} cy={y} r="3" fill={t.color} />
+                        }))}
+                        {trendMonths.map((m, i) => (
+                          <text key={m.key} x={40 + (i / (trendMonths.length - 1)) * 540} y="185" fontSize="10" fill="#888" textAnchor="middle">{m.label}</text>
+                        ))}
+                      </svg>
+                      <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginTop: 10 }}>
+                        {trendData.map(t => {
+                          const lastVal = t.points[t.points.length - 1]
+                          const prevVal = t.points[t.points.length - 2] || 0
+                          const change = prevVal > 0 ? Math.round(((lastVal - prevVal) / prevVal) * 100) : null
+                          return (
+                            <div key={t.category} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
+                              <span style={{ width: 10, height: 10, borderRadius: 2, background: t.color, display: 'inline-block' }}></span>
+                              <span style={{ color: '#444' }}>{t.category}</span>
+                              {change !== null && change !== 0 && (
+                                <span style={{ color: change > 0 ? '#A32D2D' : '#3B6D11', fontSize: 11, fontWeight: 600 }}>{change > 0 ? '▲' : '▼'} {Math.abs(change)}%</span>
+                              )}
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </>
+                  )}
+                </Card>
+              )
+            })()}
           </>}
         </>}
 
         {tab === 'cashflow' && (() => {
-          // Build last 12 months list
+          // Build the list of months to show, based on selected range
           const now = new Date()
-          const months = Array.from({ length: 12 }, (_, i) => {
-            const d = new Date(now.getFullYear(), now.getMonth() - 11 + i, 1)
-            return {
-              key: d.toISOString().slice(0, 7),
-              label: d.toLocaleDateString('en-AU', { month: 'short', year: 'numeric' })
-            }
-          })
+          let months
+
+          if (cashflowRange === 'quarter') {
+            const currentQ = Math.floor(now.getMonth() / 3)
+            const qStartMonth = currentQ * 3
+            months = Array.from({ length: now.getMonth() - qStartMonth + 1 }, (_, i) => {
+              const d = new Date(now.getFullYear(), qStartMonth + i, 1)
+              return { key: d.toISOString().slice(0, 7), label: d.toLocaleDateString('en-AU', { month: 'short', year: 'numeric' }) }
+            })
+          } else if (cashflowRange === 'year') {
+            months = Array.from({ length: now.getMonth() + 1 }, (_, i) => {
+              const d = new Date(now.getFullYear(), i, 1)
+              return { key: d.toISOString().slice(0, 7), label: d.toLocaleDateString('en-AU', { month: 'short', year: 'numeric' }) }
+            })
+          } else if (cashflowRange === 'custom' && cashflowStart && cashflowEnd) {
+            const startD = new Date(cashflowStart + '-01T00:00:00')
+            const endD = new Date(cashflowEnd + '-01T00:00:00')
+            const monthCount = Math.max(1, (endD.getFullYear() - startD.getFullYear()) * 12 + (endD.getMonth() - startD.getMonth()) + 1)
+            months = Array.from({ length: monthCount }, (_, i) => {
+              const d = new Date(startD.getFullYear(), startD.getMonth() + i, 1)
+              return { key: d.toISOString().slice(0, 7), label: d.toLocaleDateString('en-AU', { month: 'short', year: 'numeric' }) }
+            })
+          } else {
+            // default: last 12 months
+            months = Array.from({ length: 12 }, (_, i) => {
+              const d = new Date(now.getFullYear(), now.getMonth() - 11 + i, 1)
+              return { key: d.toISOString().slice(0, 7), label: d.toLocaleDateString('en-AU', { month: 'short', year: 'numeric' }) }
+            })
+          }
 
           // Money IN: payments received per month
           const moneyIn = months.map(m => ({
@@ -2398,6 +2507,17 @@ function Reports({ invoices, payments, purchases, salaryRecords }) {
           const totalNet = totalIn - totalOut
           const totalPurchases = cashFlow.reduce((s, m) => s + m.purchases, 0)
           const totalSalaries = cashFlow.reduce((s, m) => s + m.salaries, 0)
+
+          // Year-to-date (calendar year, Jan 1 to today)
+          const ytdKey = `${now.getFullYear()}-01`
+          const ytdIn = payments.filter(p => (p.date || '') >= `${now.getFullYear()}-01-01`).reduce((s, p) => s + Number(p.amount || 0), 0)
+          const ytdPurchases = (purchases || []).filter(p => (p.date || '') >= `${now.getFullYear()}-01-01`).reduce((s, p) => s + Number(p.amount || 0), 0)
+          const ytdSalaries = (salaryRecords || []).filter(r => r.month >= ytdKey).reduce((s, r) => s + Number(r.net_pay || 0), 0)
+          const ytdNet = ytdIn - ytdPurchases - ytdSalaries
+
+          // This month
+          const thisMonthKey = now.toISOString().slice(0, 7)
+          const thisMonthData = cashFlow.find(m => m.key === thisMonthKey) || { in: 0, out: 0, net: 0 }
           const maxVal = Math.max(...cashFlow.map(m => Math.max(m.in, m.out)), 1)
 
           const printCashFlow = () => {
@@ -2437,7 +2557,7 @@ function Reports({ invoices, payments, purchases, salaryRecords }) {
                 <th>Month</th><th style='text-align:right'>Money In (Receipts)</th><th style='text-align:right'>Purchases</th><th style='text-align:right'>Salaries</th><th style='text-align:right'>Total Out</th><th style='text-align:right'>Net Cash Flow</th>
               </tr></thead><tbody>${rows}
               <tr style='background:#FBF3E4;font-weight:700'>
-                <td style='padding:9px 12px'>TOTAL (12 months)</td>
+                <td style='padding:9px 12px'>TOTAL (${months.length} month${months.length===1?'':'s'})</td>
                 <td style='padding:9px 12px;text-align:right;color:#3B6D11'>VT ${Number(totalIn).toLocaleString()}</td>
                 <td style='padding:9px 12px;text-align:right'>VT ${Number(totalPurchases).toLocaleString()}</td>
                 <td style='padding:9px 12px;text-align:right'>VT ${Number(totalSalaries).toLocaleString()}</td>
@@ -2464,6 +2584,21 @@ function Reports({ invoices, payments, purchases, salaryRecords }) {
 
           return (
             <div>
+              {/* Net Profit KPI banner */}
+              <div style={{ background: 'linear-gradient(135deg, #6B4423 0%, #8B5E34 50%, #A67C42 100%)', borderRadius: 12, padding: '18px 24px', marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
+                <div>
+                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.75)', letterSpacing: 1, marginBottom: 4 }}>NET PROFIT — THIS MONTH ({now.toLocaleDateString('en-AU', { month: 'long' })})</div>
+                  <div style={{ fontSize: 30, fontWeight: 700, color: thisMonthData.net >= 0 ? '#F5D98A' : '#FF9B8A' }}>{thisMonthData.net >= 0 ? '+' : ''}{fmt(thisMonthData.net)}</div>
+                  <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', marginTop: 2 }}>{fmt(thisMonthData.in)} in &nbsp;−&nbsp; {fmt(thisMonthData.out)} out</div>
+                </div>
+                <div style={{ width: 1, alignSelf: 'stretch', background: 'rgba(255,255,255,0.2)' }}></div>
+                <div>
+                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.75)', letterSpacing: 1, marginBottom: 4 }}>YEAR-TO-DATE NET PROFIT ({now.getFullYear()})</div>
+                  <div style={{ fontSize: 30, fontWeight: 700, color: ytdNet >= 0 ? '#F5D98A' : '#FF9B8A' }}>{ytdNet >= 0 ? '+' : ''}{fmt(ytdNet)}</div>
+                  <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', marginTop: 2 }}>{fmt(ytdIn)} in &nbsp;−&nbsp; {fmt(ytdPurchases + ytdSalaries)} out</div>
+                </div>
+              </div>
+
               {/* Summary cards */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12, marginBottom: 16 }}>
                 <StatCard label="Total money in" value={fmt(totalIn)} color="#3B6D11" sub="Payments received" />
@@ -2474,7 +2609,7 @@ function Reports({ invoices, payments, purchases, salaryRecords }) {
 
               {/* Visual bar chart */}
               <Card style={{ padding: '20px 20px 16px', marginBottom: 16 }}>
-                <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 16 }}>Monthly cash flow — last 12 months</div>
+                <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 16 }}>Monthly cash flow</div>
                 <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, height: 160, borderBottom: '1px solid #FBF3E4', paddingBottom: 8 }}>
                   {cashFlow.map(m => {
                     const inH = Math.round((m.in / maxVal) * 140)
@@ -2533,7 +2668,7 @@ function Reports({ invoices, payments, purchases, salaryRecords }) {
                       </tr>
                     ))}
                     <tr style={{ background: '#FBF3E4', fontWeight: 700 }}>
-                      <td style={{ padding: '9px 14px', fontSize: 13 }}>TOTAL (12 months)</td>
+                      <td style={{ padding: '9px 14px', fontSize: 13 }}>TOTAL ({months.length} month{months.length === 1 ? '' : 's'})</td>
                       <td style={{ padding: '9px 14px', textAlign: 'right', fontSize: 13, color: '#3B6D11' }}>{fmt(totalIn)}</td>
                       <td style={{ padding: '9px 14px', textAlign: 'right', fontSize: 13 }}>{fmt(totalPurchases)}</td>
                       <td style={{ padding: '9px 14px', textAlign: 'right', fontSize: 13 }}>{fmt(totalSalaries)}</td>
