@@ -5,6 +5,22 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_KEY
 )
 
+export async function PATCH(request, { params }) {
+  const { id } = params
+  const body = await request.json()
+  const { data, error } = await supabase
+    .from('purchase_categories')
+    .update({
+      budget: body.budget ?? null,
+      budget_period: body.budget_period || 'monthly',
+    })
+    .eq('id', id)
+    .select()
+    .single()
+  if (error) return Response.json({ error: error.message }, { status: 500 })
+  return Response.json(data)
+}
+
 export async function DELETE(request, { params }) {
   const { id } = params
   const { error } = await supabase
