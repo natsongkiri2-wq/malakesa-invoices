@@ -119,6 +119,9 @@ export default function App() {
   const [page, setPage] = useState('dashboard')
   const [invoiceFilterHint, setInvoiceFilterHint] = useState('')
   const [overdueBannerDismissed, setOverdueBannerDismissed] = useState(false)
+  const [backupBannerDismissed, setBackupBannerDismissed] = useState(false)
+  const [lastBackupAt, setLastBackupAt] = useState(() => { try { return localStorage.getItem('malakesa_last_backup') } catch(e) { return null } })
+  const [backingUpTopLevel, setBackingUpTopLevel] = useState(false)
   const [invoices, setInvoices] = useState([])
   const [payments, setPayments] = useState([])
   const [clients, setClients] = useState([])
@@ -175,6 +178,37 @@ export default function App() {
   const overdueInvoices = invoices.filter(i => getStatus(i, payments) === 'overdue')
   const overdueTotal = overdueInvoices.reduce((s, i) => s + getBalance(i, payments), 0)
 
+  const daysSinceBackup = lastBackupAt ? Math.floor((Date.now() - new Date(lastBackupAt).getTime()) / (1000 * 60 * 60 * 24)) : null
+  const backupIsDue = daysSinceBackup === null || daysSinceBackup >= 7
+
+  const downloadQuickBackup = () => {
+    setBackingUpTopLevel(true)
+    try {
+      const backup = {
+        company: 'Malakesa Transfers and Tours',
+        exported_at: new Date().toISOString(),
+        invoices, payments, clients, purchases, suppliers, employees,
+        purchase_categories: customCategories,
+        salary_records: salaryRecords,
+      }
+      const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      const nowB = new Date()
+      a.href = url
+      a.download = `Malakesa_Full_Backup_${nowB.getFullYear()}-${String(nowB.getMonth() + 1).padStart(2, '0')}-${String(nowB.getDate()).padStart(2, '0')}.json`
+      a.click()
+      URL.revokeObjectURL(url)
+      const nowIso = new Date().toISOString()
+      try { localStorage.setItem('malakesa_last_backup', nowIso) } catch(e) {}
+      setLastBackupAt(nowIso)
+      setBackupBannerDismissed(false)
+    } catch (e) {
+      alert('Backup failed: ' + e.message)
+    }
+    setBackingUpTopLevel(false)
+  }
+
   return (
     <div style={{ display: 'flex', height: '100vh', fontFamily: '-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif', fontSize: 14, color: '#1a1a1a', background: '#FBF3E4' }}>
       {/* Sidebar */}
@@ -217,6 +251,24 @@ export default function App() {
             <div style={{ display: 'flex', gap: 8 }}>
               <button className="btn btn-sm" style={{ borderColor: '#791F1F', color: '#791F1F', background: '#fff' }} onClick={() => { setInvoiceFilterHint('overdue'); setPage('invoices') }}>Review &amp; Send Reminders</button>
               <button className="btn btn-sm" style={{ borderColor: 'transparent', color: '#791F1F', background: 'transparent' }} onClick={() => setOverdueBannerDismissed(true)} title="Dismiss for this session"><i className="ti ti-x"></i></button>
+            </div>
+          </div>
+        )}
+        {backupIsDue && !backupBannerDismissed && (
+          <div style={{ background: '#FDF0DC', borderBottom: '1px solid #EBCB8E', padding: '10px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#7A4E0A' }}>
+              <i className="ti ti-cloud-download" style={{ fontSize: 16 }}></i>
+              <span>
+                {lastBackupAt
+                  ? <>It's been <strong>{daysSinceBackup} days</strong> since your last data backup.</>
+                  : <>You haven't downloaded a data backup yet.</>} Keep a copy safe in case anything ever goes wrong.
+              </span>
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button className="btn btn-sm" style={{ borderColor: '#7A4E0A', color: '#7A4E0A', background: '#fff' }} onClick={downloadQuickBackup} disabled={backingUpTopLevel}>
+                <i className="ti ti-download"></i> {backingUpTopLevel ? 'Preparing...' : 'Download Backup Now'}
+              </button>
+              <button className="btn btn-sm" style={{ borderColor: 'transparent', color: '#7A4E0A', background: 'transparent' }} onClick={() => setBackupBannerDismissed(true)} title="Remind me later"><i className="ti ti-x"></i></button>
             </div>
           </div>
         )}
@@ -2204,6 +2256,7 @@ function Reports({ invoices, payments, purchases, salaryRecords }) {
       a.download = `Malakesa_Full_Backup_${nowBackup.getFullYear()}-${String(nowBackup.getMonth() + 1).padStart(2, '0')}-${String(nowBackup.getDate()).padStart(2, '0')}.json`
       a.click()
       URL.revokeObjectURL(url)
+      try { localStorage.setItem('malakesa_last_backup', new Date().toISOString()) } catch(e) {}
     } catch (e) {
       alert('Backup failed: ' + e.message)
     }
@@ -2225,6 +2278,9 @@ function Reports({ invoices, payments, purchases, salaryRecords }) {
           <div>
             <div style={{ fontWeight: 600, fontSize: 13, color: '#3D2214', display: 'flex', alignItems: 'center', gap: 6 }}><i className="ti ti-database-export"></i> Full Data Backup</div>
             <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>Download every invoice, client, payment, purchase, supplier, employee and salary record as one file — a safety copy independent of Supabase.</div>
+            <div style={{ fontSize: 11, color: '#aaa', marginTop: 4 }}>
+              {(() => { try { const last = localStorage.getItem('malakesa_last_backup'); return last ? `Last backup: ${new Date(last).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })} at ${new Date(last).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}` : 'No backup downloaded yet' } catch(e) { return '' } })()}
+            </div>
           </div>
           <button className="btn" style={{ background: '#1D6F42', borderColor: '#155233', color: '#fff', fontWeight: 500, whiteSpace: 'nowrap' }} onClick={downloadFullBackup} disabled={backingUp}>
             <i className="ti ti-download"></i> {backingUp ? 'Preparing...' : 'Download Full Backup'}
