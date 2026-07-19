@@ -534,7 +534,7 @@ function Dashboard({ invoices, payments, purchases, customCategories, loading, s
               const catsWithBudget = (customCategories || []).filter(c => c.budget && Number(c.budget) > 0)
               if (catsWithBudget.length === 0) return null
               const now4 = new Date()
-              const thisMonthStr4 = now4.toISOString().slice(0, 7)
+              const thisMonthStr4 = `${now4.getFullYear()}-${String(now4.getMonth() + 1).padStart(2, '0')}`
               const thisQStart4 = new Date(now4.getFullYear(), Math.floor(now4.getMonth() / 3) * 3, 1)
               const thisYearStr4 = String(now4.getFullYear())
               const getSpend4 = (catName, period) => purchasesList.filter(p => {
@@ -3330,13 +3330,14 @@ function Purchases({ purchases, suppliers, customCategories, reload, setModal, s
 
         {/* Budget Tracker */}
         {(() => {
+          const localMonthStr = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
           const now3 = new Date()
-          const thisMonthStr = now3.toISOString().slice(0, 7)
+          const thisMonthStr = localMonthStr(now3)
           const thisQStart = new Date(now3.getFullYear(), Math.floor(now3.getMonth() / 3) * 3, 1)
           const thisYearStr = String(now3.getFullYear())
           // Previous-period boundaries, for the "vs last period" comparison
           const lastMonthD = new Date(now3.getFullYear(), now3.getMonth() - 1, 1)
-          const lastMonthStr = lastMonthD.toISOString().slice(0, 7)
+          const lastMonthStr = localMonthStr(lastMonthD)
           const lastQEnd = new Date(thisQStart.getTime() - 1)
           const lastQStart = new Date(lastQEnd.getFullYear(), Math.floor(lastQEnd.getMonth() / 3) * 3, 1)
           const lastYearStr = String(now3.getFullYear() - 1)
@@ -3535,7 +3536,7 @@ function NewPurchaseModal({ suppliers, customCategories, purchases, purchase, on
     if (!cat || !cat.budget || Number(cat.budget) <= 0) return null
     const period = cat.budget_period || 'monthly'
     const now = new Date()
-    const thisMonthStr = now.toISOString().slice(0, 7)
+    const thisMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
     const thisQStart = new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3, 1)
     const thisYearStr = String(now.getFullYear())
     const alreadySpent = (purchases || []).filter(p => {
