@@ -6,7 +6,9 @@ const MALAKESA_LOGO = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAbgAAAB0CAY
 // ── Helpers ──────────────────────────────────────────────
 const fmt = (n) => 'VT ' + Number(n || 0).toLocaleString()
 const fmtDate = (d) => { if (!d) return ''; try { return new Date(d + 'T00:00:00').toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) } catch(e) { return d } }
-const todayStr = () => new Date().toISOString().split('T')[0]
+// Use local date components (not toISOString/UTC) so this is correct for Vanuatu (UTC+11) at any hour of the day
+const todayStr = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` }
+const localMonthStr = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
 const addDays = (d, n) => { const dt = new Date(d); dt.setDate(dt.getDate() + n); return dt.toISOString().split('T')[0] }
 const uid = () => Math.random().toString(36).slice(2)
 
@@ -403,14 +405,14 @@ function Dashboard({ invoices, payments, purchases, customCategories, loading, s
 
   const purchasesList = purchases || []
   const totalPurchases = purchasesList.reduce((s, p) => s + Number(p.amount || 0), 0)
-  const thisMonthPurchases = purchasesList.filter(p => p.date?.startsWith(new Date().toISOString().slice(0,7))).reduce((s, p) => s + Number(p.amount || 0), 0)
+  const thisMonthPurchases = purchasesList.filter(p => p.date?.startsWith(localMonthStr(new Date()))).reduce((s, p) => s + Number(p.amount || 0), 0)
   const recentPurchases = [...purchasesList].sort((a,b) => b.date > a.date ? 1 : -1).slice(0, 6)
 
   // Trend calculations: this month vs last month
   const now2 = new Date()
-  const thisMonth = now2.toISOString().slice(0, 7)
+  const thisMonth = localMonthStr(now2)
   const lastMonthD = new Date(now2.getFullYear(), now2.getMonth() - 1, 1)
-  const lastMonth = lastMonthD.toISOString().slice(0, 7)
+  const lastMonth = localMonthStr(lastMonthD)
   const invThisMonth = invoices.filter(i => i.date?.startsWith(thisMonth)).reduce((s, i) => s + Number(i.total), 0)
   const invLastMonth = invoices.filter(i => i.date?.startsWith(lastMonth)).reduce((s, i) => s + Number(i.total), 0)
   const pmtThisMonth = payments.filter(p => p.date?.startsWith(thisMonth)).reduce((s, p) => s + Number(p.amount), 0)
@@ -534,7 +536,7 @@ function Dashboard({ invoices, payments, purchases, customCategories, loading, s
               const catsWithBudget = (customCategories || []).filter(c => c.budget && Number(c.budget) > 0)
               if (catsWithBudget.length === 0) return null
               const now4 = new Date()
-              const thisMonthStr4 = `${now4.getFullYear()}-${String(now4.getMonth() + 1).padStart(2, '0')}`
+              const thisMonthStr4 = localMonthStr(now4)
               const thisQStart4 = new Date(now4.getFullYear(), Math.floor(now4.getMonth() / 3) * 3, 1)
               const thisYearStr4 = String(now4.getFullYear())
               const getSpend4 = (catName, period) => purchasesList.filter(p => {
@@ -735,7 +737,7 @@ function Invoices({ invoices, payments, reload, setModal, setSelected, initialSt
   const now = new Date()
   const monthOptions = Array.from({length: 12}, (_, i) => {
     const d = new Date(now.getFullYear(), now.getMonth() - 11 + i, 1)
-    return { value: d.toISOString().slice(0,7), label: MONTHS[d.getMonth()] + ' ' + d.getFullYear() }
+    return { value: localMonthStr(d), label: MONTHS[d.getMonth()] + ' ' + d.getFullYear() }
   }).reverse()
 
   let filtered = [...invoices].reverse()
@@ -1233,7 +1235,7 @@ function Invoices({ invoices, payments, reload, setModal, setSelected, initialSt
 
 function Payments({ payments, invoices, reload, setModal, setSelected }) {
   const total = payments.reduce((s, p) => s + Number(p.amount), 0)
-  const thisMonth = payments.filter(p => p.date?.startsWith(new Date().toISOString().slice(0, 7))).reduce((s, p) => s + Number(p.amount), 0)
+  const thisMonth = payments.filter(p => p.date?.startsWith(localMonthStr(new Date()))).reduce((s, p) => s + Number(p.amount), 0)
   const getInv = (id) => invoices.find(i => i.id === id) || {}
   const [receiptStatus, setReceiptStatus] = useState({})
 
@@ -1444,7 +1446,7 @@ function Unpaid({ invoices, payments, reload, setModal, setSelected }) {
   const now = new Date()
   const monthOptions = Array.from({length: 6}, (_, i) => {
     const d = new Date(now.getFullYear(), now.getMonth() - 5 + i, 1)
-    return { value: d.toISOString().slice(0,7), label: MONTHS[d.getMonth()] + ' ' + d.getFullYear() }
+    return { value: localMonthStr(d), label: MONTHS[d.getMonth()] + ' ' + d.getFullYear() }
   }).reverse()
 
   let filtered = allUnpaid
@@ -1576,17 +1578,17 @@ function Reports({ invoices, payments, purchases, salaryRecords }) {
   const [tab, setTab] = useState('revenue') // 'revenue' | 'suppliers' | 'cashflow'
   const [showExport, setShowExport] = useState(false)
   const [period, setPeriod] = useState('all')
-  const [revenueMonth, setRevenueMonth] = useState(new Date().toISOString().slice(0, 7))
+  const [revenueMonth, setRevenueMonth] = useState(localMonthStr(new Date()))
   const [filterClient, setFilterClient] = useState('')
 
   // VAT tab state — default to current month
   const nowD = new Date()
-  const defaultVatMonth = nowD.toISOString().slice(0, 7)
+  const defaultVatMonth = localMonthStr(nowD)
   const [vatMonth, setVatMonth] = useState(defaultVatMonth)
 
   // Supplier report tab state
   const [supplierPeriod, setSupplierPeriod] = useState('all') // 'all' | 'month' | 'quarter' | 'year' | 'specific'
-  const [supplierMonth, setSupplierMonth] = useState(nowD.toISOString().slice(0, 7))
+  const [supplierMonth, setSupplierMonth] = useState(localMonthStr(nowD))
   const [supplierSort, setSupplierSort] = useState('spend') // 'spend' | 'count' | 'name'
 
   // Cash flow tab date range
@@ -1600,7 +1602,7 @@ function Reports({ invoices, payments, purchases, salaryRecords }) {
   const MONTHS_LONG = ['January','February','March','April','May','June','July','August','September','October','November','December']
   const vatMonthOptions = Array.from({ length: 24 }, (_, i) => {
     const d = new Date(nowD.getFullYear(), nowD.getMonth() - i, 1)
-    return { value: d.toISOString().slice(0, 7), label: MONTHS_LONG[d.getMonth()] + ' ' + d.getFullYear() }
+    return { value: localMonthStr(d), label: MONTHS_LONG[d.getMonth()] + ' ' + d.getFullYear() }
   })
 
   // ── Revenue tab logic ──
@@ -2198,7 +2200,8 @@ function Reports({ invoices, payments, purchases, salaryRecords }) {
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `Malakesa_Full_Backup_${new Date().toISOString().slice(0, 10)}.json`
+      const nowBackup = new Date()
+      a.download = `Malakesa_Full_Backup_${nowBackup.getFullYear()}-${String(nowBackup.getMonth() + 1).padStart(2, '0')}-${String(nowBackup.getDate()).padStart(2, '0')}.json`
       a.click()
       URL.revokeObjectURL(url)
     } catch (e) {
@@ -2422,7 +2425,7 @@ function Reports({ invoices, payments, purchases, salaryRecords }) {
               const trendNow = new Date()
               const trendMonths = Array.from({ length: 6 }, (_, i) => {
                 const d = new Date(trendNow.getFullYear(), trendNow.getMonth() - 5 + i, 1)
-                return { key: d.toISOString().slice(0, 7), label: d.toLocaleDateString('en-AU', { month: 'short' }) }
+                return { key: localMonthStr(d), label: d.toLocaleDateString('en-AU', { month: 'short' }) }
               })
               const topCategories = Object.entries(byCategory).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([cat]) => cat)
               const trendColors = ['#A32D2D', '#8B6914', '#3B6D11', '#2563A8', '#633806']
@@ -2496,12 +2499,12 @@ function Reports({ invoices, payments, purchases, salaryRecords }) {
             const qStartMonth = currentQ * 3
             months = Array.from({ length: now.getMonth() - qStartMonth + 1 }, (_, i) => {
               const d = new Date(now.getFullYear(), qStartMonth + i, 1)
-              return { key: d.toISOString().slice(0, 7), label: d.toLocaleDateString('en-AU', { month: 'short', year: 'numeric' }) }
+              return { key: localMonthStr(d), label: d.toLocaleDateString('en-AU', { month: 'short', year: 'numeric' }) }
             })
           } else if (cashflowRange === 'year') {
             months = Array.from({ length: now.getMonth() + 1 }, (_, i) => {
               const d = new Date(now.getFullYear(), i, 1)
-              return { key: d.toISOString().slice(0, 7), label: d.toLocaleDateString('en-AU', { month: 'short', year: 'numeric' }) }
+              return { key: localMonthStr(d), label: d.toLocaleDateString('en-AU', { month: 'short', year: 'numeric' }) }
             })
           } else if (cashflowRange === 'custom' && cashflowStart && cashflowEnd) {
             const startD = new Date(cashflowStart + '-01T00:00:00')
@@ -2509,13 +2512,13 @@ function Reports({ invoices, payments, purchases, salaryRecords }) {
             const monthCount = Math.max(1, (endD.getFullYear() - startD.getFullYear()) * 12 + (endD.getMonth() - startD.getMonth()) + 1)
             months = Array.from({ length: monthCount }, (_, i) => {
               const d = new Date(startD.getFullYear(), startD.getMonth() + i, 1)
-              return { key: d.toISOString().slice(0, 7), label: d.toLocaleDateString('en-AU', { month: 'short', year: 'numeric' }) }
+              return { key: localMonthStr(d), label: d.toLocaleDateString('en-AU', { month: 'short', year: 'numeric' }) }
             })
           } else {
             // default: last 12 months
             months = Array.from({ length: 12 }, (_, i) => {
               const d = new Date(now.getFullYear(), now.getMonth() - 11 + i, 1)
-              return { key: d.toISOString().slice(0, 7), label: d.toLocaleDateString('en-AU', { month: 'short', year: 'numeric' }) }
+              return { key: localMonthStr(d), label: d.toLocaleDateString('en-AU', { month: 'short', year: 'numeric' }) }
             })
           }
 
@@ -2556,7 +2559,7 @@ function Reports({ invoices, payments, purchases, salaryRecords }) {
           const ytdNet = ytdIn - ytdPurchases - ytdSalaries
 
           // This month
-          const thisMonthKey = now.toISOString().slice(0, 7)
+          const thisMonthKey = localMonthStr(now)
           const thisMonthData = cashFlow.find(m => m.key === thisMonthKey) || { in: 0, out: 0, net: 0 }
           const maxVal = Math.max(...cashFlow.map(m => Math.max(m.in, m.out)), 1)
 
@@ -2966,7 +2969,7 @@ const PURCHASE_CATEGORIES = ['Fuel', 'Vehicle Maintenance', 'Insurance', 'Office
 // ── VAT Return Page (standalone) ──
 function VatPage({ invoices, payments, purchases }) {
   const nowD = new Date()
-  const defaultVatMonth = nowD.toISOString().slice(0, 7)
+  const defaultVatMonth = localMonthStr(nowD)
   const [vatMonth, setVatMonth] = useState(defaultVatMonth)
   const [showExport, setShowExport] = useState(false)
 
@@ -3234,7 +3237,7 @@ function Purchases({ purchases, suppliers, customCategories, reload, setModal, s
   const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
   const monthOptions = Array.from({length: 12}, (_, i) => {
     const d = new Date(now.getFullYear(), now.getMonth() - 11 + i, 1)
-    return { value: d.toISOString().slice(0,7), label: MONTHS[d.getMonth()] + ' ' + d.getFullYear() }
+    return { value: localMonthStr(d), label: MONTHS[d.getMonth()] + ' ' + d.getFullYear() }
   }).reverse()
 
   let filtered = [...purchases].sort((a,b) => b.date > a.date ? 1 : -1)
@@ -3330,7 +3333,6 @@ function Purchases({ purchases, suppliers, customCategories, reload, setModal, s
 
         {/* Budget Tracker */}
         {(() => {
-          const localMonthStr = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
           const now3 = new Date()
           const thisMonthStr = localMonthStr(now3)
           const thisQStart = new Date(now3.getFullYear(), Math.floor(now3.getMonth() / 3) * 3, 1)
@@ -3536,7 +3538,7 @@ function NewPurchaseModal({ suppliers, customCategories, purchases, purchase, on
     if (!cat || !cat.budget || Number(cat.budget) <= 0) return null
     const period = cat.budget_period || 'monthly'
     const now = new Date()
-    const thisMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+    const thisMonthStr = localMonthStr(now)
     const thisQStart = new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3, 1)
     const thisYearStr = String(now.getFullYear())
     const alreadySpent = (purchases || []).filter(p => {
@@ -4075,9 +4077,9 @@ function VNPF({ employees, salaryRecords, reload, setModal, setSelected }) {
   const MONTHS_LONG = ['January','February','March','April','May','June','July','August','September','October','November','December']
   const monthOptions = Array.from({ length: 24 }, (_, i) => {
     const d = new Date(nowD.getFullYear(), nowD.getMonth() - i, 1)
-    return { value: d.toISOString().slice(0, 7), label: MONTHS_LONG[d.getMonth()] + ' ' + d.getFullYear() }
+    return { value: localMonthStr(d), label: MONTHS_LONG[d.getMonth()] + ' ' + d.getFullYear() }
   })
-  const [vnpfMonth, setVnpfMonth] = useState(nowD.toISOString().slice(0, 7))
+  const [vnpfMonth, setVnpfMonth] = useState(localMonthStr(nowD))
   const [emailStatus, setEmailStatus] = useState('')
 
   const activeEmployees = employees.filter(e => e.active !== false)
@@ -4420,9 +4422,9 @@ function SalariesTab({ employees, salaryRecords, reload, fmt }) {
   const MONTHS_LONG = ['January','February','March','April','May','June','July','August','September','October','November','December']
   const monthOptions = Array.from({ length: 24 }, (_, i) => {
     const d = new Date(nowD.getFullYear(), nowD.getMonth() - i, 1)
-    return { value: d.toISOString().slice(0, 7), label: MONTHS_LONG[d.getMonth()] + ' ' + d.getFullYear() }
+    return { value: localMonthStr(d), label: MONTHS_LONG[d.getMonth()] + ' ' + d.getFullYear() }
   })
-  const [salaryMonth, setSalaryMonth] = useState(nowD.toISOString().slice(0, 7))
+  const [salaryMonth, setSalaryMonth] = useState(localMonthStr(nowD))
   const monthLabel = monthOptions.find(m => m.value === salaryMonth)?.label || salaryMonth
   const activeEmployees = employees.filter(e => e.active !== false)
   const [payRunModal, setPayRunModal] = useState(null) // emp object when open
@@ -4714,12 +4716,12 @@ function PayRunModal({ emp, defaultMonth, onClose, onSave, fmt }) {
   const MONTHS_LONG = ['January','February','March','April','May','June','July','August','September','October','November','December']
   const monthOptions = Array.from({ length: 24 }, (_, i) => {
     const d = new Date(nowD.getFullYear(), nowD.getMonth() - i, 1)
-    return { value: d.toISOString().slice(0, 7), label: MONTHS_LONG[d.getMonth()] + ' ' + d.getFullYear() }
+    return { value: localMonthStr(d), label: MONTHS_LONG[d.getMonth()] + ' ' + d.getFullYear() }
   })
 
   const [form, setForm] = useState({
     month: defaultMonth,
-    pay_date: nowD.toISOString().slice(0, 10),
+    pay_date: `${nowD.getFullYear()}-${String(nowD.getMonth() + 1).padStart(2, '0')}-${String(nowD.getDate()).padStart(2, '0')}`,
     days_worked: '',
     gross: emp.salary || '',
     allowances: [],
