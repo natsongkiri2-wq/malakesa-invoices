@@ -3782,10 +3782,28 @@ function ManageCategoriesModal({ customCategories, onClose, onSave }) {
   }
 
   const [budgetSaveError, setBudgetSaveError] = useState('')
-  const handleUpdateBudget = async (id, budget, budget_period) => {
+  const handleUpdateBudget = async (catNameOrId, budget, budget_period, isBuiltIn) => {
     setBudgetSaveError('')
     const budgetVal = budget === '' || budget === null ? null : Number(budget)
     try {
+      let id = catNameOrId
+      // Built-in categories have no row yet — create one on first budget entry
+      if (isBuiltIn) {
+        const existing = list.find(c => c.name === catNameOrId)
+        if (existing) {
+          id = existing.id
+        } else {
+          const createRes = await fetch('/api/purchase-categories', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: catNameOrId })
+          })
+          if (!createRes.ok) { const d = await createRes.json().catch(() => ({})); setBudgetSaveError(d.error || 'Could not save budget — please try again'); return }
+          const created = await createRes.json()
+          id = created.id
+          setList(l => [...l, created])
+        }
+      }
       const res = await fetch('/api/purchase-categories/' + id, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -3808,21 +3826,35 @@ function ManageCategoriesModal({ customCategories, onClose, onSave }) {
       {budgetSaveError && <Alert type="danger">{budgetSaveError}</Alert>}
       <div style={{ marginBottom: 16 }}>
         <div style={{ fontSize: 12, color: '#666', fontWeight: 500, marginBottom: 8 }}>Built-in categories</div>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-          {builtIns.map(c => (
-            <span key={c} style={{ background: '#FBF3E4', padding: '4px 10px', borderRadius: 99, fontSize: 12, color: '#3D2214' }}>{c}</span>
-          ))}
-          <span style={{ background: '#f1f1f1', padding: '4px 10px', borderRadius: 99, fontSize: 12, color: '#888' }}>Other</span>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {[...builtIns, 'Other'].map(name => {
+            const row = list.find(c => c.name === name)
+            return (
+              <div key={name} style={{ background: '#FBF3E4', padding: '10px 12px', borderRadius: 8, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <span style={{ fontSize: 13, color: '#3D2214', fontWeight: 600 }}>{name}</span>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                  <label style={{ fontSize: 11, color: '#666', whiteSpace: 'nowrap' }}>Budget (VT):</label>
+                  <input type="number" placeholder="No budget" defaultValue={row?.budget || ''} onBlur={e => handleUpdateBudget(name, e.target.value, row?.budget_period || 'monthly', true)} style={{ ...inputStyle, width: 120, fontSize: 12 }} />
+                  <select defaultValue={row?.budget_period || 'monthly'} onChange={e => handleUpdateBudget(name, row?.budget, e.target.value, true)} style={{ ...inputStyle, fontSize: 12, padding: '4px 8px' }}>
+                    <option value="monthly">per month</option>
+                    <option value="quarterly">per quarter</option>
+                    <option value="yearly">per year</option>
+                  </select>
+                  {row?.budget && <span style={{ fontSize: 11, color: '#8B6914', fontWeight: 500 }}>Budget: {fmt(row.budget)}/{(row.budget_period||'monthly').slice(0,2)}</span>}
+                </div>
+              </div>
+            )
+          })}
         </div>
       </div>
 
       <div style={{ marginBottom: 16 }}>
         <div style={{ fontSize: 12, color: '#666', fontWeight: 500, marginBottom: 8 }}>Your custom categories</div>
-        {list.length === 0 ? (
+        {list.filter(c => ![...builtIns, 'Other'].includes(c.name)).length === 0 ? (
           <div style={{ fontSize: 13, color: '#999', fontStyle: 'italic' }}>No custom categories yet — add one below.</div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {list.map(c => (
+            {list.filter(c => ![...builtIns, 'Other'].includes(c.name)).map(c => (
               <div key={c.id} style={{ background: '#f5f0e8', padding: '10px 12px', borderRadius: 8, display: 'flex', flexDirection: 'column', gap: 8 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ fontSize: 13, color: '#3D2214', fontWeight: 600 }}>{c.name}</span>
@@ -3830,8 +3862,8 @@ function ManageCategoriesModal({ customCategories, onClose, onSave }) {
                 </div>
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                   <label style={{ fontSize: 11, color: '#666', whiteSpace: 'nowrap' }}>Budget (VT):</label>
-                  <input type="number" placeholder="No budget" defaultValue={c.budget || ''} onBlur={e => handleUpdateBudget(c.id, e.target.value, c.budget_period || 'monthly')} style={{ ...inputStyle, width: 120, fontSize: 12 }} />
-                  <select defaultValue={c.budget_period || 'monthly'} onChange={e => handleUpdateBudget(c.id, c.budget, e.target.value)} style={{ ...inputStyle, fontSize: 12, padding: '4px 8px' }}>
+                  <input type="number" placeholder="No budget" defaultValue={c.budget || ''} onBlur={e => handleUpdateBudget(c.id, e.target.value, c.budget_period || 'monthly', false)} style={{ ...inputStyle, width: 120, fontSize: 12 }} />
+                  <select defaultValue={c.budget_period || 'monthly'} onChange={e => handleUpdateBudget(c.id, c.budget, e.target.value, false)} style={{ ...inputStyle, fontSize: 12, padding: '4px 8px' }}>
                     <option value="monthly">per month</option>
                     <option value="quarterly">per quarter</option>
                     <option value="yearly">per year</option>
