@@ -71,7 +71,7 @@ function LoginScreen({ onLogin }) {
       <div style={{ width: '100%', maxWidth: 420 }}>
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
           <img src={MALAKESA_LOGO} alt="Malakesa" style={{ width: 240, borderRadius: 8, display: 'block', margin: '0 auto 16px' }} />
-          <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12, letterSpacing: 2 }}>INVOICE & PURCHASES MANAGER</div>
+          <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12, letterSpacing: 2 }}>SALES & PURCHASES MANAGER</div>
         </div>
         <div style={{ background: 'rgba(255,255,255,0.05)', border: '0.5px solid rgba(255,215,0,0.2)', borderRadius: 16, padding: '32px 32px 28px' }}>
           <h2 style={{ color: '#F5D98A', fontSize: 20, fontWeight: 700, margin: '0 0 6px', textAlign: 'center' }}>Welcome back</h2>
@@ -220,7 +220,7 @@ export default function App() {
             style={{ width: '100%', maxWidth: 188, borderRadius: 6, display: 'block', margin: '0 auto 4px' }}
           />
           <div style={{ marginTop: 8, background: 'rgba(255,215,0,0.1)', border: '0.5px solid rgba(255,215,0,0.3)', borderRadius: 4, padding: '3px 8px', display: 'inline-block' }}>
-            <div style={{ fontSize: 8, color: '#1a1a1a', letterSpacing: '2.5px', fontWeight: 700 }}>INVOICE &amp; PURCHASES MANAGER</div>
+            <div style={{ fontSize: 8, color: '#1a1a1a', letterSpacing: '2.5px', fontWeight: 700 }}>SALES &amp; PURCHASES MANAGER</div>
           </div>
         </div>
         <nav style={{ flex: 1, padding: '8px 0' }}>
