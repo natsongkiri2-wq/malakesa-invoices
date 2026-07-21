@@ -47,7 +47,7 @@ export async function POST(req) {
     </div>
     <div style="background:#fff;padding:24px 32px;border-radius:0 0 8px 8px;border:1px solid #e0d5c0;border-top:none">
       <div style="text-align:center;margin:16px 0">
-        <div style="display:inline-block;border:3px solid #3B6D11;color:#3B6D11;font-size:22px;font-weight:900;letter-spacing:6px;padding:6px 24px;border-radius:4px;transform:rotate(-3deg)">PAID</div>
+        <div style="display:inline-block;border:3px solid #A32D2D;color:#A32D2D;font-size:22px;font-weight:900;letter-spacing:6px;padding:6px 24px;border-radius:4px;transform:rotate(-3deg)">PAID</div>
       </div>
       <div style="background:#faf6ee;border-radius:6px;padding:14px 16px;margin:16px 0">
         <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f0ebe0;font-size:13px"><span style="color:#888">Receipt No.</span><span style="font-weight:600">${receiptNum}</span></div>
@@ -75,6 +75,11 @@ export async function POST(req) {
       subject: `Payment Receipt ${receiptNum} — Malakesa Transfer and Tour`,
       html,
     })
+
+    await supabase
+      .from('payments')
+      .update({ receipt_emailed_at: new Date().toISOString() })
+      .eq('id', paymentId)
 
     return NextResponse.json({ success: true, sentTo: uniqueEmails })
   } catch (err) {
