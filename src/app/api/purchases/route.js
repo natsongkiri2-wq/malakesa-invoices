@@ -16,13 +16,13 @@ export async function GET() {
 
 export async function POST(request) {
   const body = await request.json()
-  const { date, supplier, description, category, amount, vat, amount_ex_vat, ref, receipt_url } = body
+  const { date, supplier, description, category, amount, vat, amount_ex_vat, ref, receipt_url, payment_method } = body
   if (!supplier || !date || !amount) {
     return Response.json({ error: 'supplier, date and amount are required' }, { status: 400 })
   }
   const { data, error } = await supabase
     .from('purchases')
-    .insert([{ date, supplier, description, category, amount: Number(amount), vat: Number(vat || 0), amount_ex_vat: Number(amount_ex_vat || 0), ref, receipt_url: receipt_url || null }])
+    .insert([{ date, supplier, description, category, amount: Number(amount), vat: Number(vat || 0), amount_ex_vat: Number(amount_ex_vat || 0), ref, receipt_url: receipt_url || null, payment_method: payment_method || 'Cheque' }])
     .select()
     .single()
   if (error) return Response.json({ error: error.message }, { status: 500 })

@@ -18,6 +18,7 @@ export async function PUT(req, { params }) {
       amount_ex_vat: body.amount_ex_vat || 0,
       ref: body.ref || null,
       receipt_url: body.receipt_url ?? null,
+      payment_method: body.payment_method || 'Cheque',
     })
     .eq('id', id)
     .select()
