@@ -1290,6 +1290,22 @@ function Payments({ payments, invoices, reload, setModal, setSelected }) {
   const thisMonth = payments.filter(p => p.date?.startsWith(localMonthStr(new Date()))).reduce((s, p) => s + Number(p.amount), 0)
   const getInv = (id) => invoices.find(i => i.id === id) || {}
   const [receiptStatus, setReceiptStatus] = useState({})
+  const [reversing, setReversing] = useState(null)
+
+  const handleReversePayment = async (payment) => {
+    const inv = getInv(payment.invoice_id)
+    const label = inv?.number ? `invoice ${inv.number}` : 'this invoice'
+    if (!confirm(`Reverse this payment of ${fmt(payment.amount)} against ${label}?\n\nThis will permanently delete the payment record and the invoice will go back to unpaid/partial status. This cannot be undone.`)) return
+    setReversing(payment.id)
+    try {
+      await fetch('/api/payments/' + payment.id, { method: 'DELETE' })
+      reload()
+    } catch (e) {
+      alert('Failed to reverse payment — please check your connection and try again.')
+    }
+    setReversing(null)
+  }
+
 
   const printReceipt = (payment) => {
     const inv = getInv(payment.invoice_id)
@@ -1471,6 +1487,7 @@ function Payments({ payments, invoices, reload, setModal, setSelected }) {
                         <button className="btn btn-sm" style={{ fontSize: 11, padding: '2px 8px' }} onClick={() => emailReceipt(p)} disabled={receiptStatus[p.id] === 'sending'}><i className="ti ti-mail"></i> {receiptStatus[p.id] === 'sending' ? '...' : 'Email'}</button>
                         {receiptStatus[p.id] === 'sent' && <span style={{ fontSize: 11, color: '#3B6D11' }}>✓ Sent</span>}
                         {receiptStatus[p.id] === 'error' && <span style={{ fontSize: 11, color: '#D85A30' }}>Failed</span>}
+                        <button className="btn btn-sm" style={{ fontSize: 11, padding: '2px 8px', borderColor: '#A32D2D', color: '#A32D2D' }} onClick={() => handleReversePayment(p)} disabled={reversing === p.id} title="Reverse this payment"><i className="ti ti-arrow-back-up"></i> {reversing === p.id ? 'Reversing...' : 'Reverse'}</button>
                       </div>
                     </Td>
                   </tr>
