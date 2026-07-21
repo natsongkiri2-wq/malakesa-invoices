@@ -19,6 +19,7 @@ export async function PUT(req, { params }) {
       ref: body.ref || null,
       receipt_url: body.receipt_url ?? null,
       payment_method: body.payment_method || 'Cheque',
+      cheque_number: body.cheque_number || null,
     })
     .eq('id', id)
     .select()

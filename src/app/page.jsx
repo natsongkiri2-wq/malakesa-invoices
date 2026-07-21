@@ -3327,6 +3327,7 @@ function Purchases({ purchases, suppliers, customCategories, reload, setModal, s
     { key: 'vat', label: 'VAT (VT)' },
     { key: 'amount', label: 'Total (VT)' },
     { key: 'payment_method', label: 'Payment Method' },
+    { key: 'cheque_number', label: 'Cheque Number' },
     { key: 'ref', label: 'Ref / PO #' },
   ]
   const handlePurchaseExport = (format, selected) => {
@@ -3336,7 +3337,7 @@ function Purchases({ purchases, suppliers, customCategories, reload, setModal, s
       if (!w) { alert('Please allow popups.'); return }
       const now = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
       const rows = filtered.map(p =>
-        `<tr><td>${fmtDate(p.date)}</td><td><strong>${p.supplier}</strong></td><td style='color:#555'>${p.description||'—'}</td><td><span style='background:#FBF3E420;padding:2px 7px;border-radius:99px;font-size:11px'>${p.category||'Other'}</span></td><td style='text-align:right'>${fmt(p.amount_ex_vat||0)}</td><td style='text-align:right;color:#2E7D2E'>${Number(p.vat)>0?fmt(p.vat):'Nil'}</td><td style='text-align:right;font-weight:600'>${fmt(p.amount)}</td><td>${p.payment_method||'Cheque'}</td><td style='color:#999;font-size:12px'>${p.ref||'—'}</td></tr>`
+        `<tr><td>${fmtDate(p.date)}</td><td><strong>${p.supplier}</strong></td><td style='color:#555'>${p.description||'—'}</td><td><span style='background:#FBF3E420;padding:2px 7px;border-radius:99px;font-size:11px'>${p.category||'Other'}</span></td><td style='text-align:right'>${fmt(p.amount_ex_vat||0)}</td><td style='text-align:right;color:#2E7D2E'>${Number(p.vat)>0?fmt(p.vat):'Nil'}</td><td style='text-align:right;font-weight:600'>${fmt(p.amount)}</td><td>${p.payment_method||'Cheque'}${p.payment_method==='Cheque'&&p.cheque_number?' #'+p.cheque_number:''}</td><td style='color:#999;font-size:12px'>${p.ref||'—'}</td></tr>`
       ).join('')
       w.document.write(`<!DOCTYPE html><html><head><title>Purchases Export</title><style>
         body{font-family:Arial,sans-serif;color:#222;font-size:12px;margin:0}
@@ -3519,7 +3520,10 @@ function Purchases({ purchases, suppliers, customCategories, reload, setModal, s
                       {Number(p.vat) > 0 ? fmt(p.vat) : <span style={{ fontStyle: 'italic', fontSize: 11 }}>Nil</span>}
                     </Td>
                     <Td style={{ textAlign: 'right', fontWeight: 500 }}>{fmt(p.amount)}</Td>
-                    <Td><span style={{ background: '#f5f0e8', padding: '2px 8px', borderRadius: 99, fontSize: 11, whiteSpace: 'nowrap', color: '#3D2214' }}>{p.payment_method || 'Cheque'}</span></Td>
+                    <Td>
+                      <span style={{ background: '#f5f0e8', padding: '2px 8px', borderRadius: 99, fontSize: 11, whiteSpace: 'nowrap', color: '#3D2214' }}>{p.payment_method || 'Cheque'}</span>
+                      {p.payment_method === 'Cheque' && p.cheque_number && <div style={{ fontSize: 11, color: '#999', marginTop: 2 }}>#{p.cheque_number}</div>}
+                    </Td>
                     <Td style={{ color: '#999', fontSize: 12 }}>
                       {p.ref || '—'}
                       {p.receipt_url && <a href={p.receipt_url} target="_blank" rel="noopener noreferrer" title="View attached receipt" style={{ marginLeft: 6, color: '#8B6914' }}><i className="ti ti-paperclip"></i></a>}
@@ -3551,8 +3555,8 @@ function NewPurchaseModal({ suppliers, customCategories, purchases, purchase, on
   const isEdit = !!purchase
   const allCategories = [...PURCHASE_CATEGORIES.slice(0, -1), ...(customCategories || []).map(c => c.name), 'Other']
   const [form, setForm] = useState(isEdit
-    ? { date: purchase.date || todayStr(), supplier_id: purchase.supplier_id || '', supplier: purchase.supplier || '', description: purchase.description || '', category: purchase.category || 'Other', amount: purchase.amount ?? '', vat: purchase.vat ?? '', ref: purchase.ref || '', payment_method: purchase.payment_method || 'Cheque' }
-    : { date: todayStr(), supplier_id: '', supplier: '', description: '', category: 'Other', amount: '', vat: '', ref: '', payment_method: 'Cheque' })
+    ? { date: purchase.date || todayStr(), supplier_id: purchase.supplier_id || '', supplier: purchase.supplier || '', description: purchase.description || '', category: purchase.category || 'Other', amount: purchase.amount ?? '', vat: purchase.vat ?? '', ref: purchase.ref || '', payment_method: purchase.payment_method || 'Cheque', cheque_number: purchase.cheque_number || '' }
+    : { date: todayStr(), supplier_id: '', supplier: '', description: '', category: 'Other', amount: '', vat: '', ref: '', payment_method: 'Cheque', cheque_number: '' })
   const [vatMode, setVatMode] = useState(isEdit ? (Number(purchase.vat) > 0 ? 'manual' : 'none') : 'calc15')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -3755,6 +3759,11 @@ function NewPurchaseModal({ suppliers, customCategories, purchases, purchase, on
             {PAYMENT_METHODS.map(m => <option key={m} value={m}>{m}</option>)}
           </select>
         </Field>
+        {form.payment_method === 'Cheque' && (
+          <Field label="Cheque Number">
+            <input type="text" value={form.cheque_number} onChange={e => setForm(f => ({ ...f, cheque_number: e.target.value }))} style={inputStyle} placeholder="e.g. 001234" />
+          </Field>
+        )}
         <Field label="VAT Treatment">
           <select value={vatMode} onChange={e => setVatMode(e.target.value)} style={inputStyle}>
             <option value="calc15">Calculate VAT at 15% (from inc. price)</option>
