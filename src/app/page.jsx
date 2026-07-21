@@ -3019,6 +3019,7 @@ function Reports({ invoices, payments, purchases, salaryRecords }) {
 
 // ── Purchases ─────────────────────────────────────────────
 const PURCHASE_CATEGORIES = ['Fuel', 'Vehicle Maintenance', 'Insurance', 'Office Supplies', 'Utilities', 'Staff Costs', 'Marketing', 'Equipment', 'Accommodation', 'Food & Beverages', 'Professional Services', 'Bank Charges', 'Other']
+const PAYMENT_METHODS = ['Cheque', 'Cash', 'Bank Transfer', 'Other']
 
 
 
@@ -3325,6 +3326,7 @@ function Purchases({ purchases, suppliers, customCategories, reload, setModal, s
     { key: 'amount_ex_vat', label: 'Ex-VAT (VT)' },
     { key: 'vat', label: 'VAT (VT)' },
     { key: 'amount', label: 'Total (VT)' },
+    { key: 'payment_method', label: 'Payment Method' },
     { key: 'ref', label: 'Ref / PO #' },
   ]
   const handlePurchaseExport = (format, selected) => {
@@ -3334,7 +3336,7 @@ function Purchases({ purchases, suppliers, customCategories, reload, setModal, s
       if (!w) { alert('Please allow popups.'); return }
       const now = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
       const rows = filtered.map(p =>
-        `<tr><td>${fmtDate(p.date)}</td><td><strong>${p.supplier}</strong></td><td style='color:#555'>${p.description||'—'}</td><td><span style='background:#FBF3E420;padding:2px 7px;border-radius:99px;font-size:11px'>${p.category||'Other'}</span></td><td style='text-align:right'>${fmt(p.amount_ex_vat||0)}</td><td style='text-align:right;color:#2E7D2E'>${Number(p.vat)>0?fmt(p.vat):'Nil'}</td><td style='text-align:right;font-weight:600'>${fmt(p.amount)}</td><td style='color:#999;font-size:12px'>${p.ref||'—'}</td></tr>`
+        `<tr><td>${fmtDate(p.date)}</td><td><strong>${p.supplier}</strong></td><td style='color:#555'>${p.description||'—'}</td><td><span style='background:#FBF3E420;padding:2px 7px;border-radius:99px;font-size:11px'>${p.category||'Other'}</span></td><td style='text-align:right'>${fmt(p.amount_ex_vat||0)}</td><td style='text-align:right;color:#2E7D2E'>${Number(p.vat)>0?fmt(p.vat):'Nil'}</td><td style='text-align:right;font-weight:600'>${fmt(p.amount)}</td><td>${p.payment_method||'Cheque'}</td><td style='color:#999;font-size:12px'>${p.ref||'—'}</td></tr>`
       ).join('')
       w.document.write(`<!DOCTYPE html><html><head><title>Purchases Export</title><style>
         body{font-family:Arial,sans-serif;color:#222;font-size:12px;margin:0}
@@ -3351,8 +3353,8 @@ function Purchases({ purchases, suppliers, customCategories, reload, setModal, s
       <div class='noprint'><span>Purchases Export — ${filterDesc}</span><button class='printbtn' onclick='window.print()'>🖨️ Print / Save PDF</button></div>
       <div style='padding:20px 30px'><h1>Malakesa Transfers &amp; Tours</h1>
       <div class='sub'>Purchases Export &nbsp;|&nbsp; ${filterDesc} &nbsp;|&nbsp; ${now}<br>${filtered.length} purchase(s) &nbsp;|&nbsp; Total: VT ${Number(totalAmount).toLocaleString()} &nbsp;|&nbsp; Input VAT: VT ${Number(totalVat).toLocaleString()}</div>
-      <table><thead><tr><th>Date</th><th>Supplier</th><th>Description</th><th>Category</th><th style='text-align:right'>Ex-VAT</th><th style='text-align:right'>VAT</th><th style='text-align:right'>Total</th><th>Ref</th></tr></thead><tbody>${rows}</tbody>
-      <tr style='background:#FBF3E4;font-weight:700'><td colspan='4' style='padding:8px'>TOTAL (${filtered.length})</td><td style='padding:8px;text-align:right'>VT ${Number(totalExVat).toLocaleString()}</td><td style='padding:8px;text-align:right;color:#2E7D2E'>VT ${Number(totalVat).toLocaleString()}</td><td style='padding:8px;text-align:right'>VT ${Number(totalAmount).toLocaleString()}</td><td></td></tr>
+      <table><thead><tr><th>Date</th><th>Supplier</th><th>Description</th><th>Category</th><th style='text-align:right'>Ex-VAT</th><th style='text-align:right'>VAT</th><th style='text-align:right'>Total</th><th>Payment</th><th>Ref</th></tr></thead><tbody>${rows}</tbody>
+      <tr style='background:#FBF3E4;font-weight:700'><td colspan='4' style='padding:8px'>TOTAL (${filtered.length})</td><td style='padding:8px;text-align:right'>VT ${Number(totalExVat).toLocaleString()}</td><td style='padding:8px;text-align:right;color:#2E7D2E'>VT ${Number(totalVat).toLocaleString()}</td><td style='padding:8px;text-align:right'>VT ${Number(totalAmount).toLocaleString()}</td><td colspan='2'></td></tr>
       </table></div><script>window.onload=()=>window.print()<\/script></body></html>`)
       w.document.close()
       return
@@ -3502,6 +3504,7 @@ function Purchases({ purchases, suppliers, customCategories, reload, setModal, s
                 <Th style={{ textAlign: 'right' }}>Ex-VAT</Th>
                 <Th style={{ textAlign: 'right' }}>VAT</Th>
                 <Th style={{ textAlign: 'right' }}>Total</Th>
+                <Th>Payment</Th>
                 <Th>Ref</Th><Th></Th>
               </tr></thead>
               <tbody>
@@ -3516,6 +3519,7 @@ function Purchases({ purchases, suppliers, customCategories, reload, setModal, s
                       {Number(p.vat) > 0 ? fmt(p.vat) : <span style={{ fontStyle: 'italic', fontSize: 11 }}>Nil</span>}
                     </Td>
                     <Td style={{ textAlign: 'right', fontWeight: 500 }}>{fmt(p.amount)}</Td>
+                    <Td><span style={{ background: '#f5f0e8', padding: '2px 8px', borderRadius: 99, fontSize: 11, whiteSpace: 'nowrap', color: '#3D2214' }}>{p.payment_method || 'Cheque'}</span></Td>
                     <Td style={{ color: '#999', fontSize: 12 }}>
                       {p.ref || '—'}
                       {p.receipt_url && <a href={p.receipt_url} target="_blank" rel="noopener noreferrer" title="View attached receipt" style={{ marginLeft: 6, color: '#8B6914' }}><i className="ti ti-paperclip"></i></a>}
@@ -3531,7 +3535,7 @@ function Purchases({ purchases, suppliers, customCategories, reload, setModal, s
                   <td style={{ padding: '9px 14px', textAlign: 'right', fontSize: 13 }}>{fmt(totalExVat)}</td>
                   <td style={{ padding: '9px 14px', textAlign: 'right', fontSize: 13, color: '#2E7D2E' }}>{fmt(totalVat)}</td>
                   <td style={{ padding: '9px 14px', textAlign: 'right', fontSize: 13 }}>{fmt(totalAmount)}</td>
-                  <td colSpan={2}></td>
+                  <td colSpan={3}></td>
                 </tr>
               </tbody>
             </table>
@@ -3547,8 +3551,8 @@ function NewPurchaseModal({ suppliers, customCategories, purchases, purchase, on
   const isEdit = !!purchase
   const allCategories = [...PURCHASE_CATEGORIES.slice(0, -1), ...(customCategories || []).map(c => c.name), 'Other']
   const [form, setForm] = useState(isEdit
-    ? { date: purchase.date || todayStr(), supplier_id: purchase.supplier_id || '', supplier: purchase.supplier || '', description: purchase.description || '', category: purchase.category || 'Other', amount: purchase.amount ?? '', vat: purchase.vat ?? '', ref: purchase.ref || '' }
-    : { date: todayStr(), supplier_id: '', supplier: '', description: '', category: 'Other', amount: '', vat: '', ref: '' })
+    ? { date: purchase.date || todayStr(), supplier_id: purchase.supplier_id || '', supplier: purchase.supplier || '', description: purchase.description || '', category: purchase.category || 'Other', amount: purchase.amount ?? '', vat: purchase.vat ?? '', ref: purchase.ref || '', payment_method: purchase.payment_method || 'Cheque' }
+    : { date: todayStr(), supplier_id: '', supplier: '', description: '', category: 'Other', amount: '', vat: '', ref: '', payment_method: 'Cheque' })
   const [vatMode, setVatMode] = useState(isEdit ? (Number(purchase.vat) > 0 ? 'manual' : 'none') : 'calc15')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -3746,6 +3750,11 @@ function NewPurchaseModal({ suppliers, customCategories, purchases, purchase, on
         </Field>
         <Field label="Description" style={{ gridColumn: '1/-1' }}><input type="text" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} style={inputStyle} placeholder="What was purchased..." /></Field>
         <Field label="Total Amount (VT inc. VAT) *"><input type="number" value={form.amount} min="0" onChange={e => setForm(f => ({ ...f, amount: e.target.value }))} style={inputStyle} placeholder="0" /></Field>
+        <Field label="Payment Method">
+          <select value={form.payment_method} onChange={e => setForm(f => ({ ...f, payment_method: e.target.value }))} style={inputStyle}>
+            {PAYMENT_METHODS.map(m => <option key={m} value={m}>{m}</option>)}
+          </select>
+        </Field>
         <Field label="VAT Treatment">
           <select value={vatMode} onChange={e => setVatMode(e.target.value)} style={inputStyle}>
             <option value="calc15">Calculate VAT at 15% (from inc. price)</option>
