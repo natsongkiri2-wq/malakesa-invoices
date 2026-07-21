@@ -1322,7 +1322,7 @@ function Payments({ payments, invoices, reload, setModal, setSelected }) {
     .rec-num { font-size: 20px; font-weight: 700; color: #F5D98A; margin-top: 2px; }
     .body { padding: 24px 32px; }
     .paid-stamp { text-align: center; margin: 16px 0; }
-    .paid-box { display: inline-block; border: 3px solid #3B6D11; color: #3B6D11; font-size: 22px; font-weight: 900; letter-spacing: 6px; padding: 6px 24px; border-radius: 4px; transform: rotate(-3deg); }
+    .paid-box { display: inline-block; border: 3px solid #A32D2D; color: #A32D2D; font-size: 22px; font-weight: 900; letter-spacing: 6px; padding: 6px 24px; border-radius: 4px; transform: rotate(-3deg); }
     .section { margin: 16px 0; padding: 14px 16px; background: #faf6ee; border-radius: 6px; }
     .row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #FBF3E4; font-size: 13px; }
     .row:last-child { border-bottom: none; }
@@ -1393,6 +1393,7 @@ function Payments({ payments, invoices, reload, setModal, setSelected }) {
       if (res.ok) {
         setReceiptStatus(s => ({ ...s, [pid]: 'sent' }))
         setTimeout(() => setReceiptStatus(s => ({ ...s, [pid]: '' })), 5000)
+        reload()
       } else {
         setReceiptStatus(s => ({ ...s, [pid]: 'error' }))
         setTimeout(() => setReceiptStatus(s => ({ ...s, [pid]: '' })), 6000)
@@ -1465,7 +1466,7 @@ function Payments({ payments, invoices, reload, setModal, setSelected }) {
                 const isPaidOff = balanceAfterAll <= 0
                 return (
                   <tr key={p.id} style={{ borderBottom: '0.5px solid rgba(0,0,0,0.09)' }}>
-                    <Td style={{ color: '#8B6914', fontWeight: 500 }}>{p.receipt_number || '—'}</Td><Td>{fmtDate(p.date)}</Td><Td><strong>{inv?.number || '—'}</strong></Td><Td>{inv?.client_name || '—'}</Td>
+                    <Td style={{ color: '#8B6914', fontWeight: 500 }}>{p.receipt_number || '—'} {p.receipt_emailed_at && <i className="ti ti-mail-check" style={{ color: '#3B6D11', marginLeft: 4 }} title={`Emailed ${new Date(p.receipt_emailed_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}`}></i>}</Td><Td>{fmtDate(p.date)}</Td><Td><strong>{inv?.number || '—'}</strong></Td><Td>{inv?.client_name || '—'}</Td>
                     <Td><span style={{ background: '#FBF3E4', padding: '2px 8px', borderRadius: 99, fontSize: 11 }}>{p.method || 'Cash'}</span></Td>
                     <Td style={{ color: '#3B6D11', fontWeight: 500 }}>{fmt(p.amount)}</Td>
                     <Td style={{ color: '#666', fontSize: 12 }}>{inv?.total ? fmt(inv.total) : '—'}</Td>
@@ -5879,7 +5880,7 @@ function ViewInvoiceModal({ invoice, payments, onClose, onPay }) {
     .rec-num { font-size: 20px; font-weight: 700; color: #F5D98A; margin-top: 2px; }
     .body { padding: 24px 32px; }
     .paid-stamp { text-align: center; margin: 16px 0; }
-    .paid-box { display: inline-block; border: 3px solid #3B6D11; color: #3B6D11; font-size: 22px; font-weight: 900; letter-spacing: 6px; padding: 6px 24px; border-radius: 4px; transform: rotate(-3deg); }
+    .paid-box { display: inline-block; border: 3px solid #A32D2D; color: #A32D2D; font-size: 22px; font-weight: 900; letter-spacing: 6px; padding: 6px 24px; border-radius: 4px; transform: rotate(-3deg); }
     .section { margin: 16px 0; padding: 14px 16px; background: #faf6ee; border-radius: 6px; }
     .row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #FBF3E4; font-size: 13px; }
     .row:last-child { border-bottom: none; }
@@ -6043,7 +6044,7 @@ function ViewInvoiceModal({ invoice, payments, onClose, onPay }) {
           <div style={{ fontWeight: 500, marginBottom: 8 }}>Payments received</div>
           {invPayments.map(p => (
             <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '7px 0', borderBottom: '0.5px solid rgba(0,0,0,0.09)', fontSize: 13, gap: 8 }}>
-              <span><span style={{ color: '#8B6914', fontWeight: 600, marginRight: 6 }}>{p.receipt_number || '—'}</span>{fmtDate(p.date)} — <span style={{ background: '#FBF3E4', padding: '1px 8px', borderRadius: 99, fontSize: 11 }}>{p.method}</span>{p.note ? ` · ${p.note}` : ''}</span>
+              <span><span style={{ color: '#8B6914', fontWeight: 600, marginRight: 6 }}>{p.receipt_number || '—'}</span>{p.receipt_emailed_at && <i className="ti ti-mail-check" style={{ color: '#3B6D11', marginRight: 6 }} title={`Emailed ${new Date(p.receipt_emailed_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}`}></i>}{fmtDate(p.date)} — <span style={{ background: '#FBF3E4', padding: '1px 8px', borderRadius: 99, fontSize: 11 }}>{p.method}</span>{p.note ? ` · ${p.note}` : ''}</span>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <span style={{ color: '#3B6D11', fontWeight: 500 }}>{fmt(p.amount)}</span>
                 <button className="btn btn-sm" style={{ fontSize: 11, padding: '2px 8px' }} onClick={() => printReceipt(p)}><i className="ti ti-printer"></i> Receipt</button>
