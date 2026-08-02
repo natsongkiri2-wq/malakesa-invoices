@@ -5490,14 +5490,14 @@ function NewInvoiceModal({ clients, invoice, onClose, onSave }) {
       </div>
       <div style={{ fontWeight: 500, marginBottom: 10 }}>Line items</div>
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, marginBottom: 8 }}>
-        <thead><tr style={{ background: '#FBF3E4' }}><Th style={{ width: '10%' }}>Date</Th><Th style={{ width: '12%' }}>Name</Th><Th style={{ width: '20%' }}>Description</Th><Th style={{ width: '10%' }}>Voucher #</Th><Th style={{ width: '8%' }}>Qty</Th><Th style={{ width: '14%' }}>{applyVat ? 'Rate (VT incl. VAT)' : 'Rate (VT)'}</Th><Th style={{ width: '12%' }}>Total</Th><Th style={{ width: '6%' }}></Th></tr></thead>
+        <thead><tr style={{ background: '#FBF3E4' }}><Th style={{ width: '10%' }}>Date</Th><Th style={{ width: '12%' }}>Name</Th><Th style={{ width: '17%' }}>Description</Th><Th style={{ width: '9%' }}>Voucher #</Th><Th style={{ width: '11%', textAlign: 'center' }}>Qty</Th><Th style={{ width: '14%' }}>{applyVat ? 'Rate (VT incl. VAT)' : 'Rate (VT)'}</Th><Th style={{ width: '12%' }}>Total</Th><Th style={{ width: '6%' }}></Th></tr></thead>
         <tbody>{items.map(item => (
           <tr key={item.id}>
             <td style={{ padding: '4px 4px' }}><input type="text" value={item.date || ''} onChange={e => updateItem(item.id, 'date', e.target.value)} style={inputStyle} placeholder="e.g. 10JUL" /></td>
             <td style={{ padding: '4px 4px' }}><input type="text" value={item.name || ''} onChange={e => updateItem(item.id, 'name', e.target.value)} style={inputStyle} placeholder="Pax name" /></td>
             <td style={{ padding: '4px 4px' }}><input type="text" value={item.description} onChange={e => updateItem(item.id, 'description', e.target.value)} style={inputStyle} placeholder="e.g. Airport transfer..." /></td>
             <td style={{ padding: '4px 4px' }}><input type="text" value={item.voucher || ''} onChange={e => updateItem(item.id, 'voucher', e.target.value)} style={inputStyle} placeholder="Voucher #" /></td>
-            <td style={{ padding: '4px 4px' }}><input type="number" value={item.qty} min="0" step="0.5" onChange={e => updateItem(item.id, 'qty', e.target.value)} style={inputStyle} /></td>
+            <td style={{ padding: '4px 4px' }}><input type="number" value={item.qty} min="0" step="0.5" onChange={e => updateItem(item.id, 'qty', e.target.value)} style={{ ...inputStyle, minWidth: 56, textAlign: 'center', padding: '8px 4px' }} /></td>
             <td style={{ padding: '4px 4px' }}><input type="number" value={item.rate} min="0" onChange={e => updateItem(item.id, 'rate', e.target.value)} style={inputStyle} placeholder="0" /></td>
             <td style={{ padding: '4px 10px', fontWeight: 500 }}>{fmt(item.total)}</td>
             <td style={{ padding: '4px 4px' }}><button className="btn btn-sm" onClick={() => setItems(i => i.filter(x => x.id !== item.id))}><i className="ti ti-x"></i></button></td>
