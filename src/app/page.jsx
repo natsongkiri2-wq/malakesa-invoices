@@ -170,6 +170,7 @@ export default function App() {
     { id: 'suppliers', label: 'Suppliers', icon: 'ti-truck' },
     { id: 'vnpf', label: 'Salaries & VNPF', icon: 'ti-building-bank' },
     { id: 'vat', label: 'VAT Return', icon: 'ti-receipt-tax' },
+    { id: 'performance', label: 'Performance Report', icon: 'ti-report-money' },
     { id: 'reports', label: 'Reports', icon: 'ti-chart-bar' },
   ]
 
@@ -284,6 +285,7 @@ export default function App() {
             {page === 'vnpf' && <VNPF employees={employees} salaryRecords={salaryRecords} reload={reload} setModal={setModal} setSelected={setSelected} />}
             {page === 'reports' && <Reports invoices={invoices} payments={payments} purchases={purchases} salaryRecords={salaryRecords} />}
             {page === 'vat' && <VatPage invoices={invoices} payments={payments} purchases={purchases} />}
+            {page === 'performance' && <PerformanceReport invoices={invoices} payments={payments} purchases={purchases} salaryRecords={salaryRecords} />}
             {page === 'clients' && <Clients clients={clients} invoices={invoices} payments={payments} reload={reload} setModal={setModal} />}
           </>
         )}
@@ -3031,6 +3033,416 @@ function Reports({ invoices, payments, purchases, salaryRecords }) {
         if (!cfg) return null
         return <ExportModal title={cfg.title} columns={cfg.columns} onExport={cfg.onExport} onClose={() => setShowExport(false)} />
       })()}
+    </>
+  )
+}
+
+// ── Business Performance Report ──────────────────────────────
+function PerformanceReport({ invoices, payments, purchases, salaryRecords }) {
+  const nowD = new Date()
+  const [month, setMonth] = useState(localMonthStr(nowD))
+  const [downloading, setDownloading] = useState(false)
+  const [viewing, setViewing] = useState(false)
+
+  const MONTHS_LONG = ['January','February','March','April','May','June','July','August','September','October','November','December']
+  const [my, mm] = month.split('-').map(Number)
+  const monthLabel = `${MONTHS_LONG[mm - 1]} ${my}`
+  const generatedDate = new Date().toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' })
+
+  // ── Selected month figures ──
+  const mInvoices = invoices.filter(i => i.date?.startsWith(month))
+  const mPayments = payments.filter(p => p.date?.startsWith(month))
+  const mPurchases = (purchases || []).filter(p => p.date?.startsWith(month))
+  const mSalaryRecords = (salaryRecords || []).filter(r => r.month === month)
+
+  const totalInvoiced = mInvoices.reduce((s, i) => s + Number(i.total || 0), 0)
+  const subtotalExVat = mInvoices.reduce((s, i) => s + Number(i.subtotal || 0), 0)
+  const outputVat = mInvoices.reduce((s, i) => s + Number(i.tax || 0), 0)
+  const totalCollected = mPayments.reduce((s, p) => s + Number(p.amount || 0), 0)
+  const outstandingFromMonth = mInvoices.reduce((s, i) => s + getBalance(i, payments), 0)
+
+  const totalPurchases = mPurchases.reduce((s, p) => s + Number(p.amount || 0), 0)
+  const purchasesExVat = mPurchases.reduce((s, p) => s + Number(p.amount_ex_vat || p.amount || 0), 0)
+  const inputVat = mPurchases.reduce((s, p) => s + Number(p.vat || 0), 0)
+
+  const grossSalaries = mSalaryRecords.reduce((s, r) => s + Number(r.gross || 0), 0)
+  const vnpfEmployee = mSalaryRecords.reduce((s, r) => s + Number(r.vnpf_employee || 0), 0)
+  const vnpfEmployer = mSalaryRecords.reduce((s, r) => s + Math.round(Number(r.gross || 0) * 0.06), 0)
+  const vnpfTotal = vnpfEmployee + vnpfEmployer
+  const netSalariesPaid = mSalaryRecords.reduce((s, r) => s + Number(r.net_pay || 0), 0)
+
+  const netVatPayable = Math.max(0, outputVat - inputVat)
+
+  // Net profit (accrual basis): ex-VAT revenue less ex-VAT purchases and gross salaries
+  const netProfit = subtotalExVat - purchasesExVat - grossSalaries
+
+  // Cash flow (cash basis): what actually moved this month
+  const cashIn = totalCollected
+  const cashOut = totalPurchases + netSalariesPaid
+  const netCashFlow = cashIn - cashOut
+
+  // ── Year-to-date trend: January of the selected year through the selected month ──
+  const trendMonths = Array.from({ length: mm }, (_, i) => {
+    const d = new Date(my, i, 1)
+    return { key: localMonthStr(d), label: d.toLocaleDateString('en-AU', { month: 'short' }) }
+  })
+  const trend = trendMonths.map(tm => {
+    const revCollected = payments.filter(p => (p.date || '').startsWith(tm.key)).reduce((s, p) => s + Number(p.amount || 0), 0)
+    const purTotal = (purchases || []).filter(p => (p.date || '').startsWith(tm.key)).reduce((s, p) => s + Number(p.amount || 0), 0)
+    const salTotal = (salaryRecords || []).filter(r => r.month === tm.key).reduce((s, r) => s + Number(r.net_pay || 0), 0)
+    const expenses = purTotal + salTotal
+    return { ...tm, revenue: revCollected, expenses, net: revCollected - expenses }
+  })
+  const ytdRevenue = trend.reduce((s, t) => s + t.revenue, 0)
+  const ytdExpenses = trend.reduce((s, t) => s + t.expenses, 0)
+  const ytdNet = ytdRevenue - ytdExpenses
+  const maxTrendVal = Math.max(...trend.map(t => Math.max(t.revenue, t.expenses)), 1)
+
+  const SumRow = ({ label, value, color, bold, border }) => (
+    <div style={{ display: 'flex', justifyContent: 'space-between', padding: bold ? '10px 0 0' : '7px 0', borderTop: border ? '2px solid #8B6914' : 'none', borderBottom: (!border && !bold) ? '0.5px solid #eee' : 'none', fontSize: bold ? 15 : 13, fontWeight: bold ? 700 : 400, marginTop: bold ? 6 : 0 }}>
+      <span style={{ color: bold ? '#1a1a1a' : '#555' }}>{label}</span>
+      <strong style={{ color: color || '#1a1a1a' }}>{value}</strong>
+    </div>
+  )
+
+  // ── PDF generation (same html2canvas + jsPDF pipeline used for invoices) ──
+  const loadPdfLibs = () => {
+    if (!window.__pdfLibsPromise) {
+      const loadScript = (src) => new Promise((resolve, reject) => {
+        if (document.querySelector(`script[src="${src}"]`)) { resolve(); return }
+        const s = document.createElement('script')
+        s.src = src
+        s.onload = () => resolve()
+        s.onerror = () => reject(new Error('Failed to load PDF library'))
+        document.head.appendChild(s)
+      })
+      window.__pdfLibsPromise = Promise.all([
+        loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js'),
+        loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'),
+      ])
+    }
+    return window.__pdfLibsPromise
+  }
+
+  const buildReportHtml = () => {
+    const trendRows = trend.map(t => `
+      <tr>
+        <td>${t.label} ${my}</td>
+        <td class="right green">VT ${Number(t.revenue).toLocaleString()}</td>
+        <td class="right red">VT ${Number(t.expenses).toLocaleString()}</td>
+        <td class="right" style="font-weight:700;color:${t.net >= 0 ? '#2E7D2E' : '#A32D2D'}">${t.net >= 0 ? '+' : ''}VT ${Number(t.net).toLocaleString()}</td>
+      </tr>`).join('')
+
+    const trendBars = trend.map(t => {
+      const revH = Math.round((t.revenue / maxTrendVal) * 100)
+      const expH = Math.round((t.expenses / maxTrendVal) * 100)
+      return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px">
+        <div style="width:100%;display:flex;gap:2px;align-items:flex-end;height:100px">
+          <div style="flex:1;background:#3B6D11;border-radius:2px 2px 0 0;height:${revH}px;min-height:${t.revenue > 0 ? 2 : 0}px"></div>
+          <div style="flex:1;background:#A32D2D;border-radius:2px 2px 0 0;height:${expH}px;min-height:${t.expenses > 0 ? 2 : 0}px"></div>
+        </div>
+        <div style="font-size:8px;color:#888">${t.label}</div>
+      </div>`
+    }).join('')
+
+    return `<!DOCTYPE html><html><head><style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; color: #222; font-size: 12px; background: #fff; }
+    .page { width: 800px; background: #fff; }
+    .header { background: linear-gradient(135deg, #6B4423 0%, #8B5E34 50%, #A67C42 100%); padding: 20px 32px; display: flex; justify-content: space-between; align-items: flex-start; }
+    .logo-contact { font-size: 9px; color: rgba(255,255,255,0.7); margin-top: 6px; line-height: 1.6; }
+    .rpt-meta { text-align: right; color: #fff; }
+    .rpt-title { font-size: 10px; letter-spacing: 2px; color: rgba(255,255,255,0.7); text-transform: uppercase; }
+    .rpt-period { font-size: 21px; font-weight: 700; color: #F5D98A; margin-top: 2px; }
+    .rpt-gen { font-size: 10px; color: rgba(255,255,255,0.75); margin-top: 4px; }
+    .body { padding: 28px 32px; }
+    .kpis { display: flex; gap: 12px; margin-bottom: 22px; }
+    .kpi { flex: 1; background: #FBF3E4; border-radius: 8px; padding: 12px 14px; }
+    .kpi-label { font-size: 9px; color: #666; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+    .kpi-value { font-size: 16px; font-weight: 700; }
+    h2 { font-size: 12px; font-weight: 700; color: #8B6914; text-transform: uppercase; letter-spacing: 1px; border-bottom: 2px solid #FBF3E4; padding-bottom: 5px; margin: 20px 0 10px; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 6px; }
+    td, th { padding: 7px 10px; border-bottom: 0.5px solid #eee; }
+    th { background: #FBF3E4; text-align: left; font-size: 10px; text-transform: uppercase; }
+    .right { text-align: right; }
+    .green { color: #2E7D2E; font-weight: 600; }
+    .red { color: #A32D2D; font-weight: 600; }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .summary-box { background: #f9f6f0; border-radius: 8px; padding: 14px 18px; }
+    .sum-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 0.5px solid #eee; font-size: 12px; }
+    .sum-row:last-child { border-bottom: none; }
+    .net-row { display: flex; justify-content: space-between; padding: 10px 0 0; font-size: 15px; font-weight: 700; border-top: 2px solid #8B6914; margin-top: 6px; }
+    .footer { background: linear-gradient(135deg, #6B4423, #A67C42); padding: 16px 32px; display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
+    .footer-l { color: rgba(255,255,255,0.85); font-size: 10px; line-height: 1.8; }
+    .footer-r { text-align: right; color: #F5D98A; font-size: 10px; line-height: 1.8; }
+    .chart-bars { display: flex; align-items: flex-end; gap: 4px; height: 110px; border-bottom: 1px solid #FBF3E4; padding-bottom: 4px; margin: 10px 0; }
+    .legend { display: flex; gap: 16px; font-size: 10px; color: #666; margin-bottom: 14px; }
+    .dot { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 4px; vertical-align: middle; }
+  </style></head><body>
+  <div class="page">
+    <div class="header">
+      <div>
+        <img src="${MALAKESA_LOGO}" alt="Malakesa Transfers and Tours" style="width:150px;border-radius:4px;display:block" />
+        <div class="logo-contact">📍 Port Vila, Vanuatu &nbsp;|&nbsp; 📞 +678 22712 &nbsp;|&nbsp; ✉️ accounts@malakesa.vu &nbsp;|&nbsp; TIN #445579</div>
+      </div>
+      <div class="rpt-meta">
+        <div class="rpt-title">Business Performance Report</div>
+        <div class="rpt-period">${monthLabel}</div>
+        <div class="rpt-gen">Generated ${generatedDate}</div>
+      </div>
+    </div>
+    <div class="body">
+      <div class="kpis">
+        <div class="kpi"><div class="kpi-label">Net Profit (accrual)</div><div class="kpi-value" style="color:${netProfit >= 0 ? '#2E7D2E' : '#A32D2D'}">${netProfit >= 0 ? '+' : ''}VT ${Number(netProfit).toLocaleString()}</div></div>
+        <div class="kpi"><div class="kpi-label">Net Cash Flow</div><div class="kpi-value" style="color:${netCashFlow >= 0 ? '#2E7D2E' : '#A32D2D'}">${netCashFlow >= 0 ? '+' : ''}VT ${Number(netCashFlow).toLocaleString()}</div></div>
+        <div class="kpi"><div class="kpi-label">Revenue Collected</div><div class="kpi-value">VT ${Number(totalCollected).toLocaleString()}</div></div>
+        <div class="kpi"><div class="kpi-label">VAT Net Payable</div><div class="kpi-value" style="color:#D85A30">VT ${Number(netVatPayable).toLocaleString()}</div></div>
+      </div>
+
+      <h2>Revenue Summary</h2>
+      <table>
+        <tr><td>Invoiced this month (${mInvoices.length} invoice${mInvoices.length !== 1 ? 's' : ''})</td><td class="right">VT ${Number(totalInvoiced).toLocaleString()}</td></tr>
+        <tr><td>Ex-VAT subtotal</td><td class="right">VT ${Number(subtotalExVat).toLocaleString()}</td></tr>
+        <tr><td>VAT on sales (output VAT)</td><td class="right green">VT ${Number(outputVat).toLocaleString()}</td></tr>
+        <tr><td>Payments collected</td><td class="right green">VT ${Number(totalCollected).toLocaleString()}</td></tr>
+        <tr><td>Still outstanding (from this month's invoices)</td><td class="right red">VT ${Number(outstandingFromMonth).toLocaleString()}</td></tr>
+      </table>
+
+      <h2>Expenses Summary</h2>
+      <table>
+        <tr><td>Purchases (${mPurchases.length}), ex-VAT</td><td class="right">VT ${Number(purchasesExVat).toLocaleString()}</td></tr>
+        <tr><td>VAT on purchases (input VAT)</td><td class="right green">VT ${Number(inputVat).toLocaleString()}</td></tr>
+        <tr><td>Total purchases (incl. VAT)</td><td class="right">VT ${Number(totalPurchases).toLocaleString()}</td></tr>
+        <tr><td>Gross salaries${mSalaryRecords.length ? ` (${mSalaryRecords.length} pay run${mSalaryRecords.length !== 1 ? 's' : ''})` : ' (no pay runs recorded this month)'}</td><td class="right">VT ${Number(grossSalaries).toLocaleString()}</td></tr>
+        <tr><td>Net salaries paid</td><td class="right red">VT ${Number(netSalariesPaid).toLocaleString()}</td></tr>
+      </table>
+
+      <div class="two-col" style="margin-top:16px">
+        <div>
+          <h2>VAT Return Snapshot</h2>
+          <div class="summary-box">
+            <div class="sum-row"><span>Output VAT (sales)</span><strong style="color:#2E7D2E">VT ${Number(outputVat).toLocaleString()}</strong></div>
+            <div class="sum-row"><span>Input VAT (purchases)</span><strong style="color:#1A4D1A">VT ${Number(inputVat).toLocaleString()}</strong></div>
+            <div class="net-row" style="color:#D85A30"><span>Net VAT Payable</span><span>VT ${Number(netVatPayable).toLocaleString()}</span></div>
+          </div>
+        </div>
+        <div>
+          <h2>VNPF Snapshot</h2>
+          <div class="summary-box">
+            <div class="sum-row"><span>Gross salaries</span><strong>VT ${Number(grossSalaries).toLocaleString()}</strong></div>
+            <div class="sum-row"><span>Employee contribution (6%)</span><strong>VT ${Number(vnpfEmployee).toLocaleString()}</strong></div>
+            <div class="sum-row"><span>Employer contribution (6%)</span><strong>VT ${Number(vnpfEmployer).toLocaleString()}</strong></div>
+            <div class="net-row" style="color:#8B6914"><span>Total VNPF Due</span><span>VT ${Number(vnpfTotal).toLocaleString()}</span></div>
+          </div>
+        </div>
+      </div>
+
+      <h2>Cash Flow — ${monthLabel}</h2>
+      <div class="summary-box" style="margin-bottom:6px">
+        <div class="sum-row"><span>Money in (payments received)</span><strong style="color:#2E7D2E">VT ${Number(cashIn).toLocaleString()}</strong></div>
+        <div class="sum-row"><span>Money out (purchases + net salaries)</span><strong style="color:#A32D2D">VT ${Number(cashOut).toLocaleString()}</strong></div>
+        <div class="net-row" style="color:${netCashFlow >= 0 ? '#2E7D2E' : '#A32D2D'}"><span>Net Cash Flow</span><span>${netCashFlow >= 0 ? '+' : ''}VT ${Number(netCashFlow).toLocaleString()}</span></div>
+      </div>
+
+      <h2>Year-to-Date Trend (Jan – ${MONTHS_LONG[mm - 1].slice(0, 3)} ${my})</h2>
+      <div class="legend"><span><span class="dot" style="background:#3B6D11"></span>Revenue collected</span><span><span class="dot" style="background:#A32D2D"></span>Expenses (purchases + net salaries)</span></div>
+      <div class="chart-bars">${trendBars}</div>
+      <table>
+        <thead><tr><th>Month</th><th class="right">Revenue</th><th class="right">Expenses</th><th class="right">Net</th></tr></thead>
+        <tbody>${trendRows}
+        <tr style="background:#FBF3E4;font-weight:700">
+          <td>YTD TOTAL</td>
+          <td class="right green">VT ${Number(ytdRevenue).toLocaleString()}</td>
+          <td class="right red">VT ${Number(ytdExpenses).toLocaleString()}</td>
+          <td class="right" style="color:${ytdNet >= 0 ? '#2E7D2E' : '#A32D2D'}">${ytdNet >= 0 ? '+' : ''}VT ${Number(ytdNet).toLocaleString()}</td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="footer">
+      <div class="footer-l">
+        <div><strong style="color:#F5D98A">Malakesa Transfers &amp; Tours</strong></div>
+        <div>Port Vila, Shefa Province, Vanuatu &nbsp;|&nbsp; TIN #445579</div>
+      </div>
+      <div class="footer-r">
+        <div>Business Performance Report — ${monthLabel}</div>
+        <div style="opacity:0.7">Computer generated — figures are estimates for internal use</div>
+      </div>
+    </div>
+  </div></body></html>`
+  }
+
+  const buildReportPdf = async () => {
+    await loadPdfLibs()
+    const html = buildReportHtml()
+    const iframe = document.createElement('iframe')
+    iframe.style.position = 'fixed'
+    iframe.style.left = '-99999px'
+    iframe.style.top = '0'
+    iframe.style.width = '820px'
+    iframe.style.height = '1400px'
+    iframe.style.border = 'none'
+    document.body.appendChild(iframe)
+    iframe.srcdoc = html
+    await new Promise(resolve => { iframe.onload = resolve })
+    await new Promise(r => setTimeout(r, 400))
+    const pageEl = iframe.contentDocument.querySelector('.page')
+    const canvas = await window.html2canvas(pageEl, { scale: 1.5, useCORS: true, backgroundColor: '#ffffff' })
+    const imgData = canvas.toDataURL('image/jpeg', 0.85)
+    const { jsPDF } = window.jspdf
+    const pdf = new jsPDF('p', 'mm', 'a4')
+    const pageWidth = 210, pageHeight = 297
+    const imgWidth = pageWidth
+    const imgHeight = canvas.height * imgWidth / canvas.width
+    let heightLeft = imgHeight
+    let position = 0
+    pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight)
+    heightLeft -= pageHeight
+    while (heightLeft > 0) {
+      position = heightLeft - imgHeight
+      pdf.addPage()
+      pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight)
+      heightLeft -= pageHeight
+    }
+    document.body.removeChild(iframe)
+    return pdf
+  }
+
+  const downloadReportPDF = async () => {
+    setDownloading(true)
+    try {
+      const pdf = await buildReportPdf()
+      pdf.save(`Malakesa_Performance_Report_${monthLabel.replace(/\s/g, '_')}.pdf`)
+    } catch (err) {
+      alert('Could not generate PDF: ' + err.message)
+    }
+    setDownloading(false)
+  }
+
+  const viewReportPDF = async () => {
+    setViewing(true)
+    try {
+      const pdf = await buildReportPdf()
+      const url = pdf.output('bloburl')
+      window.open(url, '_blank')
+    } catch (err) {
+      alert('Could not open PDF: ' + err.message)
+    }
+    setViewing(false)
+  }
+
+  return (
+    <>
+      <Topbar title="Business Performance Report">
+        <div style={{ display: 'flex', gap: 8 }}>
+          <MonthYearPicker value={month} onChange={setMonth} accentColor="#8B6914" />
+          <button className="btn btn-sm" style={{ background: '#455A64', borderColor: '#33454C', color: '#fff', fontWeight: 500 }} onClick={viewReportPDF} disabled={viewing || downloading}>
+            <i className="ti ti-eye"></i> {viewing ? 'Opening...' : 'View PDF'}
+          </button>
+          <button className="btn btn-sm" style={{ background: '#8B6914', borderColor: '#6B5010', color: '#fff', fontWeight: 500 }} onClick={downloadReportPDF} disabled={viewing || downloading}>
+            <i className="ti ti-download"></i> {downloading ? 'Preparing...' : 'Download PDF'}
+          </button>
+        </div>
+      </Topbar>
+      <div style={{ padding: 20 }}>
+        <div style={{ background: 'linear-gradient(135deg, #6B4423 0%, #8B5E34 50%, #A67C42 100%)', borderRadius: 12, padding: '18px 24px', marginBottom: 16, display: 'flex', flexWrap: 'wrap', gap: 16, justifyContent: 'space-between' }}>
+          <div>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.75)', letterSpacing: 1, marginBottom: 4 }}>NET PROFIT — {monthLabel.toUpperCase()}</div>
+            <div style={{ fontSize: 28, fontWeight: 700, color: netProfit >= 0 ? '#F5D98A' : '#FF9B8A' }}>{netProfit >= 0 ? '+' : ''}{fmt(netProfit)}</div>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', marginTop: 2 }}>Revenue ex-VAT − purchases ex-VAT − gross salaries</div>
+          </div>
+          <div style={{ width: 1, alignSelf: 'stretch', background: 'rgba(255,255,255,0.2)' }}></div>
+          <div>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.75)', letterSpacing: 1, marginBottom: 4 }}>NET CASH FLOW</div>
+            <div style={{ fontSize: 28, fontWeight: 700, color: netCashFlow >= 0 ? '#F5D98A' : '#FF9B8A' }}>{netCashFlow >= 0 ? '+' : ''}{fmt(netCashFlow)}</div>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', marginTop: 2 }}>{fmt(cashIn)} in − {fmt(cashOut)} out</div>
+          </div>
+          <div style={{ width: 1, alignSelf: 'stretch', background: 'rgba(255,255,255,0.2)' }}></div>
+          <div>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.75)', letterSpacing: 1, marginBottom: 4 }}>VAT NET PAYABLE</div>
+            <div style={{ fontSize: 28, fontWeight: 700, color: '#F5D98A' }}>{fmt(netVatPayable)}</div>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', marginTop: 2 }}>Output {fmt(outputVat)} − Input {fmt(inputVat)}</div>
+          </div>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12, marginBottom: 16 }}>
+          <StatCard label="Invoiced this month" value={fmt(totalInvoiced)} sub={`${mInvoices.length} invoice${mInvoices.length !== 1 ? 's' : ''}`} />
+          <StatCard label="Collected this month" value={fmt(totalCollected)} color="#3B6D11" />
+          <StatCard label="Purchases this month" value={fmt(totalPurchases)} color="#A32D2D" sub={`${mPurchases.length} purchase${mPurchases.length !== 1 ? 's' : ''}`} />
+          <StatCard label="Net salaries paid" value={fmt(netSalariesPaid)} color="#A32D2D" sub={mSalaryRecords.length ? `${mSalaryRecords.length} pay run(s)` : 'No pay runs recorded'} />
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+          <Card>
+            <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 10 }}>VAT Return Snapshot</div>
+            <SumRow label="Output VAT (sales)" value={fmt(outputVat)} color="#2E7D2E" />
+            <SumRow label="Input VAT (purchases)" value={fmt(inputVat)} color="#1A4D1A" />
+            <SumRow label="Net VAT Payable" value={fmt(netVatPayable)} color="#D85A30" bold border />
+          </Card>
+          <Card>
+            <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 10 }}>VNPF Snapshot</div>
+            <SumRow label="Gross salaries" value={fmt(grossSalaries)} />
+            <SumRow label="Employee contribution (6%)" value={fmt(vnpfEmployee)} />
+            <SumRow label="Employer contribution (6%)" value={fmt(vnpfEmployer)} />
+            <SumRow label="Total VNPF Due" value={fmt(vnpfTotal)} color="#8B6914" bold border />
+          </Card>
+        </div>
+
+        <Card style={{ padding: '20px 20px 16px', marginBottom: 16 }}>
+          <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 16 }}>Year-to-date trend — {my}</div>
+          {trend.length === 0 ? <div style={{ color: '#999', fontSize: 13, textAlign: 'center', padding: 20 }}>No data yet for {my}</div> : (
+            <>
+              <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, height: 160, borderBottom: '1px solid #FBF3E4', paddingBottom: 8 }}>
+                {trend.map(t => {
+                  const revH = Math.round((t.revenue / maxTrendVal) * 140)
+                  const expH = Math.round((t.expenses / maxTrendVal) * 140)
+                  return (
+                    <div key={t.key} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+                      <div style={{ width: '100%', display: 'flex', gap: 2, alignItems: 'flex-end', height: 140 }}>
+                        <div style={{ flex: 1, background: '#3B6D11', borderRadius: '3px 3px 0 0', height: revH + 'px', minHeight: t.revenue > 0 ? 3 : 0 }} title={`Revenue: ${fmt(t.revenue)}`}></div>
+                        <div style={{ flex: 1, background: '#A32D2D', borderRadius: '3px 3px 0 0', height: expH + 'px', minHeight: t.expenses > 0 ? 3 : 0 }} title={`Expenses: ${fmt(t.expenses)}`}></div>
+                      </div>
+                      <div style={{ fontSize: 9, color: '#888' }}>{t.label}</div>
+                      <div style={{ fontSize: 9, fontWeight: 600, color: t.net >= 0 ? '#3B6D11' : '#A32D2D' }}>{t.net >= 0 ? '+' : ''}{Math.round(t.net / 1000)}k</div>
+                    </div>
+                  )
+                })}
+              </div>
+              <div style={{ display: 'flex', gap: 16, marginTop: 10, fontSize: 12, color: '#666' }}>
+                <span><span style={{ display: 'inline-block', width: 12, height: 12, background: '#3B6D11', borderRadius: 2, marginRight: 5, verticalAlign: 'middle' }}></span>Revenue collected</span>
+                <span><span style={{ display: 'inline-block', width: 12, height: 12, background: '#A32D2D', borderRadius: 2, marginRight: 5, verticalAlign: 'middle' }}></span>Expenses (purchases + net salaries)</span>
+              </div>
+            </>
+          )}
+        </Card>
+
+        <Card style={{ padding: 0, overflow: 'hidden' }}>
+          <div style={{ padding: '12px 20px', borderBottom: '0.5px solid rgba(0,0,0,0.09)' }}>
+            <strong style={{ fontSize: 14 }}>Month-by-month — {my} year to date</strong>
+          </div>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+            <thead><tr style={{ background: '#FBF3E4' }}>
+              <Th>Month</Th><Th style={{ textAlign: 'right' }}>Revenue</Th><Th style={{ textAlign: 'right' }}>Expenses</Th><Th style={{ textAlign: 'right' }}>Net</Th>
+            </tr></thead>
+            <tbody>
+              {trend.map(t => (
+                <tr key={t.key} style={{ borderBottom: '0.5px solid rgba(0,0,0,0.07)', background: t.key === month ? '#FBF3E4' : '#fff' }}>
+                  <Td style={{ fontWeight: t.key === month ? 700 : 400 }}>{t.label} {my}{t.key === month ? ' (selected)' : ''}</Td>
+                  <Td style={{ textAlign: 'right', color: '#3B6D11' }}>{fmt(t.revenue)}</Td>
+                  <Td style={{ textAlign: 'right', color: '#A32D2D' }}>{fmt(t.expenses)}</Td>
+                  <Td style={{ textAlign: 'right', fontWeight: 600, color: t.net >= 0 ? '#3B6D11' : '#A32D2D' }}>{t.net >= 0 ? '+' : ''}{fmt(t.net)}</Td>
+                </tr>
+              ))}
+              <tr style={{ background: '#FBF3E4', fontWeight: 700 }}>
+                <td style={{ padding: '9px 14px' }}>YTD TOTAL</td>
+                <td style={{ padding: '9px 14px', textAlign: 'right', color: '#3B6D11' }}>{fmt(ytdRevenue)}</td>
+                <td style={{ padding: '9px 14px', textAlign: 'right', color: '#A32D2D' }}>{fmt(ytdExpenses)}</td>
+                <td style={{ padding: '9px 14px', textAlign: 'right', color: ytdNet >= 0 ? '#3B6D11' : '#A32D2D' }}>{ytdNet >= 0 ? '+' : ''}{fmt(ytdNet)}</td>
+              </tr>
+            </tbody>
+          </table>
+        </Card>
+      </div>
     </>
   )
 }
