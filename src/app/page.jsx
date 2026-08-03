@@ -161,6 +161,53 @@ export default function App() {
 
   useEffect(() => { reload() }, [])
 
+  // ── Idle auto-logout (security: don't stay signed in forever on a shared/public computer) ──
+  const IDLE_TIMEOUT_MS = 45 * 60 * 1000 // auto-logout after 45 minutes of inactivity
+  const IDLE_WARNING_MS = 2 * 60 * 1000  // start warning 2 minutes before that
+  const lastActivityRef = useRef(Date.now())
+  const warningActiveRef = useRef(false)
+  const [idleWarning, setIdleWarning] = useState(null) // seconds remaining, or null when not warning
+
+  const doLogout = async () => {
+    try { await fetch('/api/logout', { method: 'POST' }) } catch (e) {}
+    try { sessionStorage.removeItem('malakesa_auth') } catch (e) {}
+    setIsLoggedIn(false)
+    setIdleWarning(null)
+    warningActiveRef.current = false
+  }
+
+  const stayLoggedIn = () => {
+    lastActivityRef.current = Date.now()
+    warningActiveRef.current = false
+    setIdleWarning(null)
+  }
+
+  useEffect(() => {
+    if (!isLoggedIn) return
+    lastActivityRef.current = Date.now()
+    const markActive = () => { if (!warningActiveRef.current) lastActivityRef.current = Date.now() }
+    const events = ['mousedown', 'keydown', 'touchstart', 'scroll']
+    events.forEach(ev => window.addEventListener(ev, markActive, { passive: true }))
+
+    const interval = setInterval(() => {
+      const idleFor = Date.now() - lastActivityRef.current
+      if (idleFor >= IDLE_TIMEOUT_MS) {
+        doLogout()
+      } else if (idleFor >= IDLE_TIMEOUT_MS - IDLE_WARNING_MS) {
+        warningActiveRef.current = true
+        setIdleWarning(Math.max(0, Math.round((IDLE_TIMEOUT_MS - idleFor) / 1000)))
+      } else {
+        warningActiveRef.current = false
+        setIdleWarning(null)
+      }
+    }, 1000)
+
+    return () => {
+      events.forEach(ev => window.removeEventListener(ev, markActive))
+      clearInterval(interval)
+    }
+  }, [isLoggedIn])
+
   const nav = [
     { id: 'dashboard', label: 'Dashboard', icon: 'ti-layout-dashboard' },
     { id: 'invoices', label: 'Invoices', icon: 'ti-file-invoice' },
@@ -212,6 +259,18 @@ export default function App() {
 
   return (
     <div style={{ display: 'flex', height: '100vh', fontFamily: '-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif', fontSize: 14, color: '#1a1a1a', background: '#FBF3E4' }}>
+      {idleWarning !== null && (
+        <div style={{ position: 'fixed', top: 16, left: '50%', transform: 'translateX(-50%)', zIndex: 200, background: '#2b1d0e', border: '1px solid #F5D98A', borderRadius: 12, padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 16, boxShadow: '0 8px 30px rgba(0,0,0,0.35)', maxWidth: '92vw', flexWrap: 'wrap' }}>
+          <i className="ti ti-clock-exclamation" style={{ color: '#F5D98A', fontSize: 20 }}></i>
+          <div style={{ color: '#fff', fontSize: 13 }}>
+            You've been inactive — logging out in <strong style={{ color: '#F5D98A' }}>{Math.floor(idleWarning / 60)}:{String(idleWarning % 60).padStart(2, '0')}</strong> for security.
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button onClick={doLogout} className="btn btn-sm" style={{ background: 'transparent', borderColor: 'rgba(255,255,255,0.3)', color: 'rgba(255,255,255,0.8)' }}>Log out now</button>
+            <button onClick={stayLoggedIn} className="btn btn-sm btn-primary">Stay logged in</button>
+          </div>
+        </div>
+      )}
       {/* Sidebar */}
       <div style={{ width: 220, minWidth: 220, background: 'linear-gradient(180deg, #6B4423 0%, #8B5E34 40%, #8F6D3D 70%, #A67C42 100%)', display: 'flex', flexDirection: 'column', boxShadow: '4px 0 20px rgba(0,0,0,0.25)' }}>
         <div style={{ padding: '16px 16px 12px', borderBottom: '1px solid rgba(255,215,0,0.15)', textAlign: 'center', background: 'linear-gradient(135deg, #6B4423 0%, #8B5E34 100%)' }}>
@@ -234,7 +293,7 @@ export default function App() {
           ))}
         </nav>
         <div style={{ padding: '10px 16px', borderTop: '1px solid rgba(255,215,0,0.15)' }}>
-          <button onClick={async () => { try { await fetch('/api/logout', { method: 'POST' }) } catch(e) {}; try { sessionStorage.removeItem('malakesa_auth') } catch(e) {}; setIsLoggedIn(false) }} style={{ width: '100%', background: 'rgba(255,255,255,0.07)', border: '0.5px solid rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.65)', borderRadius: 8, padding: '7px 12px', fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center' }}>
+          <button onClick={doLogout} style={{ width: '100%', background: 'rgba(255,255,255,0.07)', border: '0.5px solid rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.65)', borderRadius: 8, padding: '7px 12px', fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center' }}>
             <i className="ti ti-logout" style={{ fontSize: 14 }}></i> Log out
           </button>
         </div>
