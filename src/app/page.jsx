@@ -130,6 +130,7 @@ export default function App() {
   const [employees, setEmployees] = useState([])
   const [customCategories, setCustomCategories] = useState([])
   const [salaryRecords, setSalaryRecords] = useState([])
+  const [vatFilings, setVatFilings] = useState([])
   const [loading, setLoading] = useState(true)
   const [modal, setModal] = useState(null)
   const [selected, setSelected] = useState(null)
@@ -137,16 +138,16 @@ export default function App() {
   const reload = async () => {
     try {
       setLoading(true)
-      const [invRes, pmtRes, clRes, purRes, supRes, empRes, catRes, salRes] = await Promise.all([
-        fetch('/api/invoices'), fetch('/api/payments'), fetch('/api/clients'), fetch('/api/purchases'), fetch('/api/suppliers'), fetch('/api/employees'), fetch('/api/purchase-categories'), fetch('/api/salary-records')
+      const [invRes, pmtRes, clRes, purRes, supRes, empRes, catRes, salRes, vatRes] = await Promise.all([
+        fetch('/api/invoices'), fetch('/api/payments'), fetch('/api/clients'), fetch('/api/purchases'), fetch('/api/suppliers'), fetch('/api/employees'), fetch('/api/purchase-categories'), fetch('/api/salary-records'), fetch('/api/vat-filings')
       ])
-      if ([invRes, pmtRes, clRes, purRes, supRes, empRes, catRes, salRes].some(r => r.status === 401)) {
+      if ([invRes, pmtRes, clRes, purRes, supRes, empRes, catRes, salRes, vatRes].some(r => r.status === 401)) {
         try { sessionStorage.removeItem('malakesa_auth') } catch(e) {}
         setIsLoggedIn(false)
         setLoading(false)
         return
       }
-      const [invs, pmts, cls, purs, sups, emps, cats, sals] = await Promise.all([invRes.json(), pmtRes.json(), clRes.json(), purRes.json(), supRes.json(), empRes.json(), catRes.json(), salRes.json()])
+      const [invs, pmts, cls, purs, sups, emps, cats, sals, vats] = await Promise.all([invRes.json(), pmtRes.json(), clRes.json(), purRes.json(), supRes.json(), empRes.json(), catRes.json(), salRes.json(), vatRes.json()])
       setInvoices(Array.isArray(invs) ? invs : [])
       setPayments(Array.isArray(pmts) ? pmts : [])
       setClients(Array.isArray(cls) ? cls : [])
@@ -155,6 +156,7 @@ export default function App() {
       setEmployees(Array.isArray(emps) ? emps : [])
       setCustomCategories(Array.isArray(cats) ? cats : [])
       setSalaryRecords(Array.isArray(sals) ? sals : [])
+      setVatFilings(Array.isArray(vats) ? vats : [])
     } catch(e) { console.error(e) }
     setLoading(false)
   }
@@ -238,6 +240,7 @@ export default function App() {
         invoices, payments, clients, purchases, suppliers, employees,
         purchase_categories: customCategories,
         salary_records: salaryRecords,
+        vat_filings: vatFilings,
       }
       const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' })
       const url = URL.createObjectURL(blob)
@@ -343,7 +346,7 @@ export default function App() {
             {page === 'suppliers' && <Suppliers suppliers={suppliers} purchases={purchases} reload={reload} setModal={setModal} />}
             {page === 'vnpf' && <VNPF employees={employees} salaryRecords={salaryRecords} reload={reload} setModal={setModal} setSelected={setSelected} />}
             {page === 'reports' && <Reports invoices={invoices} payments={payments} purchases={purchases} salaryRecords={salaryRecords} />}
-            {page === 'vat' && <VatPage invoices={invoices} payments={payments} purchases={purchases} />}
+            {page === 'vat' && <VatPage invoices={invoices} payments={payments} purchases={purchases} vatFilings={vatFilings} reload={reload} />}
             {page === 'performance' && <PerformanceReport invoices={invoices} payments={payments} purchases={purchases} salaryRecords={salaryRecords} />}
             {page === 'clients' && <Clients clients={clients} invoices={invoices} payments={payments} reload={reload} setModal={setModal} />}
           </>
@@ -2305,16 +2308,16 @@ function Reports({ invoices, payments, purchases, salaryRecords }) {
   const downloadFullBackup = async () => {
     setBackingUp(true)
     try {
-      const [invRes, pmtRes, clRes, purRes, supRes, empRes, catRes, salRes] = await Promise.all([
-        fetch('/api/invoices'), fetch('/api/payments'), fetch('/api/clients'), fetch('/api/purchases'), fetch('/api/suppliers'), fetch('/api/employees'), fetch('/api/purchase-categories'), fetch('/api/salary-records')
+      const [invRes, pmtRes, clRes, purRes, supRes, empRes, catRes, salRes, vatRes] = await Promise.all([
+        fetch('/api/invoices'), fetch('/api/payments'), fetch('/api/clients'), fetch('/api/purchases'), fetch('/api/suppliers'), fetch('/api/employees'), fetch('/api/purchase-categories'), fetch('/api/salary-records'), fetch('/api/vat-filings')
       ])
-      if ([invRes, pmtRes, clRes, purRes, supRes, empRes, catRes, salRes].some(r => !r.ok)) {
+      if ([invRes, pmtRes, clRes, purRes, supRes, empRes, catRes, salRes, vatRes].some(r => !r.ok)) {
         alert('Could not fetch all data — please make sure you are logged in and try again.')
         setBackingUp(false)
         return
       }
-      const [invoicesData, paymentsData, clientsData, purchasesData, suppliersData, employeesData, purchaseCategoriesData, salaryRecordsData] =
-        await Promise.all([invRes.json(), pmtRes.json(), clRes.json(), purRes.json(), supRes.json(), empRes.json(), catRes.json(), salRes.json()])
+      const [invoicesData, paymentsData, clientsData, purchasesData, suppliersData, employeesData, purchaseCategoriesData, salaryRecordsData, vatFilingsData] =
+        await Promise.all([invRes.json(), pmtRes.json(), clRes.json(), purRes.json(), supRes.json(), empRes.json(), catRes.json(), salRes.json(), vatRes.json()])
       const backup = {
         company: 'Malakesa Transfers and Tours',
         exported_at: new Date().toISOString(),
@@ -2326,6 +2329,7 @@ function Reports({ invoices, payments, purchases, salaryRecords }) {
         employees: employeesData,
         purchase_categories: purchaseCategoriesData,
         salary_records: salaryRecordsData,
+        vat_filings: vatFilingsData,
       }
       const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' })
       const url = URL.createObjectURL(blob)
@@ -3513,15 +3517,56 @@ const PAYMENT_METHODS = ['Cheque', 'Cash', 'Bank Transfer', 'Other']
 
 
 // ── VAT Return Page (standalone) ──
-function VatPage({ invoices, payments, purchases }) {
+function VatPage({ invoices, payments, purchases, vatFilings, reload }) {
   const nowD = new Date()
   const defaultVatMonth = localMonthStr(nowD)
   const [vatMonth, setVatMonth] = useState(defaultVatMonth)
   const [showExport, setShowExport] = useState(false)
+  const [marking, setMarking] = useState(false)
+  const [filingError, setFilingError] = useState('')
 
   const MONTHS_LONG = ['January','February','March','April','May','June','July','August','September','October','November','December']
   const vatParts = vatMonth.split('-')
   const vatMonthLabel = (MONTHS_LONG[parseInt(vatParts[1])-1] || '') + ' ' + vatParts[0]
+
+  const filing = (vatFilings || []).find(f => f.period === vatMonth)
+
+  const markAsFiled = async () => {
+    setFilingError('')
+    setMarking(true)
+    try {
+      const res = await fetch('/api/vat-filings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ period: vatMonth, filed_date: todayStr() }) })
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}))
+        setFilingError(d.error || 'Failed to mark this period as filed — please try again')
+        setMarking(false)
+        return
+      }
+      await reload()
+    } catch (e) {
+      setFilingError('Network error — this period was NOT marked as filed. Check your connection and try again.')
+    }
+    setMarking(false)
+  }
+
+  const unmarkAsFiled = async () => {
+    if (!confirm(`Unmark ${vatMonthLabel} as filed?`)) return
+    setFilingError('')
+    setMarking(true)
+    try {
+      const res = await fetch('/api/vat-filings', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ period: vatMonth }) })
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}))
+        setFilingError(d.error || 'Failed to unmark this period — please try again')
+        setMarking(false)
+        return
+      }
+      await reload()
+    } catch (e) {
+      setFilingError('Network error — could not update. Check your connection and try again.')
+    }
+    setMarking(false)
+  }
 
   const vatInvoices = invoices.filter(i => i.date?.startsWith(vatMonth))
   const vatStandard = vatInvoices.filter(i => Number(i.tax) > 0)
@@ -3640,10 +3685,20 @@ function VatPage({ invoices, payments, purchases }) {
     <>
       <Topbar title="VAT Return">
         <MonthYearPicker value={vatMonth} onChange={setVatMonth} accentColor="#8B6914" />
+        {filing ? (
+          <button className="btn btn-sm" style={{ background: '#EAF3DE', borderColor: '#C0DD97', color: '#27500A', fontWeight: 500 }} onClick={unmarkAsFiled} disabled={marking} title="Click to unmark if this was filed by mistake">
+            <i className="ti ti-circle-check"></i> {marking ? 'Updating...' : `Filed ${fmtDate(filing.filed_date)}`}
+          </button>
+        ) : (
+          <button className="btn btn-sm" style={{ background: '#2E7D2E', borderColor: '#1A4D1A', color: '#fff', fontWeight: 500 }} onClick={markAsFiled} disabled={marking}>
+            <i className="ti ti-flag-check"></i> {marking ? 'Marking...' : 'Mark as Filed'}
+          </button>
+        )}
         <button className="btn btn-sm" style={{ background: '#1D6F42', borderColor: '#155233', color: '#fff', fontWeight: 500 }} onClick={() => setShowExport(true)}><i className="ti ti-download"></i> Export</button>
         <button className="btn btn-sm" style={{ background: '#8B6914', borderColor: '#6B5010', color: '#fff', fontWeight: 500 }} onClick={printVatReturn}><i className="ti ti-printer"></i> PDF</button>
       </Topbar>
       <div style={{ padding: 20 }}>
+        {filingError && <Alert type="danger">{filingError}</Alert>}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12, marginBottom: 16 }}>
           <StatCard label="Output VAT (sales)" value={fmt(vatTotalTax)} color="#2E7D2E" />
           <StatCard label="Input VAT (purchases)" value={fmt(vatInputTax)} color="#1A4D1A" />
@@ -3651,9 +3706,9 @@ function VatPage({ invoices, payments, purchases }) {
           <StatCard label="Total invoiced" value={fmt(vatTotalInv)} sub={`${vatInvoices.length} invoice${vatInvoices.length!==1?'s':''}`} />
         </div>
 
-        <div style={{ background: '#EAF3DE', border: '0.5px solid #C0DD97', borderRadius: 8, padding: '10px 16px', marginBottom: 16, fontSize: 13, color: '#27500A', display: 'flex', alignItems: 'center', gap: 10 }}>
-          <i className="ti ti-receipt-tax" style={{ fontSize: 18 }}></i>
-          <span><strong>VAT Period: {vatMonthLabel}</strong> &nbsp;|&nbsp; TIN: 445579 &nbsp;|&nbsp; Rate: 15% &nbsp;|&nbsp; Output VAT to declare: <strong>{fmt(vatTotalTax)}</strong></span>
+        <div style={{ background: filing ? '#EAF3DE' : '#FAEEDA', border: filing ? '0.5px solid #C0DD97' : '0.5px solid #FAC775', borderRadius: 8, padding: '10px 16px', marginBottom: 16, fontSize: 13, color: filing ? '#27500A' : '#633806', display: 'flex', alignItems: 'center', gap: 10 }}>
+          <i className={`ti ${filing ? 'ti-circle-check' : 'ti-receipt-tax'}`} style={{ fontSize: 18 }}></i>
+          <span><strong>VAT Period: {vatMonthLabel}</strong> &nbsp;|&nbsp; TIN: 445579 &nbsp;|&nbsp; Rate: 15% &nbsp;|&nbsp; Output VAT to declare: <strong>{fmt(vatTotalTax)}</strong> &nbsp;|&nbsp; Status: <strong>{filing ? `Filed on ${fmtDate(filing.filed_date)}` : 'Not yet filed'}</strong></span>
         </div>
 
         {vatInvoices.length === 0 ? (
