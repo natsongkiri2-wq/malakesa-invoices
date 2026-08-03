@@ -5834,6 +5834,7 @@ function previewInvoice(inv) {
 
 function NewInvoiceModal({ clients, invoice, onClose, onSave }) {
   const isEdit = !!invoice
+  const draftKey = isEdit ? `malakesa_draft_invoice_edit_${invoice.id}` : 'malakesa_draft_invoice_new'
   const [form, setForm] = useState(isEdit
     ? { client_id: invoice.client_id || '', client_name: invoice.client_name || '', client_email: invoice.client_email || '', date: invoice.date || todayStr(), due_date: invoice.due_date || addDays(todayStr(), 14), notes: invoice.notes || '' }
     : { client_id: '', client_name: '', client_email: '', date: todayStr(), due_date: addDays(todayStr(), 14), notes: '' })
@@ -5844,6 +5845,62 @@ function NewInvoiceModal({ clients, invoice, onClose, onSave }) {
   const vatInclusive = true // Rates are always VAT-inclusive at Malakesa
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [draftBanner, setDraftBanner] = useState(null) // { savedAt } when a recoverable draft is found
+  const draftRef = useRef(null)
+  const draftChecked = useRef(false)
+
+  // On open, check for a leftover draft from a crash/accidental close (drafts expire after 48h)
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(draftKey)
+      if (raw) {
+        const d = JSON.parse(raw)
+        const ageMs = Date.now() - (d.savedAt || 0)
+        const hasContent = d.form?.client_id || (d.items || []).some(i => (i.description || '').trim() || i.rate)
+        if (hasContent && ageMs < 48 * 60 * 60 * 1000) {
+          draftRef.current = d
+          setDraftBanner({ savedAt: d.savedAt })
+        } else {
+          localStorage.removeItem(draftKey)
+        }
+      }
+    } catch (e) {}
+    draftChecked.current = true
+  }, [])
+
+  // Autosave to this browser as the form is filled in (paused while a restore prompt is showing)
+  useEffect(() => {
+    if (!draftChecked.current || draftBanner) return
+    const hasContent = form.client_id || items.some(i => (i.description || '').trim() || i.rate)
+    if (!hasContent) return
+    const t = setTimeout(() => {
+      try { localStorage.setItem(draftKey, JSON.stringify({ form, items, applyVat, savedAt: Date.now() })) } catch (e) {}
+    }, 600)
+    return () => clearTimeout(t)
+  }, [form, items, applyVat, draftBanner])
+
+  const clearDraft = () => { try { localStorage.removeItem(draftKey) } catch (e) {} }
+
+  const restoreDraft = () => {
+    const d = draftRef.current
+    if (d) {
+      setForm(d.form)
+      setItems((d.items || []).map(it => ({ ...it, id: it.id || uid() })))
+      setApplyVat(!!d.applyVat)
+    }
+    setDraftBanner(null)
+  }
+
+  const discardDraft = () => { clearDraft(); setDraftBanner(null) }
+  const handleClose = () => { clearDraft(); onClose() }
+
+  const draftAgeLabel = (savedAt) => {
+    const mins = Math.round((Date.now() - savedAt) / 60000)
+    if (mins < 1) return 'just now'
+    if (mins < 60) return `${mins} minute${mins !== 1 ? 's' : ''} ago`
+    const hrs = Math.round(mins / 60)
+    return `${hrs} hour${hrs !== 1 ? 's' : ''} ago`
+  }
 
   const updateItem = (id, field, value) => setItems(items => items.map(item => {
     if (item.id !== id) return item
@@ -5874,6 +5931,7 @@ function NewInvoiceModal({ clients, invoice, onClose, onSave }) {
         setSaving(false)
         return
       }
+      clearDraft()
       onSave()
     } catch (e) {
       setError('Network error — the invoice was NOT saved. Check your connection and try again.')
@@ -5882,7 +5940,16 @@ function NewInvoiceModal({ clients, invoice, onClose, onSave }) {
   }
 
   return (
-    <Modal title={isEdit ? `Edit Invoice — ${invoice.number}` : 'New Invoice'} onClose={onClose} wide>
+    <Modal title={isEdit ? `Edit Invoice — ${invoice.number}` : 'New Invoice'} onClose={handleClose} wide>
+      {draftBanner && (
+        <div style={{ background: '#FAEEDA', border: '0.5px solid #FAC775', borderRadius: 8, padding: '10px 14px', marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, fontSize: 13, flexWrap: 'wrap' }}>
+          <span style={{ color: '#633806' }}><i className="ti ti-history" style={{ marginRight: 6 }}></i>We found an unsaved draft from {draftAgeLabel(draftBanner.savedAt)} — looks like this invoice didn't get saved last time.</span>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button className="btn btn-sm" onClick={discardDraft}>Discard</button>
+            <button className="btn btn-sm btn-primary" onClick={restoreDraft}>Restore draft</button>
+          </div>
+        </div>
+      )}
       {error && <Alert type="danger">{error}</Alert>}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
         <Field label="Client *">
@@ -5946,8 +6013,9 @@ function NewInvoiceModal({ clients, invoice, onClose, onSave }) {
         <button className="btn" onClick={() => previewInvoice({ ...form, items: items.filter(i => i.description.trim()), subtotal, tax, total })}>
           <i className="ti ti-eye"></i> Preview Invoice
         </button>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <button className="btn" onClick={onClose}>Cancel</button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <span style={{ fontSize: 11, color: '#999' }}><i className="ti ti-device-floppy" style={{ marginRight: 4 }}></i>Progress is saved automatically in this browser</span>
+          <button className="btn" onClick={handleClose}>Cancel</button>
           <button className="btn btn-primary" onClick={handleSave} disabled={saving}><i className="ti ti-check"></i> {saving ? (isEdit ? 'Updating...' : 'Saving...') : (isEdit ? 'Update Invoice' : 'Save Invoice')}</button>
         </div>
       </div>
