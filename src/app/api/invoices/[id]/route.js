@@ -73,7 +73,12 @@ export async function DELETE(req, { params }) {
     return NextResponse.json({ error: 'This invoice is fully paid and cannot be deleted' }, { status: 403 })
   }
 
-  const { error } = await supabase.from('invoices').delete().eq('id', id)
+  // Soft delete: stamp deleted_at instead of removing the row.
+  // Recoverable from Trash for 30 days.
+  const { error } = await supabase
+    .from('invoices')
+    .update({ deleted_at: new Date().toISOString() })
+    .eq('id', id)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json({ success: true })
 }

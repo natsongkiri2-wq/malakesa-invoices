@@ -6,7 +6,7 @@ export async function GET() {
     if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_KEY) {
       return NextResponse.json({ error: 'Missing env vars' }, { status: 500 })
     }
-    const { data, error } = await supabase.from('clients').select('*').order('name', { ascending: true })
+    const { data, error } = await supabase.from('clients').select('*').is('deleted_at', null).order('name', { ascending: true })
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
     return NextResponse.json(data || [])
   } catch(e) {

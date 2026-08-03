@@ -5,6 +5,7 @@ export async function GET() {
   const { data, error } = await supabase
     .from('salary_records')
     .select('*')
+    .is('deleted_at', null)
     .order('created_at', { ascending: false })
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json(data)
@@ -34,7 +35,12 @@ export async function POST(req) {
 
 export async function DELETE(req) {
   const { id } = await req.json()
-  const { error } = await supabase.from('salary_records').delete().eq('id', id)
+  // Soft delete: stamp deleted_at instead of removing the row.
+  // Recoverable from Trash for 30 days.
+  const { error } = await supabase
+    .from('salary_records')
+    .update({ deleted_at: new Date().toISOString() })
+    .eq('id', id)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json({ success: true })
 }

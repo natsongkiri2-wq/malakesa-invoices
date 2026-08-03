@@ -31,7 +31,12 @@ export async function PUT(req, { params }) {
 
 export async function DELETE(req, { params }) {
   const { id } = params
-  const { error } = await supabase.from('purchases').delete().eq('id', id)
+  // Soft delete: stamp deleted_at instead of removing the row.
+  // Recoverable from Trash for 30 days.
+  const { error } = await supabase
+    .from('purchases')
+    .update({ deleted_at: new Date().toISOString() })
+    .eq('id', id)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json({ success: true })
 }

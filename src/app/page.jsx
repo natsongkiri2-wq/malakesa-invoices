@@ -221,6 +221,7 @@ export default function App() {
     { id: 'vat', label: 'VAT Return', icon: 'ti-receipt-tax' },
     { id: 'performance', label: 'Performance Report', icon: 'ti-report-money' },
     { id: 'reports', label: 'Reports', icon: 'ti-chart-bar' },
+    { id: 'trash', label: 'Trash', icon: 'ti-trash' },
   ]
 
   if (!isLoggedIn) return <LoginScreen onLogin={() => { try { sessionStorage.setItem('malakesa_auth', 'yes') } catch(e) {}; setIsLoggedIn(true) }} />
@@ -348,6 +349,7 @@ export default function App() {
             {page === 'reports' && <Reports invoices={invoices} payments={payments} purchases={purchases} salaryRecords={salaryRecords} />}
             {page === 'vat' && <VatPage invoices={invoices} payments={payments} purchases={purchases} vatFilings={vatFilings} reload={reload} />}
             {page === 'performance' && <PerformanceReport invoices={invoices} payments={payments} purchases={purchases} salaryRecords={salaryRecords} />}
+            {page === 'trash' && <TrashPage employees={employees} reload={reload} />}
             {page === 'clients' && <Clients clients={clients} invoices={invoices} payments={payments} reload={reload} setModal={setModal} />}
           </>
         )}
@@ -982,7 +984,7 @@ function Invoices({ invoices, payments, reload, setModal, setSelected, initialSt
   }
 
   const handleDelete = async (id) => {
-    if (!confirm('Delete this invoice?')) return
+    if (!confirm('Move this invoice to Trash? You can restore it from Trash within 30 days.')) return
     const res = await fetch('/api/invoices/' + id, { method: 'DELETE' })
     if (!res.ok) { const d = await res.json().catch(() => ({})); alert(d.error || 'Could not delete this invoice'); return }
     reload()
@@ -3510,6 +3512,168 @@ function PerformanceReport({ invoices, payments, purchases, salaryRecords }) {
   )
 }
 
+// ── Trash ──────────────────────────────────────────────────
+function TrashPage({ employees, reload }) {
+  const [trash, setTrash] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [busyKey, setBusyKey] = useState(null) // `${entity}:${id}` currently being restored/purged
+
+  const ENTITY_META = {
+    invoices: { label: 'Invoices', icon: 'ti-file-invoice' },
+    purchases: { label: 'Purchases', icon: 'ti-receipt' },
+    clients: { label: 'Clients', icon: 'ti-users' },
+    suppliers: { label: 'Suppliers', icon: 'ti-truck' },
+    employees: { label: 'Employees', icon: 'ti-id' },
+    salary_records: { label: 'Pay Runs', icon: 'ti-cash' },
+  }
+  const ENTITY_ORDER = ['invoices', 'purchases', 'clients', 'suppliers', 'employees', 'salary_records']
+
+  const loadTrash = async () => {
+    setLoading(true)
+    setError('')
+    try {
+      const res = await fetch('/api/trash')
+      if (!res.ok) { setError('Could not load Trash — please try again'); setLoading(false); return }
+      const data = await res.json()
+      setTrash(data)
+    } catch (e) {
+      setError('Network error — could not load Trash. Check your connection and try again.')
+    }
+    setLoading(false)
+  }
+
+  useEffect(() => { loadTrash() }, [])
+
+  const daysLeft = (deletedAt) => {
+    const deletedMs = new Date(deletedAt).getTime()
+    const purgeMs = deletedMs + 30 * 24 * 60 * 60 * 1000
+    const left = Math.ceil((purgeMs - Date.now()) / (24 * 60 * 60 * 1000))
+    return Math.max(0, left)
+  }
+
+  const restore = async (entity, id) => {
+    setError('')
+    setBusyKey(`${entity}:${id}`)
+    try {
+      const res = await fetch('/api/trash', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ entity, id }) })
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}))
+        setError(d.error || 'Failed to restore — please try again')
+        setBusyKey(null)
+        return
+      }
+      setTrash(t => ({ ...t, [entity]: t[entity].filter(r => r.id !== id) }))
+      await reload()
+    } catch (e) {
+      setError('Network error — could not restore. Check your connection and try again.')
+    }
+    setBusyKey(null)
+  }
+
+  const purge = async (entity, id, label) => {
+    if (!confirm(`Permanently delete "${label}"?\n\nThis cannot be undone — it will NOT be recoverable after this.`)) return
+    setError('')
+    setBusyKey(`${entity}:${id}`)
+    try {
+      const res = await fetch('/api/trash', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ entity, id }) })
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}))
+        setError(d.error || 'Failed to permanently delete — please try again')
+        setBusyKey(null)
+        return
+      }
+      setTrash(t => ({ ...t, [entity]: t[entity].filter(r => r.id !== id) }))
+    } catch (e) {
+      setError('Network error — could not permanently delete. Check your connection and try again.')
+    }
+    setBusyKey(null)
+  }
+
+  const rowLabel = (entity, item) => {
+    if (entity === 'invoices') return `${item.number || 'Invoice'} — ${item.client_name || 'No client'}`
+    if (entity === 'purchases') return `${item.supplier || 'Unknown supplier'} — ${fmtDate(item.date)}`
+    if (entity === 'clients') return item.name || 'Client'
+    if (entity === 'suppliers') return item.name || 'Supplier'
+    if (entity === 'employees') return item.name || 'Employee'
+    if (entity === 'salary_records') {
+      const emp = (employees || []).find(e => e.id === item.employee_id)
+      return `${emp ? emp.name : 'Employee'} — ${item.month || ''}`
+    }
+    return item.id
+  }
+
+  const rowDetail = (entity, item) => {
+    if (entity === 'invoices') return fmt(item.total)
+    if (entity === 'purchases') return fmt(item.amount)
+    if (entity === 'clients') return item.email || ''
+    if (entity === 'suppliers') return item.category || ''
+    if (entity === 'employees') return item.job_title || ''
+    if (entity === 'salary_records') return fmt(item.net_pay)
+    return ''
+  }
+
+  const totalCount = trash ? ENTITY_ORDER.reduce((s, e) => s + (trash[e] || []).length, 0) : 0
+
+  return (
+    <>
+      <Topbar title="Trash">
+        <button className="btn btn-sm" onClick={loadTrash} disabled={loading}><i className="ti ti-refresh"></i> {loading ? 'Refreshing...' : 'Refresh'}</button>
+      </Topbar>
+      <div style={{ padding: 20 }}>
+        {error && <Alert type="danger">{error}</Alert>}
+        <div style={{ background: '#FAEEDA', border: '0.5px solid #FAC775', borderRadius: 8, padding: '10px 16px', marginBottom: 16, fontSize: 13, color: '#633806', display: 'flex', alignItems: 'center', gap: 10 }}>
+          <i className="ti ti-clock-hour-4" style={{ fontSize: 18 }}></i>
+          <span>Deleted items are kept here for <strong>30 days</strong> before being permanently removed. Restore anything you didn't mean to delete, or delete it forever right away.</span>
+        </div>
+
+        {loading && !trash ? (
+          <div style={{ textAlign: 'center', padding: 40, color: '#999' }}>Loading Trash...</div>
+        ) : totalCount === 0 ? (
+          <Card style={{ padding: 40, textAlign: 'center' }}>
+            <i className="ti ti-trash-off" style={{ fontSize: 32, color: '#ccc' }}></i>
+            <div style={{ marginTop: 10, color: '#999', fontSize: 14 }}>Trash is empty</div>
+          </Card>
+        ) : (
+          ENTITY_ORDER.filter(entity => (trash[entity] || []).length > 0).map(entity => (
+            <Card key={entity} style={{ padding: 0, overflow: 'hidden', marginBottom: 16 }}>
+              <div style={{ padding: '12px 20px', borderBottom: '0.5px solid rgba(0,0,0,0.09)', display: 'flex', alignItems: 'center', gap: 8 }}>
+                <i className={`ti ${ENTITY_META[entity].icon}`} style={{ color: '#8B6914' }}></i>
+                <strong style={{ fontSize: 14 }}>{ENTITY_META[entity].label}</strong>
+                <span style={{ fontSize: 12, color: '#999' }}>({trash[entity].length})</span>
+              </div>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                <tbody>
+                  {trash[entity].map(item => {
+                    const key = `${entity}:${item.id}`
+                    const label = rowLabel(entity, item)
+                    const left = daysLeft(item.deleted_at)
+                    return (
+                      <tr key={item.id} style={{ borderBottom: '0.5px solid rgba(0,0,0,0.07)' }}>
+                        <Td style={{ fontWeight: 500 }}>{label}</Td>
+                        <Td style={{ color: '#666' }}>{rowDetail(entity, item)}</Td>
+                        <Td style={{ color: '#999', fontSize: 12 }}>Deleted {fmtDate(item.deleted_at)} &middot; {left > 0 ? `${left} day${left !== 1 ? 's' : ''} left` : 'purging soon'}</Td>
+                        <Td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                          <button className="btn btn-sm" style={{ background: '#EAF3DE', borderColor: '#C0DD97', color: '#27500A', marginRight: 6 }} onClick={() => restore(entity, item.id)} disabled={busyKey === key}>
+                            <i className="ti ti-arrow-back-up"></i> {busyKey === key ? 'Working...' : 'Restore'}
+                          </button>
+                          <button className="btn btn-sm" style={{ background: '#FCEBEB', borderColor: '#F3B8B8', color: '#791F1F' }} onClick={() => purge(entity, item.id, label)} disabled={busyKey === key}>
+                            <i className="ti ti-trash-x"></i> Delete Forever
+                          </button>
+                        </Td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </Card>
+          ))
+        )}
+      </div>
+    </>
+  )
+}
+
 // ── Purchases ─────────────────────────────────────────────
 const PURCHASE_CATEGORIES = ['Fuel', 'Vehicle Maintenance', 'Insurance', 'Office Supplies', 'Utilities', 'Staff Costs', 'Marketing', 'Equipment', 'Accommodation', 'Food & Beverages', 'Professional Services', 'Bank Charges', 'Other']
 const PAYMENT_METHODS = ['Cheque', 'Cash', 'Bank Transfer', 'Other']
@@ -3854,7 +4018,7 @@ function Purchases({ purchases, suppliers, customCategories, reload, setModal, s
   const clearFilters = () => { setSearch(''); setFilterMonth(''); setFilterCategory('') }
 
   const handleDelete = async (id) => {
-    if (!confirm('Delete this purchase?')) return
+    if (!confirm('Move this purchase to Trash? You can restore it from Trash within 30 days.')) return
     await fetch('/api/purchases/' + id, { method: 'DELETE' }); reload()
   }
 
@@ -4526,7 +4690,7 @@ function Suppliers({ suppliers, purchases, reload, setModal }) {
   const [saving, setSaving] = useState(false)
 
   const handleDelete = async (id) => {
-    if (!confirm('Delete this supplier? Their purchases will remain.')) return
+    if (!confirm('Move this supplier to Trash? Their purchases will remain, and you can restore the supplier within 30 days.')) return
     await fetch('/api/suppliers/' + id, { method: 'DELETE' }); reload()
   }
 
@@ -4718,7 +4882,7 @@ function VNPF({ employees, salaryRecords, reload, setModal, setSelected }) {
   const monthLabel = monthOptions.find(m => m.value === vnpfMonth)?.label || vnpfMonth
 
   const handleDelete = async (id) => {
-    if (!confirm('Delete this employee?')) return
+    if (!confirm('Move this employee to Trash? You can restore them within 30 days.')) return
     await fetch('/api/employees/' + id, { method: 'DELETE' }); reload()
   }
 
@@ -5048,7 +5212,7 @@ function SalariesTab({ employees, salaryRecords, reload, fmt }) {
   const [payRunModal, setPayRunModal] = useState(null) // emp object when open
 
   const deletePayRun = async (id) => {
-    if (!confirm('Delete this pay run? This will also remove it from the VNPF schedule.')) return
+    if (!confirm('Move this pay run to Trash? It will disappear from the VNPF schedule, and you can restore it within 30 days.')) return
     const res = await fetch('/api/salary-records', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) })
     if (res.ok) reload()
     else alert('Failed to delete pay run')
@@ -5628,7 +5792,7 @@ function Clients({ clients, invoices, payments, reload, setModal }) {
   const [saving, setSaving] = useState(false)
 
   const handleDelete = async (id) => {
-    if (!confirm('Delete this client? Their invoices will remain.')) return
+    if (!confirm('Move this client to Trash? Their invoices will remain, and you can restore the client within 30 days.')) return
     await fetch('/api/clients/' + id, { method: 'DELETE' }); reload()
   }
 

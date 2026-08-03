@@ -5,29 +5,27 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_KEY
 )
 
-export async function PATCH(request, { params }) {
-  const { id } = params
+export async function GET() {
+  const { data, error } = await supabase
+    .from('employees')
+    .select('*')
+    .is('deleted_at', null)
+    .order('name', { ascending: true })
+  if (error) return Response.json({ error: error.message }, { status: 500 })
+  return Response.json(data || [])
+}
+
+export async function POST(request) {
   const body = await request.json()
-  const { name, phone, email, address, category } = body
-  if (!name) {
-    return Response.json({ error: 'name is required' }, { status: 400 })
+  const { name, salary, vnpf_number, email, job_title } = body
+  if (!name || !salary) {
+    return Response.json({ error: 'name and salary are required' }, { status: 400 })
   }
   const { data, error } = await supabase
-    .from('suppliers')
-    .update({ name, phone, email, address, category })
-    .eq('id', id)
+    .from('employees')
+    .insert([{ name, salary: Number(salary), vnpf_number, email, job_title }])
     .select()
     .single()
   if (error) return Response.json({ error: error.message }, { status: 500 })
-  return Response.json(data)
-}
-
-export async function DELETE(request, { params }) {
-  const { id } = params
-  const { error } = await supabase
-    .from('suppliers')
-    .delete()
-    .eq('id', id)
-  if (error) return Response.json({ error: error.message }, { status: 500 })
-  return Response.json({ success: true })
+  return Response.json(data, { status: 201 })
 }

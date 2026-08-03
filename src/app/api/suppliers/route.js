@@ -9,6 +9,7 @@ export async function GET() {
   const { data, error } = await supabase
     .from('suppliers')
     .select('*')
+    .is('deleted_at', null)
     .order('name', { ascending: true })
   if (error) return Response.json({ error: error.message }, { status: 500 })
   return Response.json(data || [])

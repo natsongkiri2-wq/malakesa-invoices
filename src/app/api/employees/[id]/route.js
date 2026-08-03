@@ -24,9 +24,11 @@ export async function PATCH(request, { params }) {
 
 export async function DELETE(request, { params }) {
   const { id } = params
+  // Soft delete: stamp deleted_at instead of removing the row.
+  // Recoverable from Trash for 30 days.
   const { error } = await supabase
     .from('employees')
-    .delete()
+    .update({ deleted_at: new Date().toISOString() })
     .eq('id', id)
   if (error) return Response.json({ error: error.message }, { status: 500 })
   return Response.json({ success: true })
