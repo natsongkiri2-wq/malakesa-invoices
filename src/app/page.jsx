@@ -5864,11 +5864,21 @@ function NewInvoiceModal({ clients, invoice, onClose, onSave }) {
     const validItems = items.filter(i => i.description.trim())
     if (!validItems.length) { setError('Add at least one line item'); return }
     setSaving(true)
-    const url = isEdit ? `/api/invoices/${invoice.id}` : '/api/invoices'
-    const method = isEdit ? 'PUT' : 'POST'
-    const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...form, items: validItems.map(({ id, ...r }) => r), subtotal, tax, total, vat_applied: applyVat }) })
-    if (!res.ok) { const d = await res.json(); setError(d.error || 'Failed to save'); setSaving(false); return }
-    onSave()
+    try {
+      const url = isEdit ? `/api/invoices/${invoice.id}` : '/api/invoices'
+      const method = isEdit ? 'PUT' : 'POST'
+      const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...form, items: validItems.map(({ id, ...r }) => r), subtotal, tax, total, vat_applied: applyVat }) })
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}))
+        setError(d.error || 'Failed to save invoice — please try again')
+        setSaving(false)
+        return
+      }
+      onSave()
+    } catch (e) {
+      setError('Network error — the invoice was NOT saved. Check your connection and try again.')
+      setSaving(false)
+    }
   }
 
   return (
@@ -5949,18 +5959,33 @@ function PaymentModal({ invoice, payments, onClose, onSave }) {
   const balance = getBalance(invoice, payments)
   const [form, setForm] = useState({ amount: balance, method: 'Cash', date: todayStr(), note: '' })
   const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
 
   const handleSave = async () => {
-    if (!form.amount || form.amount <= 0) return
+    setError('')
+    if (!form.amount || form.amount <= 0) { setError('Enter a payment amount greater than 0'); return }
+    if (!form.date) { setError('Payment date is required'); return }
     setSaving(true)
-    await fetch('/api/payments', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ invoice_id: invoice.id, ...form, amount: parseFloat(form.amount) }) })
-    onSave()
+    try {
+      const res = await fetch('/api/payments', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ invoice_id: invoice.id, ...form, amount: parseFloat(form.amount) }) })
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}))
+        setError(d.error || 'Failed to record payment — please try again')
+        setSaving(false)
+        return
+      }
+      onSave()
+    } catch (e) {
+      setError('Network error — the payment was NOT recorded. Check your connection and try again.')
+      setSaving(false)
+    }
   }
 
   return (
     <Modal title="Record Payment" onClose={onClose}>
       <div style={{ fontSize: 13, color: '#666', marginBottom: 12 }}>{invoice.number} — {invoice.client_name}</div>
       <Alert type="warning">Balance due: <strong>{fmt(balance)}</strong></Alert>
+      {error && <Alert type="danger">{error}</Alert>}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 12 }}>
         <Field label="Amount (VT)"><input type="number" value={form.amount} min="0" onChange={e => setForm(f => ({ ...f, amount: e.target.value }))} style={inputStyle} /></Field>
         <Field label="Payment method">
