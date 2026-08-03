@@ -5843,10 +5843,10 @@ function previewInvoice(inv) {
     .bill-label { font-size: 9px; font-weight: 800; color: #8B6914; text-transform: uppercase; letter-spacing: 2px; border-bottom: 2px solid #8B6914; padding-bottom: 3px; margin-bottom: 8px; display: inline-block; }
     .bill-name { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
     .bill-detail { font-size: 12px; color: #555; line-height: 1.7; }
-    table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+    table { width: 100%; border-collapse: collapse; margin: 16px 0; table-layout: fixed; }
     thead tr { background: linear-gradient(135deg, #8B5E34, #8B6914); }
     th { padding: 10px 14px; text-align: left; font-size: 10px; font-weight: 700; color: #F5D98A; letter-spacing: 1px; text-transform: uppercase; }
-    td { padding: 11px 14px; border-bottom: 1px solid #FBF3E4; font-size: 13px; }
+    td { padding: 11px 14px; border-bottom: 1px solid #FBF3E4; font-size: 13px; overflow-wrap: break-word; word-break: break-word; }
     tr:nth-child(even) td { background: #faf6ee; }
     .text-right { text-align: right; }
     .totals { margin-left: auto; width: 280px; margin-top: 12px; }
@@ -5911,7 +5911,7 @@ function previewInvoice(inv) {
       </div>
       ${inv.notes ? '<div class="notes"><strong>Notes:</strong> ' + inv.notes + '</div>' : ''}
       <table>
-        <thead><tr><th>Date</th><th>Name</th><th>Description</th><th>Voucher #</th><th class="text-right">Qty</th><th class="text-right">Rate (VT)</th><th class="text-right">Amount (VT)</th></tr></thead>
+        <thead><tr><th style="width:9%">Date</th><th style="width:11%">Name</th><th style="width:29%">Description</th><th style="width:10%">Voucher #</th><th class="text-right" style="width:7%">Qty</th><th class="text-right" style="width:16%">Rate (VT)</th><th class="text-right" style="width:18%">Amount (VT)</th></tr></thead>
         <tbody>${(inv.items || []).map(it => '<tr>' + (it.date ? '<td>' + it.date + '</td>' : '<td style="color:#ccc">-</td>') + (it.name ? '<td>' + it.name + '</td>' : '<td style="color:#ccc">-</td>') + '<td>' + (it.description || '') + '</td>' + (it.voucher ? '<td>' + it.voucher + '</td>' : '<td style="color:#ccc">-</td>') + '<td class="text-right">' + (it.qty || 0) + '</td><td class="text-right" style="white-space:nowrap">VT&nbsp;' + Number(it.rate || 0).toLocaleString() + '</td><td class="text-right" style="white-space:nowrap">VT&nbsp;' + Number(it.total || 0).toLocaleString() + '</td></tr>').join('')}</tbody>
       </table>
       <div class="totals">
@@ -6213,10 +6213,10 @@ function ViewInvoiceModal({ invoice, payments, onClose, onPay }) {
     .bill-label { font-size: 9px; font-weight: 800; color: #8B6914; text-transform: uppercase; letter-spacing: 2px; border-bottom: 2px solid #8B6914; padding-bottom: 3px; margin-bottom: 8px; display: inline-block; }
     .bill-name { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
     .bill-detail { font-size: 12px; color: #555; line-height: 1.7; }
-    table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+    table { width: 100%; border-collapse: collapse; margin: 16px 0; table-layout: fixed; }
     thead tr { background: linear-gradient(135deg, #8B5E34, #8B6914); }
     th { padding: 10px 14px; text-align: left; font-size: 10px; font-weight: 700; color: #F5D98A; letter-spacing: 1px; text-transform: uppercase; }
-    td { padding: 11px 14px; border-bottom: 1px solid #FBF3E4; font-size: 13px; }
+    td { padding: 11px 14px; border-bottom: 1px solid #FBF3E4; font-size: 13px; overflow-wrap: break-word; word-break: break-word; }
     tr:nth-child(even) td { background: #faf6ee; }
     .text-right { text-align: right; }
     .totals { margin-left: auto; width: 280px; margin-top: 12px; }
@@ -6286,7 +6286,7 @@ function ViewInvoiceModal({ invoice, payments, onClose, onPay }) {
       </div>
       ${invoice.notes ? '<div class="notes"><strong>Notes:</strong> ' + invoice.notes + '</div>' : ''}
       <table>
-        <thead><tr><th>Date</th><th>Name</th><th>Description</th><th>Voucher #</th><th class="text-right">Qty</th><th class="text-right">Rate (VT)</th><th class="text-right">Amount (VT)</th></tr></thead>
+        <thead><tr><th style="width:9%">Date</th><th style="width:11%">Name</th><th style="width:29%">Description</th><th style="width:10%">Voucher #</th><th class="text-right" style="width:7%">Qty</th><th class="text-right" style="width:16%">Rate (VT)</th><th class="text-right" style="width:18%">Amount (VT)</th></tr></thead>
         <tbody>${(invoice.items || []).map(it => '<tr>' + (it.date ? '<td>' + it.date + '</td>' : '<td style="color:#ccc">-</td>') + (it.name ? '<td>' + it.name + '</td>' : '<td style="color:#ccc">-</td>') + '<td>' + (it.description || '') + '</td>' + (it.voucher ? '<td>' + it.voucher + '</td>' : '<td style="color:#ccc">-</td>') + '<td class="text-right">' + (it.qty || 0) + '</td><td class="text-right" style="white-space:nowrap">VT&nbsp;' + Number(it.rate || 0).toLocaleString() + '</td><td class="text-right" style="white-space:nowrap">VT&nbsp;' + Number(it.total || 0).toLocaleString() + '</td></tr>').join('')}</tbody>
       </table>
       <div class="totals">
@@ -6360,10 +6360,10 @@ function ViewInvoiceModal({ invoice, payments, onClose, onPay }) {
     .bill-label { font-size: 9px; font-weight: 800; color: #8B6914; text-transform: uppercase; letter-spacing: 2px; border-bottom: 2px solid #8B6914; padding-bottom: 3px; margin-bottom: 8px; display: inline-block; }
     .bill-name { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
     .bill-detail { font-size: 12px; color: #555; line-height: 1.7; }
-    table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+    table { width: 100%; border-collapse: collapse; margin: 16px 0; table-layout: fixed; }
     thead tr { background: linear-gradient(135deg, #8B5E34, #8B6914); }
     th { padding: 10px 14px; text-align: left; font-size: 10px; font-weight: 700; color: #F5D98A; letter-spacing: 1px; text-transform: uppercase; }
-    td { padding: 11px 14px; border-bottom: 1px solid #FBF3E4; font-size: 13px; }
+    td { padding: 11px 14px; border-bottom: 1px solid #FBF3E4; font-size: 13px; overflow-wrap: break-word; word-break: break-word; }
     tr:nth-child(even) td { background: #faf6ee; }
     .text-right { text-align: right; }
     .totals { margin-left: auto; width: 280px; margin-top: 12px; }
@@ -6408,7 +6408,7 @@ function ViewInvoiceModal({ invoice, payments, onClose, onPay }) {
       </div>
       ${invoice.notes ? '<div class="notes"><strong>Notes:</strong> ' + invoice.notes + '</div>' : ''}
       <table>
-        <thead><tr><th>Date</th><th>Name</th><th>Description</th><th>Voucher #</th><th class="text-right">Qty</th><th class="text-right">Rate (VT)</th><th class="text-right">Amount (VT)</th></tr></thead>
+        <thead><tr><th style="width:9%">Date</th><th style="width:11%">Name</th><th style="width:29%">Description</th><th style="width:10%">Voucher #</th><th class="text-right" style="width:7%">Qty</th><th class="text-right" style="width:16%">Rate (VT)</th><th class="text-right" style="width:18%">Amount (VT)</th></tr></thead>
         <tbody>${(invoice.items || []).map(it => '<tr>' + (it.date ? '<td>' + it.date + '</td>' : '<td style="color:#ccc">-</td>') + (it.name ? '<td>' + it.name + '</td>' : '<td style="color:#ccc">-</td>') + '<td>' + (it.description || '') + '</td>' + (it.voucher ? '<td>' + it.voucher + '</td>' : '<td style="color:#ccc">-</td>') + '<td class="text-right">' + (it.qty || 0) + '</td><td class="text-right" style="white-space:nowrap">VT&nbsp;' + Number(it.rate || 0).toLocaleString() + '</td><td class="text-right" style="white-space:nowrap">VT&nbsp;' + Number(it.total || 0).toLocaleString() + '</td></tr>').join('')}</tbody>
       </table>
       <div class="totals">
