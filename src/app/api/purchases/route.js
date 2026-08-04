@@ -1,42 +1,31 @@
-import { supabase } from '@/lib/supabase'
-import { NextResponse } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
 
-export async function PUT(req, { params }) {
-  const { id } = params
-  const body = await req.json()
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_KEY
+)
 
+export async function GET() {
   const { data, error } = await supabase
     .from('purchases')
-    .update({
-      date: body.date,
-      supplier_id: body.supplier_id || null,
-      supplier: body.supplier,
-      description: body.description || null,
-      category: body.category || 'Other',
-      amount: body.amount || 0,
-      vat: body.vat || 0,
-      amount_ex_vat: body.amount_ex_vat || 0,
-      ref: body.ref || null,
-      receipt_url: body.receipt_url ?? null,
-      payment_method: body.payment_method || 'Cheque',
-      cheque_number: body.cheque_number || null,
-    })
-    .eq('id', id)
-    .select()
-    .single()
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json(data)
+    .select('*')
+    .is('deleted_at', null)
+    .order('date', { ascending: false })
+  if (error) return Response.json({ error: error.message }, { status: 500 })
+  return Response.json(data || [])
 }
 
-export async function DELETE(req, { params }) {
-  const { id } = params
-  // Soft delete: stamp deleted_at instead of removing the row.
-  // Recoverable from Trash for 30 days.
-  const { error } = await supabase
+export async function POST(request) {
+  const body = await request.json()
+  const { date, supplier, description, category, amount, vat, amount_ex_vat, ref, receipt_url, payment_method, cheque_number } = body
+  if (!supplier || !date || !amount) {
+    return Response.json({ error: 'supplier, date and amount are required' }, { status: 400 })
+  }
+  const { data, error } = await supabase
     .from('purchases')
-    .update({ deleted_at: new Date().toISOString() })
-    .eq('id', id)
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json({ success: true })
+    .insert([{ date, supplier, description, category, amount: Number(amount), vat: Number(vat || 0), amount_ex_vat: Number(amount_ex_vat || 0), ref, receipt_url: receipt_url || null, payment_method: payment_method || 'Cheque', cheque_number: cheque_number || null }])
+    .select()
+    .single()
+  if (error) return Response.json({ error: error.message }, { status: 500 })
+  return Response.json(data, { status: 201 })
 }
