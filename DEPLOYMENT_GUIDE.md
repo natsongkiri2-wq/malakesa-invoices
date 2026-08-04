@@ -119,7 +119,7 @@ Common issues:
 
 ---
 
-## FEATURES SUMMARY
+## FEATURES SUMMARY 
 
 | Feature                        | How it works                              |
 |-------------------------------|-------------------------------------------|
