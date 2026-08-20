@@ -5263,23 +5263,32 @@ function SalariesTab({ employees, salaryRecords, reload, fmt }) {
 
   // Compact table-style payslip block (paper-saving — several fit on one printed page)
   const buildSlipBlock = (emp, mLabel, recs) => {
-    const totalGross = recs.reduce((s, r) => s + Number(r.gross || 0), 0)
-    const totalAllowances = recs.reduce((s, r) => s + (r.allowances || []).reduce((a, x) => a + Number(x.amount || 0), 0), 0)
-    const totalVnpf = recs.reduce((s, r) => s + Number(r.vnpf_employee || 0), 0)
-    const totalOtherDed = recs.reduce((s, r) => s + (r.deductions || []).reduce((a, d) => a + Number(d.amount || 0), 0), 0)
-    const totalNet = recs.reduce((s, r) => s + Number(r.net_pay || 0), 0)
-
-    const rows = recs.map(r => {
+    // VNPF-exempt employees never contribute, even if an older pay run has a stale VNPF amount
+    // saved on it — net pay is recalculated without that deduction for exempt employees.
+    const calcRows = recs.map(r => {
       const allow = (r.allowances || []).reduce((a, x) => a + Number(x.amount || 0), 0)
       const otherDed = (r.deductions || []).reduce((a, d) => a + Number(d.amount || 0), 0)
+      const gross = Number(r.gross || 0)
+      const vnpf = emp.vnpf_exempt ? 0 : Number(r.vnpf_employee || 0)
+      const net = emp.vnpf_exempt ? (gross + allow - otherDed) : Number(r.net_pay || 0)
+      return { r, allow, otherDed, gross, vnpf, net }
+    })
+
+    const totalGross = calcRows.reduce((s, x) => s + x.gross, 0)
+    const totalAllowances = calcRows.reduce((s, x) => s + x.allow, 0)
+    const totalVnpf = calcRows.reduce((s, x) => s + x.vnpf, 0)
+    const totalOtherDed = calcRows.reduce((s, x) => s + x.otherDed, 0)
+    const totalNet = calcRows.reduce((s, x) => s + x.net, 0)
+
+    const rows = calcRows.map(({ r, allow, otherDed, gross, vnpf, net }) => {
       const noteBits = [r.notes || (r.period_from && r.period_to ? periodRangeLabel(r.period_from, r.period_to) : null), ...(r.allowances||[]).filter(a=>a.label).map(a=>a.label), ...(r.deductions||[]).filter(d=>d.label).map(d=>d.label)].filter(Boolean)
       return `<tr>
         <td>${r.pay_date ? fmtDate(r.pay_date) : mLabel}</td>
-        <td class='num'>VT ${Number(r.gross||0).toLocaleString()}</td>
-        <td class='num grn'>${allow > 0 ? '+VT ' + Number(allow).toLocaleString() : '—'}</td>
-        <td class='num red'>${emp.vnpf_exempt ? 'N/A' : 'VT ' + Number(r.vnpf_employee||0).toLocaleString()}</td>
-        <td class='num red'>${otherDed > 0 ? 'VT ' + Number(otherDed).toLocaleString() : '—'}</td>
-        <td class='num grn bold'>VT ${Number(r.net_pay||0).toLocaleString()}</td>
+        <td class='num'>VT ${gross.toLocaleString()}</td>
+        <td class='num grn'>${allow > 0 ? '+VT ' + allow.toLocaleString() : '—'}</td>
+        <td class='num red'>${emp.vnpf_exempt ? 'N/A' : 'VT ' + vnpf.toLocaleString()}</td>
+        <td class='num red'>${otherDed > 0 ? 'VT ' + otherDed.toLocaleString() : '—'}</td>
+        <td class='num grn bold'>VT ${net.toLocaleString()}</td>
         <td class='notes'>${noteBits.length ? noteBits.join(', ') : '—'}</td>
       </tr>`
     }).join('')
@@ -5393,18 +5402,21 @@ body{background:#fff}
     w.document.close()
   }
 
-  const empSummary = (id) => {
-    const recs = monthRecords.filter(r => r.employee_id === id)
+  const empSummary = (emp) => {
+    const recs = monthRecords.filter(r => r.employee_id === emp.id)
     const totalGross = recs.reduce((s, r) => s + Number(r.gross || 0), 0)
     const totalAllowances = recs.reduce((s, r) => s + (r.allowances || []).reduce((a, x) => a + Number(x.amount || 0), 0), 0)
-    const totalVnpf = recs.reduce((s, r) => s + Number(r.vnpf_employee || 0), 0)
-    const totalNet = recs.reduce((s, r) => s + Number(r.net_pay || 0), 0)
+    const totalOtherDed = recs.reduce((s, r) => s + (r.deductions || []).reduce((a, d) => a + Number(d.amount || 0), 0), 0)
+    // VNPF-exempt employees never contribute, even if an older pay run has a stale VNPF amount saved on it —
+    // net pay is recalculated without that deduction for exempt employees.
+    const totalVnpf = emp.vnpf_exempt ? 0 : recs.reduce((s, r) => s + Number(r.vnpf_employee || 0), 0)
+    const totalNet = emp.vnpf_exempt ? (totalGross + totalAllowances - totalOtherDed) : recs.reduce((s, r) => s + Number(r.net_pay || 0), 0)
     return { runs: recs.length, totalGross, totalAllowances, totalVnpf, totalNet, records: recs }
   }
 
-  const totalNetAll = activeEmployees.reduce((s, e) => s + empSummary(e.id).totalNet, 0)
-  const totalGrossAll = activeEmployees.reduce((s, e) => s + empSummary(e.id).totalGross, 0)
-  const totalVnpfAll = activeEmployees.reduce((s, e) => s + empSummary(e.id).totalVnpf, 0)
+  const totalNetAll = activeEmployees.reduce((s, e) => s + empSummary(e).totalNet, 0)
+  const totalGrossAll = activeEmployees.reduce((s, e) => s + empSummary(e).totalGross, 0)
+  const totalVnpfAll = activeEmployees.reduce((s, e) => s + empSummary(e).totalVnpf, 0)
 
   return (
     <div style={{ padding: 20 }}>
@@ -5449,7 +5461,7 @@ body{background:#fff}
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {activeEmployees.map(emp => {
-            const sum = empSummary(emp.id)
+            const sum = empSummary(emp)
             return (
               <Card key={emp.id} style={{ padding: 0, overflow: 'hidden' }}>
                 {/* Employee header row */}
@@ -5466,7 +5478,7 @@ body{background:#fff}
                     {sum.runs > 0 ? (
                       <div style={{ textAlign: 'right' }}>
                         <div style={{ fontSize: 12, color: '#27500A', fontWeight: 600 }}>{sum.runs} pay run{sum.runs !== 1 ? 's' : ''} this month</div>
-                        <div style={{ fontSize: 12, color: '#666' }}>Gross: {fmt(sum.totalGross)} | VNPF: {fmt(sum.totalVnpf)}</div>
+                        <div style={{ fontSize: 12, color: '#666' }}>Gross: {fmt(sum.totalGross)} | VNPF: {emp.vnpf_exempt ? 'N/A' : fmt(sum.totalVnpf)}</div>
                         <div style={{ fontSize: 14, fontWeight: 700, color: '#2E7D2E' }}>Net: {fmt(sum.totalNet)}</div>
                       </div>
                     ) : (
@@ -5503,6 +5515,8 @@ body{background:#fff}
                         {sum.records.map((rec, i) => {
                           const recAllowances = (rec.allowances || []).reduce((s, a) => s + Number(a.amount || 0), 0)
                           const recOtherDeductions = (rec.deductions || []).reduce((s, d) => s + Number(d.amount || 0), 0)
+                          const recVnpf = emp.vnpf_exempt ? 0 : Number(rec.vnpf_employee || 0)
+                          const recNet = emp.vnpf_exempt ? (Number(rec.gross || 0) + recAllowances - recOtherDeductions) : Number(rec.net_pay || 0)
                           return (
                             <tr key={rec.id} style={{ borderBottom: '0.5px solid rgba(0,0,0,0.07)', background: i % 2 === 0 ? '#fff' : '#fafaf8' }}>
                               <Td style={{ fontSize: 12 }}>
@@ -5515,9 +5529,9 @@ body{background:#fff}
                               </Td>
                               <Td style={{ textAlign: 'right', fontSize: 12 }}>{fmt(rec.gross)}</Td>
                               <Td style={{ textAlign: 'right', fontSize: 12, color: '#2E7D2E' }}>{recAllowances > 0 ? '+' + fmt(recAllowances) : '—'}</Td>
-                              <Td style={{ textAlign: 'right', fontSize: 12, color: '#A32D2D' }}>{fmt(rec.vnpf_employee)}</Td>
+                              <Td style={{ textAlign: 'right', fontSize: 12, color: emp.vnpf_exempt ? '#999' : '#A32D2D' }}>{emp.vnpf_exempt ? 'N/A' : fmt(recVnpf)}</Td>
                               <Td style={{ textAlign: 'right', fontSize: 12, color: '#A32D2D' }}>{recOtherDeductions > 0 ? fmt(recOtherDeductions) : '—'}</Td>
-                              <Td style={{ textAlign: 'right', fontSize: 12, fontWeight: 600, color: '#2E7D2E' }}>{fmt(rec.net_pay)}</Td>
+                              <Td style={{ textAlign: 'right', fontSize: 12, fontWeight: 600, color: '#2E7D2E' }}>{fmt(recNet)}</Td>
                               <Td style={{ fontSize: 11, color: '#888' }}>{rec.notes || (rec.period_from && rec.period_to ? periodRangeLabel(rec.period_from, rec.period_to) : '—')}</Td>
                               <Td>
                                 <div style={{ display: 'flex', gap: 4 }}>
@@ -5532,7 +5546,7 @@ body{background:#fff}
                           <td style={{ padding: '7px 14px' }}>TOTAL ({sum.runs} run{sum.runs!==1?'s':''})</td>
                           <td style={{ padding: '7px 14px', textAlign: 'right' }}>{fmt(sum.totalGross)}</td>
                           <td style={{ padding: '7px 14px', textAlign: 'right', color: '#2E7D2E' }}>{fmt(sum.totalAllowances)}</td>
-                          <td style={{ padding: '7px 14px', textAlign: 'right', color: '#A32D2D' }}>{fmt(sum.totalVnpf)}</td>
+                          <td style={{ padding: '7px 14px', textAlign: 'right', color: emp.vnpf_exempt ? '#999' : '#A32D2D' }}>{emp.vnpf_exempt ? 'N/A' : fmt(sum.totalVnpf)}</td>
                           <td style={{ padding: '7px 14px', textAlign: 'right' }}></td>
                           <td style={{ padding: '7px 14px', textAlign: 'right', color: '#2E7D2E' }}>{fmt(sum.totalNet)}</td>
                           <td></td>
