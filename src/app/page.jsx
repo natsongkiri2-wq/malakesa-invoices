@@ -4866,14 +4866,15 @@ function VNPF({ employees, salaryRecords, reload, setModal, setSelected }) {
 
   const activeEmployees = employees.filter(e => e.active !== false)
 
-  const calc = (salary) => {
-    const s = Number(salary || 0)
+  const calc = (emp) => {
+    if (emp?.vnpf_exempt) return { employee: 0, employer: 0, total: 0 }
+    const s = Number(emp?.salary || 0)
     const employee = Math.round(s * VNPF_EMPLOYEE_RATE)
     const employer = Math.round(s * VNPF_EMPLOYER_RATE)
     return { employee, employer, total: employee + employer }
   }
 
-  const rows = activeEmployees.map(e => ({ ...e, ...calc(e.salary) }))
+  const rows = activeEmployees.map(e => ({ ...e, ...calc(e) }))
   const totalSalary = rows.reduce((s, r) => s + Number(r.salary || 0), 0)
   const totalEmployee = rows.reduce((s, r) => s + r.employee, 0)
   const totalEmployer = rows.reduce((s, r) => s + r.employer, 0)
@@ -5104,8 +5105,8 @@ function VNPFContributions({ rows, totalSalary, totalEmployee, totalEmployer, to
   const scheduleRows = rows.map(r => {
     const proc = processedByEmp[r.id]
     if (proc) {
-      const empVnpf = proc.vnpf
-      const emplVnpf = Math.round(proc.gross * 0.06)
+      const empVnpf = r.vnpf_exempt ? 0 : proc.vnpf
+      const emplVnpf = r.vnpf_exempt ? 0 : Math.round(proc.gross * 0.06)
       return { ...r, gross: proc.gross, employee: empVnpf, employer: emplVnpf, total: empVnpf + emplVnpf, runs: proc.runs, processed: true }
     }
     return { ...r, runs: 0, processed: false }
@@ -5167,14 +5168,16 @@ function VNPFContributions({ rows, totalSalary, totalEmployee, totalEmployer, to
                 <tr key={r.id} style={{ borderBottom: '0.5px solid rgba(0,0,0,0.09)', background: r.processed ? '#f6fbf0' : '#fff' }}>
                   <Td><strong>{r.name}</strong></Td>
                   <Td style={{ color: '#666' }}>{r.job_title || '—'}</Td>
-                  <Td style={{ color: '#666' }}>{r.vnpf_number || '—'}</Td>
+                  <Td style={{ color: '#666' }}>
+                    {r.vnpf_exempt ? <span style={{ background: '#F0ECE4', color: '#7A5A2E', borderRadius: 99, padding: '2px 10px', fontSize: 11, fontWeight: 600 }}>N/A — Exempt</span> : (r.vnpf_number || '—')}
+                  </Td>
                   <Td style={{ textAlign: 'center' }}>
                     {r.processed ? <span style={{ background: '#EAF3DE', color: '#27500A', borderRadius: 99, padding: '2px 10px', fontSize: 11, fontWeight: 600 }}>{r.runs} run{r.runs !== 1 ? 's' : ''}</span> : <span style={{ color: '#ccc', fontSize: 12 }}>none</span>}
                   </Td>
                   <Td style={{ textAlign: 'right' }}>{fmt(r.gross || r.salary)}</Td>
-                  <Td style={{ textAlign: 'right' }}>{fmt(r.employee)}</Td>
-                  <Td style={{ textAlign: 'right' }}>{fmt(r.employer)}</Td>
-                  <Td style={{ textAlign: 'right', fontWeight: 500, color: '#2E7D2E' }}>{fmt(r.total)}</Td>
+                  <Td style={{ textAlign: 'right' }}>{r.vnpf_exempt ? '—' : fmt(r.employee)}</Td>
+                  <Td style={{ textAlign: 'right' }}>{r.vnpf_exempt ? '—' : fmt(r.employer)}</Td>
+                  <Td style={{ textAlign: 'right', fontWeight: 500, color: r.vnpf_exempt ? '#999' : '#2E7D2E' }}>{r.vnpf_exempt ? '—' : fmt(r.total)}</Td>
                   <Td>
                     <div style={{ display: 'flex', gap: 5, justifyContent: 'center' }}>
                       <button className="btn btn-sm" onClick={() => { setSelected(r); setModal('editEmployee') }}><i className="ti ti-pencil"></i></button>
@@ -5241,7 +5244,7 @@ function SalariesTab({ employees, salaryRecords, reload, fmt }) {
         <td>${r.pay_date ? fmtDate(r.pay_date) : mLabel}</td>
         <td class='num'>VT ${Number(r.gross||0).toLocaleString()}</td>
         <td class='num grn'>${allow > 0 ? '+VT ' + Number(allow).toLocaleString() : '—'}</td>
-        <td class='num red'>VT ${Number(r.vnpf_employee||0).toLocaleString()}</td>
+        <td class='num red'>${emp.vnpf_exempt ? 'N/A' : 'VT ' + Number(r.vnpf_employee||0).toLocaleString()}</td>
         <td class='num red'>${otherDed > 0 ? 'VT ' + Number(otherDed).toLocaleString() : '—'}</td>
         <td class='num grn bold'>VT ${Number(r.net_pay||0).toLocaleString()}</td>
         <td class='notes'>${noteBits.length ? noteBits.join(', ') : '—'}</td>
@@ -5252,7 +5255,7 @@ function SalariesTab({ employees, salaryRecords, reload, fmt }) {
         <td>TOTAL (${recs.length} run${recs.length!==1?'s':''})</td>
         <td class='num'>VT ${Number(totalGross).toLocaleString()}</td>
         <td class='num grn'>VT ${Number(totalAllowances).toLocaleString()}</td>
-        <td class='num red'>VT ${Number(totalVnpf).toLocaleString()}</td>
+        <td class='num red'>${emp.vnpf_exempt ? 'N/A' : 'VT ' + Number(totalVnpf).toLocaleString()}</td>
         <td class='num red'>${totalOtherDed > 0 ? 'VT ' + Number(totalOtherDed).toLocaleString() : '—'}</td>
         <td class='num grn bold'>VT ${Number(totalNet).toLocaleString()}</td>
         <td></td>
@@ -5269,7 +5272,7 @@ function SalariesTab({ employees, salaryRecords, reload, fmt }) {
         </div>
         <div class='slip-emp'>
           <div class='emp-name'>${emp.name}</div>
-          <div class='emp-sub'>${emp.job_title || 'Employee'}${emp.vnpf_number ? ' &nbsp;|&nbsp; VNPF: ' + emp.vnpf_number : ''} &nbsp;|&nbsp; Period: <strong>${mLabel}</strong></div>
+          <div class='emp-sub'>${emp.job_title || 'Employee'}${emp.vnpf_exempt ? ' &nbsp;|&nbsp; VNPF: N/A' : (emp.vnpf_number ? ' &nbsp;|&nbsp; VNPF: ' + emp.vnpf_number : '')} &nbsp;|&nbsp; Period: <strong>${mLabel}</strong></div>
         </div>
       </div>
       <table class='slip-table'>
@@ -5396,7 +5399,7 @@ body{background:#fff}
                     <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'linear-gradient(135deg,#8B5E34,#8B6914)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#F5D98A', fontWeight: 700, fontSize: 16 }}>{emp.name?.charAt(0)}</div>
                     <div>
                       <div style={{ fontWeight: 700, fontSize: 15 }}>{emp.name}</div>
-                      <div style={{ fontSize: 12, color: '#666' }}>{emp.job_title || 'Employee'}{emp.vnpf_number ? ` | VNPF: ${emp.vnpf_number}` : ''}</div>
+                      <div style={{ fontSize: 12, color: '#666' }}>{emp.job_title || 'Employee'}{emp.vnpf_exempt ? ' | VNPF: N/A' : (emp.vnpf_number ? ` | VNPF: ${emp.vnpf_number}` : '')}</div>
                       <div style={{ fontSize: 12, color: '#888' }}>Base salary: {fmt(emp.salary)}</div>
                     </div>
                   </div>
@@ -5516,7 +5519,7 @@ function PayRunModal({ emp, defaultMonth, onClose, onSave, fmt }) {
 
   const gross = Number(form.gross || 0)
   const totalAllowances = form.allowances.reduce((s, a) => s + Number(a.amount || 0), 0)
-  const vnpfDeduction = Math.round(gross * 0.06)
+  const vnpfDeduction = emp.vnpf_exempt ? 0 : Math.round(gross * 0.06)
   const otherDeductions = form.deductions.reduce((s, d) => s + Number(d.amount || 0), 0)
   const totalDeductions = vnpfDeduction + otherDeductions
   const netPay = gross + totalAllowances - totalDeductions
@@ -5614,9 +5617,14 @@ function PayRunModal({ emp, defaultMonth, onClose, onSave, fmt }) {
             <div>
               <div style={{ fontWeight: 600, fontSize: 13, color: '#A32D2D', marginBottom: 10 }}>— Deductions</div>
               <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', fontSize: 13, borderBottom: '0.5px solid #FBF3E4', marginBottom: 6 }}>
-                <span style={{ color: '#555' }}>VNPF Employee Contribution (6%)</span>
-                <span style={{ fontWeight: 600, color: '#A32D2D' }}>{fmt(vnpfDeduction)}</span>
+                <span style={{ color: '#555' }}>VNPF Employee Contribution (6%){emp.vnpf_exempt ? ' — N/A' : ''}</span>
+                <span style={{ fontWeight: 600, color: emp.vnpf_exempt ? '#999' : '#A32D2D' }}>{emp.vnpf_exempt ? 'N/A' : fmt(vnpfDeduction)}</span>
               </div>
+              {emp.vnpf_exempt && (
+                <div style={{ background: '#F0ECE4', border: '0.5px solid #DDD0BC', borderRadius: 6, padding: '6px 10px', fontSize: 11.5, color: '#7A5A2E', marginBottom: 6 }}>
+                  <i className="ti ti-info-circle" style={{ marginRight: 4 }}></i>This employee is marked VNPF not applicable — no VNPF is deducted.
+                </div>
+              )}
               {form.deductions.map((d, i) => (
                 <div key={i} style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
                   <input type="text" placeholder="e.g. Loan repayment" value={d.label} onChange={e => updateDeduction(i, 'label', e.target.value)} style={{ ...inputStyle, flex: 2, fontSize: 12 }} />
@@ -5650,9 +5658,15 @@ function PayRunModal({ emp, defaultMonth, onClose, onSave, fmt }) {
               ))}
             </div>
             <div style={{ marginTop: 12, padding: '8px 12px', background: 'rgba(255,255,255,0.08)', borderRadius: 6, fontSize: 12, color: 'rgba(255,255,255,0.7)', display: 'flex', justifyContent: 'space-between' }}>
-              <span>VNPF Employee (6%): <strong style={{ color: '#ff8a8a' }}>{fmt(vnpfDeduction)}</strong></span>
-              <span>VNPF Employer (6%): <strong style={{ color: '#ff8a8a' }}>{fmt(Math.round(gross * 0.06))}</strong></span>
-              <span>Total VNPF contribution: <strong style={{ color: '#F5D98A' }}>{fmt(Math.round(gross * 0.12))}</strong></span>
+              {emp.vnpf_exempt ? (
+                <span>VNPF: <strong style={{ color: '#F5D98A' }}>N/A — employee marked exempt</strong></span>
+              ) : (
+                <>
+                  <span>VNPF Employee (6%): <strong style={{ color: '#ff8a8a' }}>{fmt(vnpfDeduction)}</strong></span>
+                  <span>VNPF Employer (6%): <strong style={{ color: '#ff8a8a' }}>{fmt(Math.round(gross * 0.06))}</strong></span>
+                  <span>Total VNPF contribution: <strong style={{ color: '#F5D98A' }}>{fmt(Math.round(gross * 0.12))}</strong></span>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -5713,8 +5727,10 @@ function NewEmployeeModal({ employee, onClose, onSave }) {
   const isEdit = !!employee
   const [form, setForm] = useState({
     name: employee?.name || '',
+    job_title: employee?.job_title || '',
     salary: employee?.salary || '',
     vnpf_number: employee?.vnpf_number || '',
+    vnpf_exempt: employee?.vnpf_exempt || false,
     email: employee?.email || ''
   })
   const [saving, setSaving] = useState(false)
@@ -5753,8 +5769,12 @@ function NewEmployeeModal({ employee, onClose, onSave }) {
           <input type="text" value={form.job_title} onChange={e => setForm(f => ({ ...f, job_title: e.target.value }))} style={inputStyle} placeholder="e.g. Driver" />
         </Field>
         <Field label="VNPF member number">
-         <input type="text" value={form.vnpf_number} onChange={e => setForm(f => ({ ...f, vnpf_number: e.target.value }))} style={inputStyle} placeholder="e.g. VN-12345" />
+         <input type="text" value={form.vnpf_number} onChange={e => setForm(f => ({ ...f, vnpf_number: e.target.value }))} style={inputStyle} placeholder="e.g. VN-12345" disabled={form.vnpf_exempt} />
         </Field>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#3D2214', cursor: 'pointer', background: form.vnpf_exempt ? '#F0ECE4' : 'transparent', padding: '8px 10px', borderRadius: 6, border: '0.5px solid ' + (form.vnpf_exempt ? '#DDD0BC' : 'transparent') }}>
+          <input type="checkbox" checked={form.vnpf_exempt} onChange={e => setForm(f => ({ ...f, vnpf_exempt: e.target.checked }))} style={{ width: 16, height: 16, accentColor: '#8B6914' }} />
+          VNPF not applicable for this employee (e.g. contractor or exempt) — no VNPF will be deducted or contributed
+        </label>
         <Field label="Monthly gross salary (VT) *">
           <input type="number" value={form.salary} min="0" onChange={e => setForm(f => ({ ...f, salary: e.target.value }))} style={inputStyle} placeholder="0" />
         </Field>
@@ -5763,16 +5783,22 @@ function NewEmployeeModal({ employee, onClose, onSave }) {
       {salary > 0 && (
         <div style={{ background: '#f5f0e8', borderRadius: 8, padding: '12px 16px', marginTop: 16 }}>
           <div style={{ fontWeight: 500, fontSize: 13, marginBottom: 8, color: '#3D2214' }}>VNPF Contribution Preview</div>
-          {[
-            ['Employee contribution (6%)', fmt(employeeContrib)],
-            ['Employer contribution (6%)', fmt(employerContrib)],
-            ['Total monthly contribution', fmt(employeeContrib + employerContrib)],
-          ].map(([l, v], i) => (
-            <div key={l} style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', borderBottom: i < 2 ? '0.5px solid rgba(0,0,0,0.09)' : 'none', fontSize: 13 }}>
-              <span style={{ color: '#666' }}>{l}</span>
-              <span style={{ fontWeight: i === 2 ? 600 : 400, color: i === 2 ? '#2E7D2E' : '#1a1a1a' }}>{v}</span>
+          {form.vnpf_exempt ? (
+            <div style={{ fontSize: 13, color: '#7A5A2E' }}>
+              <i className="ti ti-info-circle" style={{ marginRight: 6 }}></i>Not applicable — this employee is marked VNPF exempt.
             </div>
-          ))}
+          ) : (
+            [
+              ['Employee contribution (6%)', fmt(employeeContrib)],
+              ['Employer contribution (6%)', fmt(employerContrib)],
+              ['Total monthly contribution', fmt(employeeContrib + employerContrib)],
+            ].map(([l, v], i) => (
+              <div key={l} style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', borderBottom: i < 2 ? '0.5px solid rgba(0,0,0,0.09)' : 'none', fontSize: 13 }}>
+                <span style={{ color: '#666' }}>{l}</span>
+                <span style={{ fontWeight: i === 2 ? 600 : 400, color: i === 2 ? '#2E7D2E' : '#1a1a1a' }}>{v}</span>
+              </div>
+            ))
+          )}
         </div>
       )}
 
