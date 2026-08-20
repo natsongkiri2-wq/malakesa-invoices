@@ -12,6 +12,25 @@ const localMonthStr = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padS
 const addDays = (d, n) => { const dt = new Date(d); dt.setDate(dt.getDate() + n); return dt.toISOString().split('T')[0] }
 const uid = () => Math.random().toString(36).slice(2)
 
+// e.g. periodRangeLabel('2026-08-08','2026-08-21') -> "8th to 21st August 2026"
+const ordinalSuffix = (n) => {
+  const v = n % 100
+  if (v >= 11 && v <= 13) return 'th'
+  switch (n % 10) { case 1: return 'st'; case 2: return 'nd'; case 3: return 'rd'; default: return 'th' }
+}
+const MONTHS_FULL = ['January','February','March','April','May','June','July','August','September','October','November','December']
+const periodRangeLabel = (fromStr, toStr) => {
+  if (!fromStr && !toStr) return ''
+  if (fromStr && !toStr) { const f = new Date(fromStr + 'T00:00:00'); return `From ${f.getDate()}${ordinalSuffix(f.getDate())} ${MONTHS_FULL[f.getMonth()]} ${f.getFullYear()}` }
+  if (!fromStr && toStr) { const t = new Date(toStr + 'T00:00:00'); return `To ${t.getDate()}${ordinalSuffix(t.getDate())} ${MONTHS_FULL[t.getMonth()]} ${t.getFullYear()}` }
+  const f = new Date(fromStr + 'T00:00:00')
+  const t = new Date(toStr + 'T00:00:00')
+  if (f.getFullYear() === t.getFullYear() && f.getMonth() === t.getMonth()) {
+    return `Pay for ${f.getDate()}${ordinalSuffix(f.getDate())} to ${t.getDate()}${ordinalSuffix(t.getDate())} ${MONTHS_FULL[t.getMonth()]} ${t.getFullYear()}`
+  }
+  return `Pay for ${f.getDate()}${ordinalSuffix(f.getDate())} ${MONTHS_FULL[f.getMonth()]} ${f.getFullYear()} to ${t.getDate()}${ordinalSuffix(t.getDate())} ${MONTHS_FULL[t.getMonth()]} ${t.getFullYear()}`
+}
+
 const getBalance = (inv, payments) => {
   const paid = (payments || []).filter(p => p.invoice_id === inv.id).reduce((s, p) => s + Number(p.amount), 0)
   return Math.max(0, Number(inv.total) - paid)
@@ -5239,7 +5258,7 @@ function SalariesTab({ employees, salaryRecords, reload, fmt }) {
     const rows = recs.map(r => {
       const allow = (r.allowances || []).reduce((a, x) => a + Number(x.amount || 0), 0)
       const otherDed = (r.deductions || []).reduce((a, d) => a + Number(d.amount || 0), 0)
-      const noteBits = [r.notes, ...(r.allowances||[]).filter(a=>a.label).map(a=>a.label), ...(r.deductions||[]).filter(d=>d.label).map(d=>d.label)].filter(Boolean)
+      const noteBits = [r.notes || (r.period_from && r.period_to ? periodRangeLabel(r.period_from, r.period_to) : null), ...(r.allowances||[]).filter(a=>a.label).map(a=>a.label), ...(r.deductions||[]).filter(d=>d.label).map(d=>d.label)].filter(Boolean)
       return `<tr>
         <td>${r.pay_date ? fmtDate(r.pay_date) : mLabel}</td>
         <td class='num'>VT ${Number(r.gross||0).toLocaleString()}</td>
@@ -5446,13 +5465,20 @@ body{background:#fff}
                           const recOtherDeductions = (rec.deductions || []).reduce((s, d) => s + Number(d.amount || 0), 0)
                           return (
                             <tr key={rec.id} style={{ borderBottom: '0.5px solid rgba(0,0,0,0.07)', background: i % 2 === 0 ? '#fff' : '#fafaf8' }}>
-                              <Td style={{ fontSize: 12 }}>{rec.pay_date ? fmtDate(rec.pay_date) : rec.month}</Td>
+                              <Td style={{ fontSize: 12 }}>
+                                {rec.pay_date ? fmtDate(rec.pay_date) : rec.month}
+                                {(rec.period_from || rec.period_to) && (
+                                  <div style={{ fontSize: 10.5, color: '#999', marginTop: 2 }}>
+                                    {rec.period_from ? fmtDate(rec.period_from) : '?'} – {rec.period_to ? fmtDate(rec.period_to) : '?'}
+                                  </div>
+                                )}
+                              </Td>
                               <Td style={{ textAlign: 'right', fontSize: 12 }}>{fmt(rec.gross)}</Td>
                               <Td style={{ textAlign: 'right', fontSize: 12, color: '#2E7D2E' }}>{recAllowances > 0 ? '+' + fmt(recAllowances) : '—'}</Td>
                               <Td style={{ textAlign: 'right', fontSize: 12, color: '#A32D2D' }}>{fmt(rec.vnpf_employee)}</Td>
                               <Td style={{ textAlign: 'right', fontSize: 12, color: '#A32D2D' }}>{recOtherDeductions > 0 ? fmt(recOtherDeductions) : '—'}</Td>
                               <Td style={{ textAlign: 'right', fontSize: 12, fontWeight: 600, color: '#2E7D2E' }}>{fmt(rec.net_pay)}</Td>
-                              <Td style={{ fontSize: 11, color: '#888' }}>{rec.notes || '—'}</Td>
+                              <Td style={{ fontSize: 11, color: '#888' }}>{rec.notes || (rec.period_from && rec.period_to ? periodRangeLabel(rec.period_from, rec.period_to) : '—')}</Td>
                               <Td>
                                 <div style={{ display: 'flex', gap: 4 }}>
                                   <button className="btn btn-sm" style={{ background: '#3B6D11', borderColor: '#2A5009', color: '#fff', padding: '2px 8px', fontSize: 11 }} onClick={() => printPayslip(emp, rec)} title="Print this pay run"><i className="ti ti-printer"></i></button>
@@ -5506,6 +5532,8 @@ function PayRunModal({ emp, defaultMonth, onClose, onSave, fmt }) {
   const [form, setForm] = useState({
     month: defaultMonth,
     pay_date: `${nowD.getFullYear()}-${String(nowD.getMonth() + 1).padStart(2, '0')}-${String(nowD.getDate()).padStart(2, '0')}`,
+    period_from: '',
+    period_to: '',
     days_worked: '',
     gross: emp.salary || '',
     allowances: [],
@@ -5537,6 +5565,8 @@ function PayRunModal({ emp, defaultMonth, onClose, onSave, fmt }) {
           employee_id: emp.id,
           month: form.month,
           pay_date: form.pay_date,
+          period_from: form.period_from || null,
+          period_to: form.period_to || null,
           days_worked: form.days_worked ? Number(form.days_worked) : null,
           gross,
           allowances: form.allowances,
@@ -5579,7 +5609,7 @@ function PayRunModal({ emp, defaultMonth, onClose, onSave, fmt }) {
           {error && <Alert type="danger">{error}</Alert>}
 
           {/* Pay Period & Date */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 18 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 12 }}>
             <Field label="Pay period (month)">
               <select value={form.month} onChange={e => setF('month', e.target.value)} style={inputStyle}>
                 {monthOptions.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
@@ -5591,6 +5621,26 @@ function PayRunModal({ emp, defaultMonth, onClose, onSave, fmt }) {
             <Field label="Days worked (optional)">
               <input type="number" value={form.days_worked} onChange={e => setF('days_worked', e.target.value)} placeholder="e.g. 22" min="0" max="31" style={inputStyle} />
             </Field>
+          </div>
+
+          {/* Pay period covered (from / to) */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: 12, alignItems: 'end', marginBottom: 18 }}>
+            <Field label="Pay period covered — from">
+              <input type="date" value={form.period_from} onChange={e => setF('period_from', e.target.value)} style={inputStyle} />
+            </Field>
+            <Field label="Pay period covered — to">
+              <input type="date" value={form.period_to} onChange={e => setF('period_to', e.target.value)} style={inputStyle} />
+            </Field>
+            <button
+              type="button"
+              className="btn btn-sm"
+              disabled={!form.period_from || !form.period_to}
+              onClick={() => setF('notes', periodRangeLabel(form.period_from, form.period_to))}
+              style={{ height: 40, whiteSpace: 'nowrap' }}
+              title="Fill the Notes field below with this period as text"
+            >
+              <i className="ti ti-arrow-down"></i> Insert into Notes
+            </button>
           </div>
 
           {/* Gross Salary */}
