@@ -5233,6 +5233,10 @@ function SalariesTab({ employees, salaryRecords, reload, fmt }) {
   const activeEmployees = employees.filter(e => e.active !== false)
   const [payRunModal, setPayRunModal] = useState(null) // emp object when open
 
+  // Optional pay date range filter for bulk-printing payslips (overrides the month filter below)
+  const [printFrom, setPrintFrom] = useState('')
+  const [printTo, setPrintTo] = useState('')
+
   const deletePayRun = async (id) => {
     if (!confirm('Move this pay run to Trash? It will disappear from the VNPF schedule, and you can restore it within 30 days.')) return
     const res = await fetch('/api/salary-records', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) })
@@ -5357,17 +5361,23 @@ body{background:#fff}
     w.document.close()
   }
 
-  // Print all employees' payslips for the selected month in one go — compact rows stack
-  // several slips per printed page, saving paper vs. one full page per employee.
+  // Print all employees' payslips for the selected month (or custom pay date range) in one go —
+  // compact rows stack several slips per printed page, saving paper vs. one full page per employee.
+  const printRangeActive = !!(printFrom && printTo)
+  const printRecords = printRangeActive
+    ? (salaryRecords || []).filter(r => r.pay_date && r.pay_date >= printFrom && r.pay_date <= printTo)
+    : monthRecords
+  const printLabel = printRangeActive ? `${fmtDate(printFrom)} – ${fmtDate(printTo)}` : monthLabel
+
   const printAllPayslips = () => {
-    const empsWithRuns = activeEmployees.filter(e => monthRecords.some(r => r.employee_id === e.id))
-    if (empsWithRuns.length === 0) { alert(`No pay runs to print for ${monthLabel}.`); return }
+    const empsWithRuns = activeEmployees.filter(e => printRecords.some(r => r.employee_id === e.id))
+    if (empsWithRuns.length === 0) { alert(`No pay runs to print for ${printLabel}.`); return }
     const w = window.open('', '_blank')
     if (!w) { alert('Please allow popups to print payslips.'); return }
-    const blocks = empsWithRuns.map(emp => buildSlipBlock(emp, monthLabel, monthRecords.filter(r => r.employee_id === emp.id))).join('')
+    const blocks = empsWithRuns.map(emp => buildSlipBlock(emp, printLabel, printRecords.filter(r => r.employee_id === emp.id))).join('')
 
-    w.document.write(`<!DOCTYPE html><html><head><title>Payslips - ${monthLabel}</title><style>${slipStyles}</style></head><body>
-<div class='noprint'><span>All Payslips — ${monthLabel} (${empsWithRuns.length} employee${empsWithRuns.length!==1?'s':''})</span><button class='printbtn' onclick='window.print()'>Print / Save PDF</button></div>
+    w.document.write(`<!DOCTYPE html><html><head><title>Payslips - ${printLabel}</title><style>${slipStyles}</style></head><body>
+<div class='noprint'><span>All Payslips — ${printLabel} (${empsWithRuns.length} employee${empsWithRuns.length!==1?'s':''})</span><button class='printbtn' onclick='window.print()'>Print / Save PDF</button></div>
 <div class='wrap'>${blocks}</div>
 <script>window.onload=()=>window.print()<\/script></body></html>`)
     w.document.close()
@@ -5388,14 +5398,34 @@ body{background:#fff}
 
   return (
     <div style={{ padding: 20 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10, flexWrap: 'wrap' }}>
         <MonthYearPicker value={salaryMonth} onChange={setSalaryMonth} accentColor="#8B6914" />
         <span style={{ fontSize: 13, color: '#666' }}>Pay period: <strong>{monthLabel}</strong></span>
-        {monthRecords.length > 0 && (
-          <button className="btn btn-sm" style={{ background: '#8B6914', borderColor: '#6B5010', color: '#fff', whiteSpace: 'nowrap', marginLeft: 'auto' }} onClick={printAllPayslips} title="Print all payslips for this month on as few pages as possible">
-            <i className="ti ti-printer"></i> Print All Payslips ({monthLabel})
-          </button>
-        )}
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, marginBottom: 16, flexWrap: 'wrap', background: '#faf6ee', border: '0.5px solid #FBF3E4', borderRadius: 8, padding: '10px 14px' }}>
+        <div>
+          <div style={{ fontSize: 11, color: '#8B6914', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 4 }}>Print by pay date range (optional)</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <input type="date" value={printFrom} onChange={e => setPrintFrom(e.target.value)} style={{ ...inputStyle, padding: '6px 8px', fontSize: 12 }} />
+            <span style={{ color: '#999', fontSize: 12 }}>to</span>
+            <input type="date" value={printTo} onChange={e => setPrintTo(e.target.value)} style={{ ...inputStyle, padding: '6px 8px', fontSize: 12 }} />
+            {printRangeActive && (
+              <button className="btn btn-sm" onClick={() => { setPrintFrom(''); setPrintTo('') }} style={{ fontSize: 11 }}>
+                <i className="ti ti-x"></i> Clear
+              </button>
+            )}
+          </div>
+        </div>
+        <button
+          className="btn btn-sm"
+          style={{ background: '#8B6914', borderColor: '#6B5010', color: '#fff', whiteSpace: 'nowrap', marginLeft: 'auto' }}
+          onClick={printAllPayslips}
+          disabled={printRecords.length === 0}
+          title={printRangeActive ? `Print all payslips for pay dates ${printLabel}` : `Print all payslips for ${monthLabel}`}
+        >
+          <i className="ti ti-printer"></i> Print All Payslips ({printLabel})
+        </button>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12, marginBottom: 16 }}>
