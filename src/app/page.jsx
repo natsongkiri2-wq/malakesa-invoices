@@ -5223,136 +5223,130 @@ function SalariesTab({ employees, salaryRecords, reload, fmt }) {
   const monthRecords = (salaryRecords || []).filter(r => r.month === salaryMonth)
 
   // Per-employee summary for this month
-  const printPayslip = (emp, rec) => {
-    // rec = specific pay run record (or null for summary of all this month)
-    const monthRecs = (salaryRecords || []).filter(r => r.month === salaryMonth && r.employee_id === emp.id)
-    const recs = rec ? [rec] : monthRecs
+  const MONTHS_LONG2 = ['January','February','March','April','May','June','July','August','September','October','November','December']
+
+  // Compact table-style payslip block (paper-saving — several fit on one printed page)
+  const buildSlipBlock = (emp, mLabel, recs) => {
     const totalGross = recs.reduce((s, r) => s + Number(r.gross || 0), 0)
     const totalAllowances = recs.reduce((s, r) => s + (r.allowances || []).reduce((a, x) => a + Number(x.amount || 0), 0), 0)
     const totalVnpf = recs.reduce((s, r) => s + Number(r.vnpf_employee || 0), 0)
     const totalOtherDed = recs.reduce((s, r) => s + (r.deductions || []).reduce((a, d) => a + Number(d.amount || 0), 0), 0)
     const totalNet = recs.reduce((s, r) => s + Number(r.net_pay || 0), 0)
-    const MONTHS_LONG2 = ['January','February','March','April','May','June','July','August','September','October','November','December']
-    const useMonth = rec ? rec.month : salaryMonth
-    const mParts = useMonth.split('-')
-    const mLabel = (MONTHS_LONG2[parseInt(mParts[1])-1] || '') + ' ' + mParts[0]
-    const issued = new Date().toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' })
-    const w = window.open('', '_blank')
-    if (!w) { alert('Please allow popups to print payslips.'); return }
 
-    const earningRows = [
-      `<div class='row'><span class='lbl'>Basic / Gross Salary</span><span class='amt grn'>VT ${Number(totalGross).toLocaleString()}</span></div>`,
-      ...recs.flatMap(r => (r.allowances||[]).filter(a=>a.label||a.amount).map(a => `<div class='row'><span class='lbl'>${a.label||'Allowance'}</span><span class='amt grn'>VT ${Number(a.amount||0).toLocaleString()}</span></div>`))
-    ].join('')
+    const rows = recs.map(r => {
+      const allow = (r.allowances || []).reduce((a, x) => a + Number(x.amount || 0), 0)
+      const otherDed = (r.deductions || []).reduce((a, d) => a + Number(d.amount || 0), 0)
+      const noteBits = [r.notes, ...(r.allowances||[]).filter(a=>a.label).map(a=>a.label), ...(r.deductions||[]).filter(d=>d.label).map(d=>d.label)].filter(Boolean)
+      return `<tr>
+        <td>${r.pay_date ? fmtDate(r.pay_date) : mLabel}</td>
+        <td class='num'>VT ${Number(r.gross||0).toLocaleString()}</td>
+        <td class='num grn'>${allow > 0 ? '+VT ' + Number(allow).toLocaleString() : '—'}</td>
+        <td class='num red'>VT ${Number(r.vnpf_employee||0).toLocaleString()}</td>
+        <td class='num red'>${otherDed > 0 ? 'VT ' + Number(otherDed).toLocaleString() : '—'}</td>
+        <td class='num grn bold'>VT ${Number(r.net_pay||0).toLocaleString()}</td>
+        <td class='notes'>${noteBits.length ? noteBits.join(', ') : '—'}</td>
+      </tr>`
+    }).join('')
 
-    const deductionRows = [
-      `<div class='row'><span class='lbl'>VNPF Employee Contribution (6%)</span><span class='amt red'>VT ${Number(totalVnpf).toLocaleString()}</span></div>`,
-      ...recs.flatMap(r => (r.deductions||[]).filter(d=>d.label||d.amount).map(d => `<div class='row'><span class='lbl'>${d.label||'Deduction'}</span><span class='amt red'>VT ${Number(d.amount||0).toLocaleString()}</span></div>`))
-    ].join('')
+    const totalRow = `<tr class='total'>
+        <td>TOTAL (${recs.length} run${recs.length!==1?'s':''})</td>
+        <td class='num'>VT ${Number(totalGross).toLocaleString()}</td>
+        <td class='num grn'>VT ${Number(totalAllowances).toLocaleString()}</td>
+        <td class='num red'>VT ${Number(totalVnpf).toLocaleString()}</td>
+        <td class='num red'>${totalOtherDed > 0 ? 'VT ' + Number(totalOtherDed).toLocaleString() : '—'}</td>
+        <td class='num grn bold'>VT ${Number(totalNet).toLocaleString()}</td>
+        <td></td>
+      </tr>`
 
-    const payRunsInfo = recs.length > 1
-      ? `<div style='font-size:11px;color:rgba(255,255,255,0.6);margin-top:4px'>${recs.length} pay runs accumulated</div>`
-      : rec?.pay_date ? `<div style='font-size:11px;color:rgba(255,255,255,0.6);margin-top:4px'>Pay date: ${rec.pay_date}</div>` : ''
+    return `<div class='slip'>
+      <div class='slip-top'>
+        <div class='slip-co'>
+          <img src='${MALAKESA_LOGO}' class='logo' alt='Malakesa'/>
+          <div class='co-text'>
+            <div class='co-name'>Malakesa Transfers &amp; Tours</div>
+            <div class='co-sub'>TIN: 445579 &nbsp;|&nbsp; Port Vila, Vanuatu &nbsp;|&nbsp; PAY SLIP</div>
+          </div>
+        </div>
+        <div class='slip-emp'>
+          <div class='emp-name'>${emp.name}</div>
+          <div class='emp-sub'>${emp.job_title || 'Employee'}${emp.vnpf_number ? ' &nbsp;|&nbsp; VNPF: ' + emp.vnpf_number : ''} &nbsp;|&nbsp; Period: <strong>${mLabel}</strong></div>
+        </div>
+      </div>
+      <table class='slip-table'>
+        <thead><tr>
+          <th>PAY DATE</th><th class='num'>GROSS</th><th class='num'>ALLOWANCES</th><th class='num'>VNPF 6%</th><th class='num'>OTHER DEDUCTIONS</th><th class='num'>NET PAY</th><th>NOTES</th>
+        </tr></thead>
+        <tbody>${rows}${totalRow}</tbody>
+      </table>
+    </div>`
+  }
 
-    const notesHtml = recs.filter(r=>r.notes).map(r=>`<div class='notes'><strong>Notes:</strong> ${r.notes}</div>`).join('')
-
-    w.document.write(`<!DOCTYPE html><html><head><title>Payslip - ${emp.name} - ${mLabel}</title><style>
+  const slipStyles = `
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:Arial,sans-serif;background:#FBF3E4;color:#222;font-size:13px}
-.page{max-width:680px;margin:20px auto;background:#fff;border-radius:4px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.15)}
-.hdr{background:linear-gradient(135deg,#6B4423 0%,#8B5E34 50%,#A67C42 100%);padding:24px 36px;display:flex;justify-content:space-between;align-items:flex-start}
-.hdr-r{text-align:right;color:#fff}
-.ps-title{font-size:10px;letter-spacing:3px;color:rgba(255,255,255,.6);text-transform:uppercase;margin-top:10px}
-.ps-period{font-size:18px;font-weight:700;color:#F5D98A;margin-top:3px}
-.ps-date{font-size:11px;color:rgba(255,255,255,.7);margin-top:4px}
-.emp-bar{background:#3D2214;padding:12px 36px;display:flex;justify-content:space-between;align-items:center}
-.emp-name{color:#F5D98A;font-weight:700;font-size:16px}
-.emp-det{color:rgba(255,255,255,.75);font-size:11px;margin-top:3px}
-.emp-r{text-align:right;color:rgba(255,255,255,.75);font-size:11px}
-.body{padding:24px 36px}
-.sec{font-size:10px;font-weight:800;color:#8B6914;text-transform:uppercase;letter-spacing:2px;border-bottom:2px solid #FBF3E4;padding-bottom:4px;margin:20px 0 10px}
-.row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:.5px solid #FBF3E4;font-size:13px}
-.row:last-child{border-bottom:none}
-.lbl{color:#555}
-.amt{font-weight:500}
-.grn{color:#2E7D2E}
-.red{color:#A32D2D}
-.bold{font-weight:700}
-.net-box{background:linear-gradient(135deg,#6B4423,#8B5E34);border-radius:8px;padding:16px 24px;margin:20px 0;display:flex;justify-content:space-between;align-items:center}
-.net-lbl{color:rgba(255,255,255,.8);font-size:13px;font-weight:600}
-.net-amt{color:#F5D98A;font-size:26px;font-weight:900}
-.notes{background:#faf6ee;border-left:4px solid #8B6914;padding:10px 14px;border-radius:0 6px 6px 0;font-size:12px;color:#555;margin-top:8px}
-.sigs{display:flex;justify-content:space-between;margin-top:32px;gap:40px}
-.sig{flex:1;border-top:1px solid #ccc;padding-top:6px;font-size:11px;color:#888;text-align:center}
-.ftr{background:linear-gradient(135deg,#6B4423,#A67C42);padding:14px 36px;display:flex;justify-content:space-between;color:rgba(255,255,255,.7);font-size:10px;line-height:1.9}
+body{font-family:Arial,sans-serif;background:#FBF3E4;color:#222;font-size:12px}
+.wrap{max-width:920px;margin:16px auto;padding:0 10px}
+.slip{background:#fff;border:1px solid #E5D6B8;border-radius:6px;overflow:hidden;margin-bottom:14px;page-break-inside:avoid;break-inside:avoid}
+.slip-top{display:flex;justify-content:space-between;align-items:center;background:#F5E9D0;padding:10px 16px;gap:12px;flex-wrap:wrap}
+.slip-co{display:flex;align-items:center;gap:10px}
+.logo{width:70px;border-radius:4px;display:block}
+.co-name{font-weight:800;font-size:13px;color:#3D2214}
+.co-sub{font-size:10px;color:#7A5A2E;margin-top:2px}
+.slip-emp{text-align:right}
+.emp-name{font-weight:800;font-size:14px;color:#3D2214}
+.emp-sub{font-size:10.5px;color:#7A5A2E;margin-top:2px}
+.slip-table{width:100%;border-collapse:collapse}
+.slip-table th{background:#EFE2C2;color:#5C4322;font-size:10px;text-transform:uppercase;letter-spacing:.4px;text-align:left;padding:7px 12px;border-bottom:1px solid #E0CFA0}
+.slip-table th.num{text-align:right}
+.slip-table td{padding:8px 12px;border-bottom:1px solid #F0E6D0;font-size:12px;color:#333}
+.slip-table td.num{text-align:right;font-variant-numeric:tabular-nums}
+.slip-table td.grn{color:#2E7D2E}
+.slip-table td.red{color:#A32D2D}
+.slip-table td.bold{font-weight:700}
+.slip-table td.notes{color:#888;font-size:11px}
+.slip-table tr.total td{background:#F5E9D0;font-weight:700;border-bottom:none;border-top:1.5px solid #C9AF7A}
 .noprint{background:#333;color:#fff;padding:10px 20px;display:flex;justify-content:space-between;align-items:center;font-size:13px}
 .printbtn{background:#8B6914;color:#fff;border:none;padding:7px 18px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600}
-.rpt-hdr{display:none}
-@page{margin:16mm 14mm 20mm 14mm;size:A4}
+@page{margin:12mm 10mm;size:A4}
 @media print{
 .noprint{display:none}
 body{background:#fff}
-.page{box-shadow:none;margin:0;max-width:100%;border-radius:0}
-.hdr{-webkit-print-color-adjust:exact;print-color-adjust:exact}
-.emp-bar{-webkit-print-color-adjust:exact;print-color-adjust:exact}
-.net-box{-webkit-print-color-adjust:exact;print-color-adjust:exact}
-.ftr{-webkit-print-color-adjust:exact;print-color-adjust:exact}
-.rpt-hdr{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #8B6914;padding-bottom:5px}
-.rpt-hdr{position:fixed;top:0;left:0;right:0;background:#fff;z-index:999;padding:5px 36px}
-.page{padding-top:36px}
+.wrap{max-width:100%;margin:0;padding:0}
+.slip-top{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.slip-table th{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.slip-table tr.total td{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 }
-</style></head><body>
-<div class='rpt-hdr'>
-  <span style='font-size:11px;font-weight:700;color:#3D2214'>Malakesa Transfers &amp; Tours &nbsp;—&nbsp; Payslip &nbsp;—&nbsp; ${emp.name} &nbsp;—&nbsp; ${mLabel}</span>
-  <span style='font-size:10px;color:#888'>Page <span class='pgnum'></span></span>
-</div>
+`
+
+  const printPayslip = (emp, rec) => {
+    // rec = specific pay run record (or null for summary of all this month)
+    const monthRecs = (salaryRecords || []).filter(r => r.month === salaryMonth && r.employee_id === emp.id)
+    const recs = rec ? [rec] : monthRecs
+    if (recs.length === 0) { alert('No pay runs to print for this employee.'); return }
+    const useMonth = rec ? rec.month : salaryMonth
+    const mParts = useMonth.split('-')
+    const mLabel = (MONTHS_LONG2[parseInt(mParts[1])-1] || '') + ' ' + mParts[0]
+    const w = window.open('', '_blank')
+    if (!w) { alert('Please allow popups to print payslips.'); return }
+
+    w.document.write(`<!DOCTYPE html><html><head><title>Payslip - ${emp.name} - ${mLabel}</title><style>${slipStyles}</style></head><body>
 <div class='noprint'><span>Payslip — ${emp.name} — ${mLabel}</span><button class='printbtn' onclick='window.print()'>Print / Save PDF</button></div>
-<div class='page'>
-  <div class='hdr'>
-    <div>
-      <img src='${MALAKESA_LOGO}' alt='Malakesa' style='width:200px;border-radius:6px;display:block'/>
-      <div class='ps-date' style='margin-top:8px'>Port Vila, Shefa Province, Vanuatu | TIN: 445579</div>
-    </div>
-    <div class='hdr-r'>
-      <div class='ps-title'>Pay Slip</div>
-      <div class='ps-period'>${mLabel}</div>
-      <div class='ps-date'>Issued: ${issued}</div>
-      ${payRunsInfo}
-    </div>
-  </div>
-  <div class='emp-bar'>
-    <div>
-      <div class='emp-name'>${emp.name}</div>
-      <div class='emp-det'>${emp.job_title || 'Employee'} | VNPF: ${emp.vnpf_number || 'N/A'}</div>
-    </div>
-    <div class='emp-r'>
-      <div>Pay Period: <strong style='color:#F5D98A'>${mLabel}</strong></div>
-      <div>Pay Date: ${issued}</div>
-    </div>
-  </div>
-  <div class='body'>
-    <div class='sec'>Earnings</div>
-    ${earningRows}
-    <div class='row bold'><span>Total Earnings</span><span class='amt grn'>VT ${Number(totalGross + totalAllowances).toLocaleString()}</span></div>
-    <div class='sec'>Deductions</div>
-    ${deductionRows}
-    <div class='row bold'><span>Total Deductions</span><span class='amt red'>VT ${Number(totalVnpf + totalOtherDed).toLocaleString()}</span></div>
-    <div class='net-box'>
-      <div class='net-lbl'>NET PAY — ${mLabel}</div>
-      <div class='net-amt'>VT ${Number(totalNet).toLocaleString()}</div>
-    </div>
-    ${notesHtml}
-    <div class='sigs'>
-      <div class='sig'>Employee Signature &amp; Date</div>
-      <div class='sig'>Prepared by &amp; Date</div>
-      <div class='sig'>Authorised by &amp; Date</div>
-    </div>
-  </div>
-  <div class='ftr'>
-    <div><strong style='color:#F5D98A'>Malakesa Transfers &amp; Tours</strong><br>Port Vila, Shefa Province, Vanuatu<br>TIN: 445579 | PO Box 823</div>
-    <div style='text-align:right'>Tel: +678 22712 | Mob: +678 7798712<br>Email: accounts@malakesa.vu<br><span style='opacity:.6'>Computer generated payslip</span></div>
-  </div>
-</div>
+<div class='wrap'>${buildSlipBlock(emp, mLabel, recs)}</div>
+<script>window.onload=()=>window.print()<\/script></body></html>`)
+    w.document.close()
+  }
+
+  // Print all employees' payslips for the selected month in one go — compact rows stack
+  // several slips per printed page, saving paper vs. one full page per employee.
+  const printAllPayslips = () => {
+    const empsWithRuns = activeEmployees.filter(e => monthRecords.some(r => r.employee_id === e.id))
+    if (empsWithRuns.length === 0) { alert(`No pay runs to print for ${monthLabel}.`); return }
+    const w = window.open('', '_blank')
+    if (!w) { alert('Please allow popups to print payslips.'); return }
+    const blocks = empsWithRuns.map(emp => buildSlipBlock(emp, monthLabel, monthRecords.filter(r => r.employee_id === emp.id))).join('')
+
+    w.document.write(`<!DOCTYPE html><html><head><title>Payslips - ${monthLabel}</title><style>${slipStyles}</style></head><body>
+<div class='noprint'><span>All Payslips — ${monthLabel} (${empsWithRuns.length} employee${empsWithRuns.length!==1?'s':''})</span><button class='printbtn' onclick='window.print()'>Print / Save PDF</button></div>
+<div class='wrap'>${blocks}</div>
 <script>window.onload=()=>window.print()<\/script></body></html>`)
     w.document.close()
   }
@@ -5375,6 +5369,11 @@ body{background:#fff}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
         <MonthYearPicker value={salaryMonth} onChange={setSalaryMonth} accentColor="#8B6914" />
         <span style={{ fontSize: 13, color: '#666' }}>Pay period: <strong>{monthLabel}</strong></span>
+        {monthRecords.length > 0 && (
+          <button className="btn btn-sm" style={{ background: '#8B6914', borderColor: '#6B5010', color: '#fff', whiteSpace: 'nowrap', marginLeft: 'auto' }} onClick={printAllPayslips} title="Print all payslips for this month on as few pages as possible">
+            <i className="ti ti-printer"></i> Print All Payslips ({monthLabel})
+          </button>
+        )}
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12, marginBottom: 16 }}>
