@@ -5121,15 +5121,19 @@ function VNPFContributions({ rows, totalSalary, totalEmployee, totalEmployer, to
   })
 
   // Use processed data if available, else fall back to employee base salary
-  const scheduleRows = rows.map(r => {
-    const proc = processedByEmp[r.id]
-    if (proc) {
-      const empVnpf = r.vnpf_exempt ? 0 : proc.vnpf
-      const emplVnpf = r.vnpf_exempt ? 0 : Math.round(proc.gross * 0.06)
-      return { ...r, gross: proc.gross, employee: empVnpf, employer: emplVnpf, total: empVnpf + emplVnpf, runs: proc.runs, processed: true }
-    }
-    return { ...r, runs: 0, processed: false }
-  })
+  // Only show employees who actually worked (had a processed pay run) this month —
+  // exclude both unprocessed employees and VNPF-exempt employees from the schedule list.
+  const scheduleRows = rows
+    .map(r => {
+      const proc = processedByEmp[r.id]
+      if (proc) {
+        const empVnpf = r.vnpf_exempt ? 0 : proc.vnpf
+        const emplVnpf = r.vnpf_exempt ? 0 : Math.round(proc.gross * 0.06)
+        return { ...r, gross: proc.gross, employee: empVnpf, employer: emplVnpf, total: empVnpf + emplVnpf, runs: proc.runs, processed: true }
+      }
+      return { ...r, runs: 0, processed: false }
+    })
+    .filter(r => r.processed && !r.vnpf_exempt)
   const schedTotalSalary = scheduleRows.reduce((s, r) => s + Number(r.gross || 0), 0)
   const schedTotalEmp = scheduleRows.reduce((s, r) => s + r.employee, 0)
   const schedTotalEr = scheduleRows.reduce((s, r) => s + r.employer, 0)
@@ -5170,6 +5174,12 @@ function VNPFContributions({ rows, totalSalary, totalEmployee, totalEmployer, to
             <i className="ti ti-users-plus" style={{ fontSize: 36, display: 'block', marginBottom: 10 }}></i>
             <p style={{ marginBottom: 14 }}>No employees added yet</p>
             <button className="btn btn-primary" onClick={() => setModal('newEmployee')}>Add first employee</button>
+          </div>
+        ) : scheduleRows.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '48px 20px', color: '#666' }}>
+            <i className="ti ti-calendar-off" style={{ fontSize: 36, display: 'block', marginBottom: 10 }}></i>
+            <p style={{ marginBottom: 4 }}>No one has been paid for {monthLabel} yet — or everyone paid this month is VNPF-exempt.</p>
+            <p style={{ fontSize: 12, color: '#999' }}>Process pay runs in the Salaries &amp; Payslips tab, then this schedule will populate automatically.</p>
           </div>
         ) : (
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
