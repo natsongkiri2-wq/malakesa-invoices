@@ -5441,10 +5441,6 @@ body{background:#fff}
         <tbody>${summaryRows}</tbody>
       </table>
       <div class='cheque-box'>
-        <div class='cheque-line'><span>Total Gross Pay</span><span>VT ${r10(printGrandTotals.gross).toLocaleString()}</span></div>
-        <div class='cheque-line'><span>Total Allowances</span><span>+VT ${r10(printGrandTotals.allow).toLocaleString()}</span></div>
-        <div class='cheque-line'><span>Total VNPF Deducted</span><span>-VT ${r10(printGrandTotals.vnpf).toLocaleString()}</span></div>
-        <div class='cheque-line'><span>Total Other Deductions</span><span>-VT ${r10(printGrandTotals.otherDed).toLocaleString()}</span></div>
         <div class='cheque-line cheque-final'><span>AMOUNT TO WRITE ON CHEQUE</span><span>VT ${r10(printGrandTotals.net).toLocaleString()}</span></div>
       </div>
     </div>`
