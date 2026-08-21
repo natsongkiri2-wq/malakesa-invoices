@@ -5264,11 +5264,10 @@ function SalariesTab({ employees, salaryRecords, reload, fmt }) {
   // Per-employee summary for this month
   const MONTHS_LONG2 = ['January','February','March','April','May','June','July','August','September','October','November','December']
 
-  // Compact table-style payslip block (paper-saving — several fit on one printed page)
-  const buildSlipBlock = (emp, mLabel, recs) => {
-    // VNPF-exempt employees never contribute, even if an older pay run has a stale VNPF amount
-    // saved on it — net pay is recalculated without that deduction for exempt employees.
-    const calcRows = recs.map(r => {
+  // Shared calc for one employee's pay runs — recalculates net pay for VNPF-exempt employees
+  // rather than trusting a possibly-stale stored net_pay value.
+  const calcEmpPayTotals = (emp, recs) => {
+    const rows = recs.map(r => {
       const allow = (r.allowances || []).reduce((a, x) => a + Number(x.amount || 0), 0)
       const otherDed = (r.deductions || []).reduce((a, d) => a + Number(d.amount || 0), 0)
       const gross = Number(r.gross || 0)
@@ -5276,14 +5275,21 @@ function SalariesTab({ employees, salaryRecords, reload, fmt }) {
       const net = emp.vnpf_exempt ? (gross + allow - otherDed) : Number(r.net_pay || 0)
       return { r, allow, otherDed, gross, vnpf, net }
     })
+    return {
+      rows,
+      gross: rows.reduce((s, x) => s + x.gross, 0),
+      allow: rows.reduce((s, x) => s + x.allow, 0),
+      vnpf: rows.reduce((s, x) => s + x.vnpf, 0),
+      otherDed: rows.reduce((s, x) => s + x.otherDed, 0),
+      net: rows.reduce((s, x) => s + x.net, 0),
+    }
+  }
 
-    const totalGross = calcRows.reduce((s, x) => s + x.gross, 0)
-    const totalAllowances = calcRows.reduce((s, x) => s + x.allow, 0)
-    const totalVnpf = calcRows.reduce((s, x) => s + x.vnpf, 0)
-    const totalOtherDed = calcRows.reduce((s, x) => s + x.otherDed, 0)
-    const totalNet = calcRows.reduce((s, x) => s + x.net, 0)
+  // Compact table-style payslip block (paper-saving — several fit on one printed page)
+  const buildSlipBlock = (emp, mLabel, recs) => {
+    const t = calcEmpPayTotals(emp, recs)
 
-    const rows = calcRows.map(({ r, allow, otherDed, gross, vnpf, net }) => {
+    const rows = t.rows.map(({ r, allow, otherDed, gross, vnpf, net }) => {
       const noteBits = [r.notes || (r.period_from && r.period_to ? periodRangeLabel(r.period_from, r.period_to) : null), ...(r.allowances||[]).filter(a=>a.label).map(a=>a.label), ...(r.deductions||[]).filter(d=>d.label).map(d=>d.label)].filter(Boolean)
       return `<tr>
         <td>${r.pay_date ? fmtDate(r.pay_date) : mLabel}</td>
@@ -5298,11 +5304,11 @@ function SalariesTab({ employees, salaryRecords, reload, fmt }) {
 
     const totalRow = `<tr class='total'>
         <td>TOTAL (${recs.length} run${recs.length!==1?'s':''})</td>
-        <td class='num'>VT ${r10(totalGross).toLocaleString()}</td>
-        <td class='num grn'>VT ${r10(totalAllowances).toLocaleString()}</td>
-        <td class='num red'>${emp.vnpf_exempt ? 'N/A' : 'VT ' + r10(totalVnpf).toLocaleString()}</td>
-        <td class='num red'>${totalOtherDed > 0 ? 'VT ' + r10(totalOtherDed).toLocaleString() : '—'}</td>
-        <td class='num grn bold'>VT ${r10(totalNet).toLocaleString()}</td>
+        <td class='num'>VT ${r10(t.gross).toLocaleString()}</td>
+        <td class='num grn'>VT ${r10(t.allow).toLocaleString()}</td>
+        <td class='num red'>${emp.vnpf_exempt ? 'N/A' : 'VT ' + r10(t.vnpf).toLocaleString()}</td>
+        <td class='num red'>${t.otherDed > 0 ? 'VT ' + r10(t.otherDed).toLocaleString() : '—'}</td>
+        <td class='num grn bold'>VT ${r10(t.net).toLocaleString()}</td>
         <td></td>
       </tr>`
 
@@ -5352,6 +5358,10 @@ body{font-family:Arial,sans-serif;background:#FBF3E4;color:#222;font-size:12px}
 .slip-table td.bold{font-weight:700}
 .slip-table td.notes{color:#888;font-size:11px}
 .slip-table tr.total td{background:#F5E9D0;font-weight:700;border-bottom:none;border-top:1.5px solid #C9AF7A}
+.cheque-summary{border:2px solid #8B6914}
+.cheque-box{padding:14px 18px;border-top:1px solid #E5D6B8}
+.cheque-line{display:flex;justify-content:space-between;padding:5px 0;font-size:13px;color:#555}
+.cheque-final{border-top:1.5px solid #C9AF7A;margin-top:6px;padding-top:10px;font-size:16px;font-weight:800;color:#3D2214}
 .noprint{background:#333;color:#fff;padding:10px 20px;display:flex;justify-content:space-between;align-items:center;font-size:13px}
 .printbtn{background:#8B6914;color:#fff;border:none;padding:7px 18px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600}
 @page{margin:12mm 10mm;size:A4}
@@ -5391,16 +5401,59 @@ body{background:#fff}
     : monthRecords
   const printLabel = printRangeActive ? `${fmtDate(printFrom)} – ${fmtDate(printTo)}` : monthLabel
 
+  // Grand totals across everyone included in the current print batch — used both for the on-screen
+  // preview and the "amount to write on cheque" summary at the top of the printed payslips.
+  const printEmpsWithRuns = activeEmployees.filter(e => printRecords.some(r => r.employee_id === e.id))
+  const printEmpTotals = printEmpsWithRuns.map(emp => ({ emp, t: calcEmpPayTotals(emp, printRecords.filter(r => r.employee_id === emp.id)) }))
+  const printGrandTotals = printEmpTotals.reduce((acc, { t }) => ({
+    gross: acc.gross + t.gross,
+    allow: acc.allow + t.allow,
+    vnpf: acc.vnpf + t.vnpf,
+    otherDed: acc.otherDed + t.otherDed,
+    net: acc.net + t.net,
+  }), { gross: 0, allow: 0, vnpf: 0, otherDed: 0, net: 0 })
+
   const printAllPayslips = () => {
-    const empsWithRuns = activeEmployees.filter(e => printRecords.some(r => r.employee_id === e.id))
-    if (empsWithRuns.length === 0) { alert(`No pay runs to print for ${printLabel}.`); return }
+    if (printEmpsWithRuns.length === 0) { alert(`No pay runs to print for ${printLabel}.`); return }
     const w = window.open('', '_blank')
     if (!w) { alert('Please allow popups to print payslips.'); return }
-    const blocks = empsWithRuns.map(emp => buildSlipBlock(emp, printLabel, printRecords.filter(r => r.employee_id === emp.id))).join('')
+
+    const summaryRows = printEmpTotals.map(({ emp, t }) =>
+      `<tr><td>${emp.name}</td><td style='color:#888'>${emp.job_title || '—'}</td><td class='num grn bold'>VT ${r10(t.net).toLocaleString()}</td></tr>`
+    ).join('')
+
+    const chequeSummary = `<div class='slip cheque-summary'>
+      <div class='slip-top'>
+        <div class='slip-co'>
+          <img src='${MALAKESA_LOGO}' class='logo' alt='Malakesa'/>
+          <div class='co-text'>
+            <div class='co-name'>Malakesa Transfers &amp; Tours</div>
+            <div class='co-sub'>TIN: 445579 &nbsp;|&nbsp; Port Vila, Vanuatu &nbsp;|&nbsp; PAYROLL SUMMARY</div>
+          </div>
+        </div>
+        <div class='slip-emp'>
+          <div class='emp-name'>Payroll Summary — For Cheque</div>
+          <div class='emp-sub'>Period: <strong>${printLabel}</strong> &nbsp;|&nbsp; ${printEmpsWithRuns.length} employee${printEmpsWithRuns.length!==1?'s':''}</div>
+        </div>
+      </div>
+      <table class='slip-table'>
+        <thead><tr><th>EMPLOYEE</th><th>JOB TITLE</th><th class='num'>NET PAY</th></tr></thead>
+        <tbody>${summaryRows}</tbody>
+      </table>
+      <div class='cheque-box'>
+        <div class='cheque-line'><span>Total Gross Pay</span><span>VT ${r10(printGrandTotals.gross).toLocaleString()}</span></div>
+        <div class='cheque-line'><span>Total Allowances</span><span>+VT ${r10(printGrandTotals.allow).toLocaleString()}</span></div>
+        <div class='cheque-line'><span>Total VNPF Deducted</span><span>-VT ${r10(printGrandTotals.vnpf).toLocaleString()}</span></div>
+        <div class='cheque-line'><span>Total Other Deductions</span><span>-VT ${r10(printGrandTotals.otherDed).toLocaleString()}</span></div>
+        <div class='cheque-line cheque-final'><span>AMOUNT TO WRITE ON CHEQUE</span><span>VT ${r10(printGrandTotals.net).toLocaleString()}</span></div>
+      </div>
+    </div>`
+
+    const blocks = printEmpTotals.map(({ emp }) => buildSlipBlock(emp, printLabel, printRecords.filter(r => r.employee_id === emp.id))).join('')
 
     w.document.write(`<!DOCTYPE html><html><head><title>Payslips - ${printLabel}</title><style>${slipStyles}</style></head><body>
-<div class='noprint'><span>All Payslips — ${printLabel} (${empsWithRuns.length} employee${empsWithRuns.length!==1?'s':''})</span><button class='printbtn' onclick='window.print()'>Print / Save PDF</button></div>
-<div class='wrap'>${blocks}</div>
+<div class='noprint'><span>All Payslips — ${printLabel} (${printEmpsWithRuns.length} employee${printEmpsWithRuns.length!==1?'s':''})</span><button class='printbtn' onclick='window.print()'>Print / Save PDF</button></div>
+<div class='wrap'>${chequeSummary}${blocks}</div>
 <script>window.onload=()=>window.print()<\/script></body></html>`)
     w.document.close()
   }
@@ -5451,6 +5504,12 @@ body{background:#fff}
         >
           <i className="ti ti-printer"></i> Print All Payslips ({printLabel})
         </button>
+        {printEmpsWithRuns.length > 0 && (
+          <div style={{ textAlign: 'right' }}>
+            <div style={{ fontSize: 10.5, color: '#8B6914', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.5px' }}>Cheque total — {printEmpsWithRuns.length} employee{printEmpsWithRuns.length!==1?'s':''}</div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: '#2E7D2E' }}>{fmt(printGrandTotals.net)}</div>
+          </div>
+        )}
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12, marginBottom: 16 }}>
