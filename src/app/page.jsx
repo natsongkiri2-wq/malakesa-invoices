@@ -4,7 +4,10 @@ import { useEffect, useState, useRef } from 'react'
 const MALAKESA_LOGO = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAbgAAAB0CAYAAAD3lyfIAAA8OklEQVR4nO2deZwcV3Xvf+fcquru2TTaV0uaGS8jL2NtxrINODFBBoyDAxhsbOMVk+UlkBdIwgtJ4CW8JCzJI4QQXh6EPHAwa8BLMDa78S7JQhh5DB6NFmuxds3WXcs95/3RM9JImpnununu6Rnd7+fTH9nTVXVPd1fVr+65ZwEcDofD4XA4HA6Hw+FwOBwOh8PhcDgcDofD4XA4HA6Hw+FwOBwOh8PhcDgcDofD4XA4HA6Hw+FwOBwOh8PhcDgcDofD4XA4HA6Hw+FwOBwOh8PhcDgcDofD4ag4NNkGOBwOR41Da1q95VZoNhE1K2QGAUxEoSoNKMkACHukL9mz5WVEk22s4wQ1J3AdHTDc619LUH8cu298tjvZNlEbVi4PLiCS80vfk3ue7Y6+O9HxR2JNi7dUgEtL2YcATTh5aEsX+iph0+rW4CJVaS/KFqJwzrb4gYcBqYQtE4BWt/jXKDRTyk5K9OLmbfGzlTCoYxkyzN4bCOBitmfCho3bku7xjeNfXcq1RoAaTX33me39vaNts6rVfwNU60u1ZyIQYd+mbcmj5Tre6pbgYoXcqKBfJ+hFAA0/P2Tw5Z2ymwI4wsAOABsEuoXAzyUcbajUNTgS65bADwPvWihMKfuRmi2btocvVMquyeDUH2jS8fr81Qr8J4iSEnclT7EVQMdExm9rg6eK7xF4LqBayvhQNevOyTQ/+avssYnYMBIW/G9EeiXyF1FxKLhJ/b8B4g+W2x4AEMW/EGgdaGzRIgVU4fW0Bh3YFv28EraMl1UtwXqF3gciW8JuZFQH2tsxt7MTYbltMiZ4PVS/DkLBa4AU7Cm+COC2UsZYtwR1OeN/jxWXKlFxDx0KowBijn8DwA9G2mR1i79QFQ8Ofp+lXD/jR0GA5gA0TPBItKoluEUJf6qqK4g48Zg8JoAZIDo+H2Cc8vChqlAFqWKWqM5SRQcprKoGnviyphVbVel7Av3B5u74AVTwu8kFqdug8lkiFH9OK4jJbgdwdqXsmgxqTuAgakCEdGC8UqaXqopcJBdd0uJd+kx38tR4h2/S4DehOi8dMBMV9QANABBVhJFAIinpqakY1izzFgv01zyPyWcq+muxViSX6J0A/hyVuaA8a0gbPB7zPBr8baC2tCfKKnG7ZRpo8LmkGUcutPULYu+NnUi+UW6DFPAAkrpg7O8VAGwsvSSlnXNrzkV9Ngl+QMCaVEBMRZzoVsRGscJA37thWzyiuAEAWA2EkPLZlHCqTggRkSiZ2Lm1ss1brkr3kOo6w8S+YRBR0fdHIsLQxzV5x5gZfEFE2YpeqIrzVPDetcuDCzdsj34xEXvHQoG7yZBkClyXJ+2Tv0bbLm31L3lqW/xMpWyrNsXfwWscIoIhxB7hDydyHAH+SJgsVeniLAYx5mYhxKWIGwAwE1tgwWUt3qsrZdtUZvXSTJOSXucbKsk9CQBsCKHgdyphVyXpaENDkgQ/JGBNJiBTzHlurdgoVmboH2zoTv6xCmZWldWt/iUk9AtDdGkqYA48Rjmvf2aC7zECj3wAIKrcxOLiZaaNVdakTAlP5xi8fzJyrLi9UrZNBtNG4ADAeOSFSm+5bFkwbzz7r24NLmLVy9Ne8U9u1UChd4Kp5CdUIgIzEiK8qxJ2TXXUk+uh4BSXfh0YJg6Jfu2SlmBuJWyrBJcsr28kCX5EwOqMT4aKWIK3VmyUKBvg9zZ2J/9UBTOrypq24EJR/ICZMmmfixL8WobY3CpEyXg+iGEKIuCmjvkIKmHbZDC9BI6ZiKBk9O7x7C/Ae4QorKWzfOVyfy2pnpMxpQscAHjMJqd487olqCu3bVMdVb1dDNnxxFoZzu9TD7m53HZVgkuW1zdGHP+YCCszfgkzt0SZCL+zoTv+TBXMrCodbWiwgkfYUF3K55q55icAKXCn4fHNEI1hVqAhU+ddU27DJotpJXAA4BkykeL329pK+5FXtaRnQvUm31BNPb0Q0W1ClOVxiq4xRAClTCr4rXLbNpVZ0+q1EPTyFFNqvMcwTDxAeHc57aoEq5dmmiKKHyWgo1i3pFhJokSZgXdv2hZ/tgpmVh3W4INKOift8bS4D65uTb2SoYtS3vgf0A0jIdCd5bRrMpkWP+xwjGEWYM488d5U0o6sdwIwgamd2du6JfAVuMkYjPsmDADGkFqVmr8RVxOr/E4hypa6rjkczxDFSuddvjy4oJy2lZOOczIzrGd/SoQLi3VLipUkTNQw4V0bu+N/rYKZVWdtG9JQ/QPfcNGeEVVArMJaRWwFcaKIE0Ey+DeR6gSNjoYo7hSiuJjfeDQMsx8Rrl7ZlppTRtMmjWkncABgmFSAPyp2+/UAq+p7ME43YKUIff8NBG1KmYk9YRomjpSuuGyZt7hctk1xCMBt4ImtNRARmGANy11lsqusrG1LN5O1PyXg/BICSgZnbnTHxm3x5yptYz68fqKv0se1mrqKgHQxD7SiqlFks7nIIkwkihO7LUnkp4nYH8ZWn4gT+0Jo5UAYC7KhRTaSXBiLtVarlCeRz2kE5HrfTCx+gA0RqWpa7I3lsm0yqalginJhPOIwossuXR5c8FQR4bj7W1LXkMqi9ASFpNwo6A5lRASkJ3IcZiIQrG/4FgB/WybzpiyrW7zLFbosbSb+cxsmHhDc2tGB923ZUkLeUYVZ1ZKeGav8lIDzMkHRASVxnKgB6PaN3dH/q7SN1opEiZbjmmMCjpSygwBvApMAY6cXWKsaJ6IEfI9Af58MRI+PVq1kbVu6OZHkYoKutMpXWytXUYKAiGLfo6CSq3zMwXWAFiXYBY9lmEX0LgCfmrhlk8u0FDgmIkOIDPS9QOEIQiX9QyVKiGpn/W3N2anZYuX1HhfOZUmswCtwszZMJityN5zAQcC3KmGAicbMfbNWT03wPQ3jEcWhNjf3Bq8FoofKbuw46FiWmiUkjzFwTsYnU0wQjU0kjq0agG7d1B19qQpmAoAaYKeFWTnRAw2kcgMlDQx9pUeFPViJtZEHfOrp7uT9hbbd0JU7CuDHg69P5ivFBFeqys1RTNcrgalC91wlvAtEBSeMiRUYprHPaUMcWu24pCU4/5nuaGtZDa0yU1rgFKNfusawn0vk5o5zMu/bMkZlkZVtqXYS+bXAG/1cH2ucSmGt3gCCFnoiS6xonCiBVL0x1pM8Q5Sz1HJpi7/mqe54Y/ktnhqsbUM6EbmBPVMg900RW7EinKvzMaoQEgiGMLTGOekCt+bs1OzE6mMEPTvts0Exbsnj4qY3b+qOv1wFM08a/tnuXEmzr3JAirmFJjuiqqIUCMz/QuGiMqexZQeygw89D61qSf8+aXILQNfETLvHafaI5KvH6JVBgUhQVUWcqEYGWueNnieXnyBozle9FcCflNPWalNTLrlSyYUWVkf2wBsDAqnXZOPbxjyI6B8IUTRa2QVrVcNwElaPCXdoEQEQYjUGgJzk/x31cEOJ8MC0iZAaD6LemwDKpHnsRFgrUFUYEkkX+vGNYcqCrrliaaapjKaWzMq21JxE9AkmPTsTmOLW3PLixkT6jk3dSbXFbdIgaBMX8tuKAoSoHAL8bHfuyLPdyT8+2x1fvbkrPDjR4w1HiG9Rgi30g4uoACBYLajWxnAQEt3e0VGT1YeKZsoK3NDybS7RUap3Ezxmzin9d4wyAVu9NNMEyG3eGKkBViSSqi0V51nZlmon1dXpAgvGqgqrCAj4BkvhpXY25OWAm9YtwXgKWU8LRPl2MRQVuvVbUU1Bf6qkuZzVMWs1Dj5MsW+St5XR1JLoaAnmqsoTBG1N+8YU43E4Lm7QGzduS75ScSNriSKqiRAToEitreEoWQBQ1buoiGhQsRr6wLcA+LbA/YINsSjmBH3BVeWyczKYsgI3BIv6o8UqGUNsgbMuawnWj/S+GHsbQF7KjCyAoqpWJhaiPy5E3ylEuUJPZFZUDeEQib6HFH48ymx2CM8wKdBgfH/aJHKWQkdbsICgvxFQ4dJcYhU+4TOk/C0r2j/21gTDTDmanNJdFjSXoE8SqKUuMEWFGVgrUWSVAH37xu7ka5W3srZQpT4pEORIRGQYobJ8a3WLd0W1bCuFla3+KoaeU6gaj6oiUWQU+gkleionYz+0EQgea+SrTGmPz5QXOABJ1uqI0WtEBI9hlfS/j/S2kr4Xhnm0FTZrxRKq299pPcAg3EaGCs6yxGqcUnx5445kt4IeC+1os9kTMEP1DC3dxYKbFIj9AhIw+HSbWEruI+i9RrS+oJuSiUPF6itbvZbyWVwcCXA1ES3LBMXldFkrUT4VQN+2qbv8xaKnAkp6wBZRgDzwTYqJlyro0TWt/tOrWvz/sarFe0WtuO5U+Q4higqtZoioGMK+md3J4wR8kQoIHAAwmyAkuu6S5fWNZTO4ykzpIBMAIOhXNcHbYEY+4YxhE8by2ktbvZanhvXMWtUSrFfV5ZlRZm8AYC2YofcK6KZK2D4SB1uCX4fqgnSBM3bIPRlB8xFvhHvY6qWFflFjmHOJXH352anZj78YHiqb4VOD28VwwWhta0XShO8+3oW+jvnxw1zn92VF6+vGqAfKTGBCAtAdyHdvqAoKpInJZvwixS2xUWTBDLx1Y3fy7UrbVwgFmle1BBMLZCD51bPbkm+WtAv4J1Z0OYooSuz7HBhVWKtrIbhIFB8xvX64pgW/APCYEm0kwsbZXdHWavY7bGuDB9GbPS685GCthJ7iPx4GZI3F14XxqURVvTG8RMaA4gSGKboewOfLanyVmPICx+DPCen1kdURIw6Z8ykDnuK/YVjytwB/CKZ4tNSAxIoQ4bAovgmgagInhNsFFDLRmLlvIioGePmZ7uRpAADRN0j106N9D0MYJoqhStbeCGDaFc8djXwDS70gY8YOpVYAIiBf9QsAsOVlRCtb6BuS6FsR0JhPssxk+q3eCeAvUKVeaJ7PfrEXcZJIlFiQAm/e2B3fX1HDioCYGIR6Bv7neI+hUGal/QBKEzjV70D1tmK3ZyJwvgRWWlUhgpSorlbVDhWFKLyDrV7fGtBPVPURInx7PE1oS2GGpF6nkBmBN/aSqypglTKq+DIAbNwR7b+4JfhpaPVyb8zC8gTDAFTvxBQVuCnvojTAYYDuia2O2niSDfk5wt35bP98SwmCrk95o7sBbaJJCvg0QGNGJ5aTjjY0QPXNvilcHzGxkmTyszcFgM1d4UEF/SjW0b+HIQwzx0RnVOkuBd0qRP0FI82sKkjDfpP819DfmHCvUa2XAqLlGSILLHxVDa7X2ETCxCoJ8Fuba0DcgHw4eirgYCIv3xDpOGpTyUB0H0CHwqT0CGkigjGDLXB846VTxksHBr4xDUz0ehB9VJS61rT6z6xq8e9ub6/MOr4lvEuYbOGAKRED7Ny4Pd5w/DOAvki28Ec3HptI6bK1bd7yCZo7KUx5gQMAVvwjq6ZHSxnwDJMqZRqN/w4AIDb/TQnRaNNza0WVwH1E/1JJu0/FSOrNAPmpAmtEqgpRCmLwPSe/Q/eQVVOoQJAxxLHiwnVtqfYJGz0FaGuDp9BbyIw9KwbyN4MMcP+GLuSG/naMoh8o6Gi2QDTlYE8tq8C4ullUCptIGFslKN60uTt+cLLtqQW2vIwIhA9ZCykiALkgRMiLns+UDoyfCpiIaQ2Rfro+9HeuafHvKue63aqW9ExSeX1QRHlBsRL6wEnJ+yL4JgiIC0VTDhbN8JXeOVGbJ4NpIXCbuqOfCejJnB09F8wYoljxR2vORT2gd3mGR5+9WY1Tqt/c0hXtq4zFIyPQO9UU9uFbUfFItz/ZHf1s+N89pv8kAHGBvAYmApPGnthp1dxwNJrUX0/QWYVaDqkCVsAk9O/D/97VhQTA19RqwWoZhomzwFvWt02svFq5sImEsSgU9JubtsffmWx7aol526J/UcL3c7HG5a4ayUQIPKZU4Hns0Twl/EvQ632vXEWMleXtAKhQsXBRVauUsUwn5Thu2REeBuiH0SgBesMxhvxEcQeqX+9iwkwLgQMAIvwDWzWjPY94hjgGVmji/zMI6dE63g4Fb4jiHypp76msbPXOIuirgiKiJ63VJC10Wq3ADV25o0r0SDSGu3YIZvZyoNvXT6NzYDQUdJtlyha6OkVEGdqXJPEjp77HwL1GtUEKlPY1hklB6RDedROxuVwolBWAGU8pjmnOw4CoMW8D8FwukkKTmXFBAHzDSPnGgOgKo7J55dJg/kSPq4K7iwmQEREx0F8+3RU9d5ptSl8iARVaLmYmToBll7R6l03A5Elh2tzc0lH0nwo6lJPRUwYMIVbFOzHGU09iJQkIP39qe/Jk5awdwT6YW5Qo8gutEalCFEEC/o+Rj0P/wQqv0BPp4HrRnL6W4NcnYHbNs7Yt3QzVN/mmcO6bFbUZom8++RJO8wTM6Y5+oqADWVu4oLIxhEgmJyfuVDzP+D4TW9IH17YEr5lse2qNLb/KHvMoulyVvp6LRMNECqXHjQsiIAiMT8A839MHJrIut6rVnMPQleliBM4i9olGrC1Klr8FqBTy+Ay63kNPacp5fKaNwD35EmIQPi1WRn1S9bx84eLMGFn/VkCs9PeVsHEsVOUOmMJRrdaqeKSdT2wPXxjpfU+8+wC1kS180noMC5KaWi8qN1b0bQAQFEqEhcIKPMXpM2Mg/7QP4CtqNVtoTMPEIeiVl7cFC8ZldJnxPPZ9JhbofzmRO50NXcht7o7ewUSvsxYvhqFILhZbif5uvs++Vb24OfJ+e7zHUDG3CVFcMPdNVa0ibUlGLMG2aWe2R4kfjoop3cXkh9Ab1taI671Ypo3AAQASfJYVHNmRfQ3MROmAR60/a60IAX0xR/dW0sxTWdXivYKAtgwXbtcjojalPGork2e29/dC6TuxaG60bYZgZpNTelNHGxpKtXmqoKS3iyEpFGhnLZSBI/Xboh+NuhFJ3k1ZoGIMM4EI6ovcMi6jK4Dnse8ZIoH+15qW4Dcm254h7GCz0PG+RMu3LrRpW/SwNEbnA3iTCB4KE7HZyNpcLHFiFXkX5sREj4jgeWxi0J+NcxZHSrjDFNH3Taxan7Dl6S774mjbsOqXSAu3LDL5ghgZFu/aUg2eTKaVwG3eGb2soK+PtQY1lgcwsZqkVD8zPIKuGij4NkuULVT8ddA96eV45CeyIQjyHywaFC4SDALgzUDw1lJtngqsbjNnk+ql6SLSLkTE1gH3jpWou3lb8oQS7cnawutZnA82qalUjCGRU+iDtSBy1orEiUic2N7xvqyVfigK9nwsli1bYDd1xw9s7o7eyMzzoXojRD8fWd0eRoJsKJKLJBslovkZXumC5xlmUcxpDINfK3Xf1S3pKxm6oFBpLiDvcifQF8fahv3ofiiS0SYFwzEGlkE12dx3NKZ8ovfpyCeN0o2iqlxMOfWhvURVFV5M+OdKWncqHfMRAHiHV8RN2FoVD+hMxDu2qsWbOdp2LMnj1iCJrNJowTR5CMYAsci7AXxhHObXNsK3CFHWI6obazPVvHsyUdy/qiU96vea31juE9GbgbGDgQbbE7W9almw8tEd0ebSjS+OOJHIKky6yEomnsc+IHFi9cE1LcE1G7uj71XKtiJQBnZu6E5aJ9GGUdmYr/TztcEXOlqCuQxdp6qXicWVVvQVyJesjD2mlFdCs1FDCH2V1wD4bik2CemdShQTjX3+5Vv9IAiBh8c6pyUGFPr9WPS1hQLcDLMfWXnNyqXB/M07o5dLsXuymHYCt7k7eerilmBzNtEL6v3CEYlDJFbigPDdJ7cluypp36mY+uCNUG1MFdFNXERVgPMBe3jM7ZhAClhVWyiy1xg2oZVL17V4S5/sTnaWaH4tQwK6HYyCTWwlv8hOOcJ/oYim3EYL9wgkIjDBktF3Afi9oq0uEVaEiWjjQCxJnV+4OS5wXOSSGhG5KcOW7ugAgPsHX+hoQ4MR/zWi+sZY9ObIgtI+p4rocgVm8sXqJaWMv24J6nIqb/FN4d/Z5pO4iaA/K3ROMwAIFVGbkogINuPJTQCqHqcwHqaVi3IIBv0DKQq3tx1kMP8p0EkJLsEdliku5tEv8NmkA0axrzqv8FN9PicOiQe6tQwfp2ZY1eq9iqBLCuW+AfkcyVK+13QwRgHTYXiGeUBxU1tbZR8kPegPINgzEI8eYHXaPh57niFW6IOrW4PXVtK+6cqWLvQ92x1/e3N3/C4LWqpKj+ZijYtyWxIgoJLSBXJ+6s0gBIWaIAOA73Fp53SqcEQmABgmk4CmTIeBaSlw2VT4FSh6wwKVJ4awVqwH/eVT3WMEGFSAlW2pOSC9OsWj96MbDhGV9CoWZvJypFPKt14IVb7VMg8U66Yu7bstzgY2RAI0LYb/uol8lkIYYI8RuXycIkdQfcCJ3MTY0h0dCNR/M6BRoQhmACCAhNBcyhgKfRcKlgofNkYp53SRsTpsiBPF+Wtago5SbJ8spqXAdXYiJOAztoj2MQCQiKg3CbM3iL4DCinUvqXSeIbJKi29bLm3bjLtKBcdy5AByds9RsHct0pCyLcnsoJxh4QXy8Ydye7jIhdJUqz3Yijw5EwTuVWt5pyVrf6qch7zme39vQramGhxD9bQwpHOQ6xZ5i1m6CtTBTrRV5p86S7NBcCUyImblgIHAMTyGVb1C5UnsFYUijAK4hGTISsK4U6dZHEDBuvoEWLDU8f1MBbM3nVQSo0dYFMdjGHKAle/qi3dXOmxNu5IdkP1Mij2ZMcpcmtbR24OPN1QNX9Nik1rWrzvr2zxrizfccHFZC6oQg3oYLHHtcbcokTWFLPAV2GM4SAmvaXSrvdyMOk3gEqxqSt5SYnuK1S2KrESp4n/78ZfokDX5vKyuiU4n1Q70kXks1QDY8jLQm+oVOXzqkJ8uxS5rllpDINASkbtjdUYb/P2eM+gyO0ej8iJ6v1ngsgpka9EQsyvJNCP1rb6T69q8W5YtwRjRtyOxWCU5SWFigoMWiBM2Fu0vZC7mGujyaoxzFYxa476NX+eTFuBAwCofJJFU6PV3smH0pIfWfupapsmwK1CyBZq31ItTL7jQt2scGolcp7KyuX+IlJ9TcCFOwdUB4JhpiyqV7prUOQudyI3NsrQwOcgX/yBVhPRlyLfP7i2xfvS6uX+60sRu5XL/UUEPAQCFyqADACqiFR1xGpEp7KqxV/DirZa8EgM4TEizhdgrmlqYvZQKTZ3Jz9e2Rp05mJp8+j0BF5VNSnCj57cYbuqaVdHBwx6cRsbLjhbUiikcOT6mBDlq2sUgplUFXcD+PrERhyZ2OD2VS3BnokehyBdm7qTkW0kvllJoqCI1jgiWqB0cmGYxy4eAOTbE4VWL3plqznnp9vsryY2YnFs3h7vWbncvxzA49lIFmcC9oqK/DyRJ3f/2tbg2g3boocraWdZOnoPwowHN45QVLgQRATfJ+MDsFYz1sr1Crwj8n1Z3YrnofixAJuZsB+qh4TNIQP1rEgzEZ2nSusJ+lsgUKbIVA2rSCvo0WK2FeI7AI1Ga8580rZ24pU0ByvxFNomCEV/c21bunlDV+7oBIesGNNa4ACAIe9W0M0j9vZTSERU1cRuAOC+4CpA5xbq+wYASSyJFQhQuEPAaCioTg2jzhs7ZN4zxGGiV122LJj3xI5o/3jHOxUiwDBZVfz2ROerCjAp9WBUEdbbpYiFeFFFGAsI2jsBW4yCvLqUGfPGM5iKYY3SHQA+MN7xSuW4yJE+lo1kSV1QUp5cnFi9f01L8Jsbu6OSkpGLpRwdvYdQCPtCiwH8wUSOYwzBmPzvKaLGil6oqudBoVB4CmISgQAgEEgRM4M9w8YUGeEoVgSKKJK4YP7huiXwc9CbjEExXUY0TkQBHfdyi4J8JeK6gMc8p40hShKBJ/ZtAP7PeMerNNNe4DZtSx4FUNSTUtVQ3K5MIaOYBpzglOpNT2xPvjre4Va1BB9RkT8EzJhRhZyPqVfPyE1AOdsFEQKfDDDxNQRrFTYZuXbe6hZ/tULbM4YLPsRaqxIAzz3VnVw8XltWLg3mk9HdoagWyu5lJu63uAPA/8BECxqWwKDIXQHWxwbGJ3L3VUrk8h29i0uRKYSNpY/KWJcSyM9kBj0fJ4mLqubj/AEUqmgzEomVMAD926YdKFi4O+enriGVxsCYgp9NRMIU8OAT3cm4S++tWhasJNZnRXWspivIV0EiUsFdqGGBqxmf7pnCJcvrGwH9LZ+LKs2lgIb9mtw/kTGZ8WVWZEbreD4cw8S5GutIXSwKulWY+otZ17SikiL9/ETGG6x9+sNYCncYGGxPNO/Vy0uvPzhRNm+P97DickBfKjFPbqh25X1rWoKrK2njVOJE3ljpemqtiCghR/q3xWyvwF3CJMWMZAVBfErn7lJ5dke0WYDuUAqnOrBhEynWvqLNnD2RMSuJE7gqk1DyFoA8v4hiGFYkSQPf3lLEk95YbOyKnlNQZ66YthiGOFFqv6wtuHAiY1abdUvgK3AzceF2HiIKKDhMeMJdIwi4h616hSZl+Z5aZC3LpBRg3tQd72XF5ZBxiRw7kZs4oqpxomDg/ZuLKAnYsSw1iyBXB0VU47FWBNCBvtTEu7YT8b9LMQXFicgQIk/4nRMds1I4gasyQnKXGBRs3wIAVuAJ+N/LMS6BvkhSuNDiUGNYT2RK5cTlfP91BG3OcOHyZFZEAugTT5WhYKz1zH8CQE5G70IwhMl3GLhu/QRC0SfCpu54L2NcIjdU1uu+1S1BRauyVJUyuzTHwopqFIkw8JkN3fGni9mHjd4IAoqJyhTRMAB9rbMT416rH4KQ/AerBoXaQuVtJD8i3IHxTGergBO4KrJqmbeMFJenC1TtBvIJ6Ew4doDLUwiXyX6ZVFPFuCmZ2cuC3tnRURt5N0VBdJtlyhYRoA0rUJ9oQu7JIbb8KnsMoO/EFgOFtjWGCEp+GARvKcfY4+EkkYtKFzlAvz0dRI6gL7AoZyMJo0S1QD2IcaOqiGOJ4liUgb/a0B3/ftH7AnejiIAphSIRpBPQPROzNs+z2+yvhOi5XBGlDg0TW8XiV7R6ryrH2OXGCVw1MfxOJQq9YtaIrMYpxVe6ugq7Coph47akW4k25qzGhbb1DMgCM+t7aj+REwBWtaRnkuq1vqGCpbmszWdexMb7RrnGJ8g9RiRdzC3SGCCCVLx011hs6o73CtNlUN1Vqsj500TkNm+LPiCQ80jx4UT0uTAS5CIbhyc1Nx0/1iqiWOJcJBDVrUL6qg3d8YdRZIDR6uWp8zhfCKJwRLBVYeBQ1Fi+WroEfAFWi/P4MEIDqsmcuJqNooxjCTH2yUBAdapuEEBRLGPWjdN8V9wxI8JUcSND/VxkC9agU0U6gY7ZrLBUSPElsvqJnBQeH0BKSd8BYEyfPinIjpiDURlGuvEo5DoCfEkkzBW4gajCSxEeefJX2WPlsslK8gAbL8xF1lKhG5jCWNC6dW2pOU92hSOWasofQwuecwCgoil/HFGZW7qifR1tweUs+ng2ksVmhDzRUccEUgT99soW79Wbu5OnRtpGJD+zqBZWySv1af1n3faXgP0bAH+zptVrEdBVIvpqq7iKEl0CAETIDRbYTjGBoKfniEn+54KKRgIlVfiA9jHoKwr9wsZtyWMo8TcS1htIgWLOASi8AHTPxi1F9HoqEmPlXsv0sWxkwyLOaS8kfWtHB+7cUkYbykHtCZz4W+HZf7SqBYMFFDRAcTRqO/ZyQEJPK+unrWpBt6ICh57eER4Z7X0m/VNVWlHMw6EC+5/ujh8vzdqxScXRv4aBB1UuqspHCP3h2Fvo8yy6Ii761lgemPDzk/6f5RFVfj8UptBXq4DEkLImsm/ZgeyqFr4OwJpi7mIEPTZQP/p5oqKPMeMzVrXw9UlADjyuzzMkckbwxxZaX/SOBKhCwOYYTnEwGJs6FnO0O0ls03hsGj+kMXTcSfQbtyXdAD43+MKaZd5iNXyBqJ5NirOV9FwCFpBKA4gaVNEAQkSq/QD1KOQgEXVCsVkVz+bSyc8ntB5G9BVSZLWIdUIiJLFFWR+GN+5Idq9q9d4K5XOKUmalvbUmbg6Hw+FwOBwOh8PhcDgcDofD4XA4HA6Hw+FwOBwOR1HUZPa5wzHVWLIEfp0NZhLsTCaaJdCZDKoHAFU0EJ1asBcxEfoAQKD9DDoiqocV5oitiw6XK//R4TiTcQLncBRBx3wEEZnzQLQChDYCzlLgLADLAV0KUJnD4vUYQLsAbCdglwK7oOgi6FZf7C+3vIyovOM5HNMPJ3AOxymcPxeN4nmXgLAO0DUEulCBNpzS7ocZYpjZGILJ93zLN4vkfA+4oYI1BODUVmH5es95VPOVM1TyhaBFAauabw0kIiKnVRyyULwI6HMg2kiKJylJNmw9gHH3tnM4piNO4BxnPBcuQrNV7yoFXkuEVyvQjsEydgyI5zF7HsE3DM8QPI9hGCimYHY5UOTFLhl8xVaQJIokEZGhcnsKIcLzAH4CxSOJSX7wq5dQtmotDsdUxAmc44xkxWKzQpXeCsUbALwClBcK37AGPpPvEQKP4ZdcAKq6xIkgtoIoFkSJapwcbx1mATwNxX+x0a9vfcl2TqadDsdk4ATOccawYpE5B6AbAbxNgQsAwGNIKjCcCgwCn2EK18E+GQI8Y+D5DMMMYxiGCWzy/z10NCICDfopVRRDTR0UgLUCsQIrCmsFVgRJLEisLbnKpFVFGAnC2CKMrNhB9yYBP1fFV2H0y50v2a7SjupwTE2cwDmmNesB3rXIu0qB9wC4BgB5TJJOGU4HBim/8AyNmZBK+0gFHoKhl+/B8xhsGEliYZO8IInk3YkiecECALEjF+tkkx/bMIGZYQyBmfKC6TGMZyBWkCSCKE4QRSdeuVycb9xagNgKsqFFNrSSWGXkJfP7BPyfXk6+9dJLKNhdwuGYqjiBc0xLzl2Ieob3bhDeB2AhA5JJe1yXNgjGcDsSE+oyAeoyAdJpH6m0D8OMMIwRxhZRGA+KjEWcJJAKd1JgQ/C9IWE1CFI+Ur5BKuXDiiDMxciFMQYGImSz0ZiiFyWCgZxFNpeI5ONe9qji42ySz259qXA/O4djqlE1gbuiPXORQm+u1niOMxNV9QdyujpK5BWqyHiGtT5tqC5tMFJjZCKgri6FhoY06usCBIGPgWyEbDZELpcgl4sQx7VZJN33DdLpAOm0h0wmhbpMgCiK0T8Qoa8vh4GBECN1rhBVDOQs+nOJJlaJCAOBz0/XpehZInIzOkdFUaV7nnghu6UaY1VP4Fakr1fFV6s1nuPMI04E/TmBCOAbRkOdQV3q9I4zzISmpgwaG9Kor08jl4vQOygI2Vw8ju5qxdGTzbsqmzIVClwhIJP2UVeXQmNDGul0gP7+HHp7czjWm4WOMLvLRha9AwniRMAM1KUYQRFuW4djArz98c5cVbSgagK3vgNBn6QaqzWe48yhr1+WR6F+AsCVhiEzGgLOBOa07RoaUpgxow4N9Wn094fo6c2iry9X1FpWOXh+VwgC0H5WVfr0gpnQ0JBGU1MG9XUp9PXncOzYAPr6Tm9TNhAm6OmPxQqYgB8FHv1RfRPvqIqhjjOKBg57H95SnUIFbg3OMaVpX+S9BdDPA9TYkPGosc47yRXJTGhursesmfVIrODo0X709GSrJmpDhLHi+V15YWk/K4W0X91Lb2jWOrO5HsYwDh/pw9GjAyd9D6qK3myC3oFECehX4O7OPcmXq2qow1FGnMA5piRLlsBvEO+fANztMcnMpoCHB48wE2bNasCsWfXo7wtx6EgfctnJW17ati/CoZ78Wt7sJoPWBcGk2ZJO+5g1qwENDSkcOtyPw4f7TnJfRongSG8kiVUm4DNRJvkDVxvTMRVxAueYcrS1Ie1nva8CuLYuZTCjwT8xayOgeUYd5s1tQn9/iP0HeiY9SMSq4rntIaI4LyKBT7hgWQreqfW7qozvG8yd24SG+hT2H+jB0aMnAilFFUf7YmRDCwDfjjPJDV1dyE2asQ7HOHAC55hSdCxDJoq97wC4siHjYUb9iSL9fuBh0cJmMBH27D2CMKyNSceewzF2H0pOBK8QsHi2h0Wz/DH3qxaplI9FC5thRbF375GTHgiO9cfoyyYg4IdRJnmDEznHVMKFSzmmFHHs/SuAKxvrTha3hoYUWpbPQW9PFt3bD9SMuCmAQz1ycmSm5v9W3VXA0QnDGN3bD6CvL4eWlrmorz8RBDOj3kdjnQcFft3Pep+dRDMdjpJxAueYMqxY5L1PgZvq0wZNdSfEbeaseixaOBM7dx3C4SP9k2jh6Rzty4fgn0qUCI721YYID3H4cB927TqExYtmYubM+uN/b6rzUZc2APDO9kXeeyfLPoejVJyL0jElOG+Rt5wVnb7PwZzmgIYq+Tc312HO7EZs33kASTxySazJ5Bc7chgIR56r1aUZFyytTspAKXiewfJlc3DwUO/xdTmF4uDRSKNEImacu/WlZOckm+lwFMTN4BxTAoZ+TAlBc4N/XNzq6gLMm9uEHTsP1qS4DUSCOBmjdFYsGAhrz+4ksdix8yDmzW1CXV0+2pNAaG7wCUAggo9OroUOR3G4GZyj5lmxwGtVxot1aUMzGwZvuAS0tc7H3n1H0d9/euJyucnFijAubdVs7+EYvQNjC1hjHWNhicEmKZ+qkkdXX5/CwgXN6OrefzyN4EhvhIHQKivatu5NuituhMMxAU6vY+Rw1BjKuAEA1adPnK4zZ9Yjl4urIm4A4HvAjpdj9OZKmHEVoYd9WcGv9hT/GRrTjLMXVyeHrr8/RC4Xobm5DkcO59c26zMeBkJLCrwNwN9VxRCHY5w4F6Wj9lFca5hkeCJ3c3M9Dh3uq5oJhgjnLUlh4UwPhgkqKPwqQuBUiziOAB4D82Z4OG9JqvSedRPg0JF+zGw+EXASeAyPIUq4tmpGOBzjxAmco+Yhwtm+x8fPVWaC7xlks1UpZ3cSi2f7aFvgI1XFFLbAJyyfH2Dp3OrnzWUHIvieAQ9LSvc8wwDOqboxDkeJOIFz1DTts5FSYLYZdoMNfA9RNHkh9k11Bu1npZFJMSo5mSIC0gGjfUkKzfWnF4+uFnGcwA9OuIcHf4u57bNReyGgDscwnMA5apq4GRZ68mqWQkFVdNONROARLlgaYFajgamA9hgDzKg3uGBZgFSVCzOfDkH1lEx1hcbNqM1GeQ7HIE7gHDVNVxcSEF62wzpnx7FFEEx+fBQRoXVBgCWzffhe+UTI9wgLZ/k4Z1EwYpPWqkJAEHgnle9KLECEva4As6PWcQLnmAp0xtYer3cvosiFMRoaasNDNq/ZwzmLyzPTCnzC2QsDLJw5+QIOAA31KeRy0fE0AQUQJ1ag6JxcyxyOwjiBc9Q+qt+0Ag6HJXMfOdKPWbNqp39ufYrRuiCANwF3pWeAtgUBGirV8XsczJ7diMNHT5Q/C2MLUbCSfmMSzXI4iqJ2riSHYzQ883UAtj93wiN27NgADBOaZmQmz65TONJvkUxgVSqxwJG+2lnWam6uAzOhpyd7/G/9WQsAlsV8c9IMcziKxAmco+bp3BXtA/DZXGiRG7YWtGfvESyYPwPpTG20nekpULWkqGNka6N0VybjY968Juzec+R4wnouFuQiCyj+eeu+6OXJtdDhKIwTOMeUgNn8JaDHjvXFIoMRfWGYYPfuI1i6ZDZS6ckVuUQUiZ14A5zEKhKZ3EY66ZSPs5bMxu7dRxANth2yqjjWFwlBj6qYD02qgQ5HkTiBc0wJtr4UHoTSuxOrdLjnRFHI/v4Qe/YexbKzZqOxMT1p9h3ts2MWVgbyof+FUgriRHF0Et2UjY0ZLF06G3v2HjleBk0BHOmJNLFKCnrXCy+HhyfNQIejBJzAOaYMnXuTrxDwN2Fs6UhfdDw5rq8vhx07D2H+vBlYMH/GSVU3qsWhXjt6aS4CUj5j6VwfS+f6SAc8aplz1fyxqg0xYcGCZsyfl+/O0Nd3QtyO9kUIYyEAH+nck3y96sY5HONksjNIq0rjisY1F2p87XBVTyE5RkuTT37/YQjWf5zP2fnB358HzARUGRTPRPzsFZ32oT85tXTuhYuaL04O//a5iH/xtU57/0nvnb9kzsVy4HdWI/7xv3XKT9C23lvh//j9RyT83L5fYv/QZjPPn9myTLNvrAeampE8/3yU3LdtKLfo/CVzLpaDv9MADD7zKzo0fvAzL8gzI78PzEbSdV9n8kUAqG9vWtWB6E0MQKGaJj1wOUXf+uut2DPc1CXtDZcuQPLqDCkvVvvTezuTxyb6PVeS9QDvXOR9HsCt6ZTBrEYfQ+1zmAnz581AfUMKL798DL29uarYpAB+3p0bsduA7xGa6hjL5vvHa0iKKnYdSHCkL0E8QiZZKiBctDxdtYuzsTGDBfOb0NsX4uX9x4alBCgO98bIhRYA/m3pnuSuh4HaWCSsAEva69+6FPbCE9+7YhGS577WaU+IekeHaY261s+FvbgOcmyNRA98/JfYNfS2t2LO4ovRc9u5Gn3qy53oQfvSpoto3++/iOgL2eexG8BJ165C1SP0n6Px9z7XKZtPtmdqXZu1yBk1g1MlH4SGPtA6hv5hHbQJRHUL9g3eS7Y+aQB6Tz3kciVqDImW7yH/qztX8B2nHmtG0n/9cuiyF8EfntuBk8q7GyRzAPrgDpgvpNvRBH+pAfABGMw7vtF5SxYukuzTi1RfIUrebvU+eblv/urkY+ifNUKXKaFBiRqI4Y/+PhoIOO6jI6LVZugzgpoOq7nlcfF+8tElJ46RaZ/5+sUUf28edO6AevNehHn4g+30+jJ93RXhYUA69yS3A/hkLrQ4cDTSoTUrEcXefUexZ88RzJ3ThJblc4/3M6skfVk5bd3MGKAhw2g/K4XWBcFJBZKZCMvm+Th/aRoz6s1pqQWJVfRXIdikri5Ay/K5mDOnEbv3HMG+fUePi1siigNHI82Lm/59557kzuksbgCgoNTg/eH6DOTtIGog0Ilky45bzLL4xXuXIPm/GUJrD8xvPcGpn39oBb9q2GEWQ/FnfYIZAOCJzoDSnwmweGiD4dcuiBr7lS/bCu+xRe04f2ibqXht1iK1kU1aJfo6e558AniyYcWMO9fqwIrn+uI/2fsS4lO384FDpLpdiWdY1SiADpy0wfqP8+ydH7zxQYr/dJGm5/5eZK/8EOSR4ZsYyEA//K63Qt7fGfd+pP+UGAhDqDPQuiWwD1/F4Tf+N5o+nZbcSdWDCSqbKfrEvufxHAA8foqdBGiKdA8UewFgHsvGU/a3AWhHH0ESpXMJ1PDd1ImZqCGZHaj2XQD5Zmccbkin6j/RLOGhYr/PSUQ79yTvbV/o7YgT+eiBIzlubgw4E+SVYmAgwrbt+9HYkMHChTMhVnDocB96erNFtbAplYM9CeygV5EG3ZFL5hjMbBj78go8wrmLAxwbsNh1IEEYCUQBa4EDPQkaMhUQZwKaGjOYPasBzIz9B3rQ23fy95KNLI72RCKABfT9nXvsJ8tvSO2xu7Pvnt3APUvaG+afi9j73vPR+4a/74UPXjaPkjd2I1qz63lsBT5OS9v/8t6Nav/iNevl6u8/XPwDwPBr14J9BeIGxfHrfwpfmzXFGSVwxRIRLRHlNar2xlWI/+QfOvXLw983Oz/W3gxdda4G1+6B1j8HvgWnCJwCZiVn/uQZSb7zc/+hr559yhi286WuQ+0NN2wAv+tn4n30HITbAvCfA/KDE1sRXYrgxgPttBeAvhrhQ3/bia5hY1BW6TyA5gMABC8OH0OI/JzSxTmli+YjmcEcX/7IsPJKfdGl9+7xH5v9Q8hH5/vmvHqJHwPjjwBMiUaWnXuTf2hf5D+qql893BO1pAODGQ0+PCZAgd7eLHr7smioT2HWrEbMnz8Dx44O4GjPwPHowHLQP9gjzveAWY0ezprjlVQrc0adQdNSgz1HYhw8liCKTxyzXAQpD80z6jBjRh3CMMGBgz3o6w9PEjYrimP9MbJ5l+RuAt7+/B77RFkNmcIYsksz0J7rA7z49wCA92kfmp7uB+4+uwv8/RJmuEPXbgjuyCD5jWc0eXXywonrd6pfm7XCGeWiLA7FORp96YnOv7pjH7yv7ANfd9X6k7+nOdR/0xzoz/oAW0+0aQf46r++ELNPPdIzoWzdg+Df11Pub32cPFOcfe7sea2aO/K2zuybnlr66sXPw//hL2E+tbztxEPHMAFbCdBKcN7tMQRBZQuFH3q8M3fX4525u/61Ux4a/r6vcnhrX+7dv0DTrQdBi68QXjX8/bP8x1ov1twPN3RmX/0Ez23pJq9pg5oPTODLqzqde+INBslqAj6TC63sP5yTnoH4RHFgBfr6QuzceRA7dhwECFh61my0ts7DnDmNE04viBJFLtLBwshpLJ3rj6sQNBGweFbebdncYBDGiqhAVGYh0ikfc+Y0orVlHpadNRuqih07DmLnUBDJ4OFFFT0DMV4+nNNszgoB/2Q5uej5PYkTt2FY8rYPgJr+LcaK/F8+TvWwr2gAtrV05QtPs3g5BegJg1kAQF4414fSTOAkL9DQtbsxvuD6g+CdNzGd1F9vOlybtYCbwY3K+3Q/5v/dbiTPvGGnfcMPoA8AANqvS83Qh264BPF7PtKpD2D9x7l155//+l5L1wH6ueFHuME/on+s5/1tF3Zung3bsH/Ye32GlvfB+86P2vn+y3c92j1AeFO9ygu/2wb548E5Wv4iiD40motSQbxSU+/taaeDAJCCHF0URB+7Z8vJVd6jzvc/f6j9Q19/EvbDLW3yw+7BWVyWzNX74P3P167wvtSjh8JY9eIG6IPl+w6rw3N7cBRIfrd9of+vCv1070ByWf9AInV1HjdmvOMFi6Mowf79Pdh/oAd1mQANDRksWTQLbAh9vTn0ZyMMDOSQxMXPnqJY0X5WCg3p8jwr+oZwzqIAfTlBFCuCEoo4+z6jri6NukyAxsY0rBX09eWwd9/REXvnqSr6sxa92VhEwQA2EfC7z+9Jni7Lh5lmJGd94MkDO//y2xcqPeKtoPt79M8XpyGXriW55gODjwtRqqPzWPTocx2a+kq8gn7QLz3r50OemhWhc99IB+3akDvYPuNjL6r83etW2M8+NBiIMl2uzcnmjBQ4Vd0E6P8+/3zYvS8Ne+P8dRY7H/gkEW0AFFHn+5/vaf+L3+uEqcegZ8/Xx2c1snx+N+mPAQAPv08Gzmv8673E9RjUFQvvoAJ/83AMi64XDh9qb7htNuwVsCciKMPnDz69u71pDSF6fQbaME+Tv0rF9tt/POjHt/AOKuEjw/cZjoV3EKCP9AJm6BZIkHDfAii2nPoZ36f7qPnDC5VvejmFeUA+kvLg8z2fyrTX/2w+7GUZCBapveHcF4a7SKcWnXvjZwFcsWKhd52S/mXfQHLxwEAidRmP6zMGx3uman6dbmAgwv79x+D7Bg0NaTQ2pLBgXhNEFdlshFwuRi4XI5uLIKMkcVeqbmQhwWRDyKQDpNM+MukAmUx+5jgwEKF/IMTBQ70ndQAYTmwFAzmLgWwiAjCgPwPw4c499j5UZJVyaqGE/4Tq6T/Aw++THevXv8PsfOzqOWpXNsE+fQVHd/zF8MjkLQ9HXefPvSol/W9phiyeA/nzviD51qOdJ5YGTr22j8TnfOmw/9zcC5TPAmQ3MP2uzcnijEoTcJxR0IpF5lqA3q/AKwEg8Fnr04YygRnTjej7Bpm6FDIpD6l0gEzah6oiihKEUYIoShBFFom1iOMESSJllwUiwPMYnufB8wyCwCAIPKQCD0GQX+PL5mKEuQjZMEZ2IBpV0IC8GzIXWfRnLaLk+Az1p1D9aOde+wCcsDmmIU7gHNOeFQvNhUr02wS8U4FGAjSVygtdOuCieq4Zj4+LSxB4CHwDz/fgGYbnG4gIrFWIFVgZ+jcvJCKK07LAiY4npBtmsGEYpvy/hsDMSGKLxAqSOEEU20FhzYusTQq7UfOiJsiGFmFkVfO62Qvg30X1X17Ya39R8pfpcEwhnMA5zhjOX4I6sd4bAX0bQNeAkCZAfZ8p5TPSgUHgjc/lyEzwPANmgjEM5rxQDc0UiQAadJGqyHG9U1VYKxA58W+S2Lwolki+V1u+IHIYCeJEVPPXeI6gDwD0VeLkwa0vnRzw4HBMV5zAOc5I2uajwWfvGhBeT8DrFJgPAAyI7zP7HiPwGYGXn1nVIlYUUSKIEkEcC+JYBtfUAAD7ADwExXcEyYO/3Iv+sY7lcExHavPKdTiqTPsCcxGIfgOkrwLoMgALht5jgvges2cYniF4hmAM5V2K40gJKAVRhbUKO9itILGK2AqSRIYiH4fYB+jjAD2qqo8496PD4QTO4RiRcxd4ZxnGOoWuBeh8ABcCWIpTckcZEGOYmEE8KHjEgEH+XwAA4TQhFNXjYR0qgIVCJf93EYUI1FpROT1XVQDsBPAcoFsBekYET/1yX7ILDofjJJzAORxF0rEMmSTyVwhpKxRngbAM0KUALQGwgICZCjRMZAwC+hQ4gvyMbBdAu6DYAcIuKHUFQdy5ZQeyBQ/kcDicwDkc5aStDZ6fDWZC7UxibgQAEc0w4aRmdaLIMVMWAFSkF2SOBHOiw1tOSdJ3OBwOh8PhcDgcDofD4XA4HA6HwzEl+f9cCgQLxpU+JwAAAABJRU5ErkJggg=="
 
 // ── Helpers ──────────────────────────────────────────────
-const fmt = (n) => 'VT ' + Number(n || 0).toLocaleString()
+// Vanuatu Vatu has no cents. Round every computed money amount to the nearest 10 vatu
+// so figures like VT 2300.57 never appear anywhere — on screen, on printed documents, or saved to the database.
+const r10 = (n) => Math.round(Number(n || 0) / 10) * 10
+const fmt = (n) => 'VT ' + r10(n).toLocaleString()
 const fmtDate = (d) => { if (!d) return ''; try { return new Date(d + 'T00:00:00').toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) } catch(e) { return d } }
 // Use local date components (not toISOString/UTC) so this is correct for Vanuatu (UTC+11) at any hour of the day
 const todayStr = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` }
@@ -329,7 +332,7 @@ export default function App() {
           <div style={{ background: '#FCEBEB', borderBottom: '1px solid #E8B4B4', padding: '10px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#791F1F' }}>
               <i className="ti ti-alert-triangle" style={{ fontSize: 16 }}></i>
-              <span><strong>{overdueInvoices.length} invoice{overdueInvoices.length === 1 ? '' : 's'}</strong> overdue, VT {overdueTotal.toLocaleString()} outstanding — needs a reminder</span>
+              <span><strong>{overdueInvoices.length} invoice{overdueInvoices.length === 1 ? '' : 's'}</strong> overdue, VT {r10(overdueTotal).toLocaleString()} outstanding — needs a reminder</span>
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
               <button className="btn btn-sm" style={{ borderColor: '#791F1F', color: '#791F1F', background: '#fff' }} onClick={() => { setInvoiceFilterHint('overdue'); setPage('invoices') }}>Review &amp; Send Reminders</button>
@@ -906,8 +909,8 @@ function Invoices({ invoices, payments, reload, setModal, setSelected, initialSt
       'Invoice Number: ' + inv.number + '\n' +
       'Invoice Date:   ' + fmtDate(inv.date) + '\n' +
       'Due Date:       ' + fmtDate(inv.due_date) + '\n' +
-      'Invoice Total:  VT ' + Number(inv.total).toLocaleString() + '\n' +
-      'Balance Due:    VT ' + Number(bal).toLocaleString() + '\n\n' +
+      'Invoice Total:  VT ' + r10(inv.total).toLocaleString() + '\n' +
+      'Balance Due:    VT ' + r10(bal).toLocaleString() + '\n\n' +
       'Please arrange payment at your earliest convenience. If you have already made payment, please disregard this notice.\n\n' +
       'For payment enquiries please contact us:\n' +
       'Tel: +678 22712 | Mob: +678 7798712\n' +
@@ -962,7 +965,7 @@ function Invoices({ invoices, payments, reload, setModal, setSelected, initialSt
     let msg = 'Send ONE grouped reminder email per client?\n\n'
     withEmail.forEach(([name, c]) => {
       const total = c.invoices.reduce((s, i) => s + getBalance(i, payments), 0)
-      msg += '- ' + name + ': ' + c.invoices.length + ' invoice(s), VT ' + Number(total).toLocaleString() + ' outstanding\n'
+      msg += '- ' + name + ': ' + c.invoices.length + ' invoice(s), VT ' + r10(total).toLocaleString() + ' outstanding\n'
     })
     if (noEmail.length > 0) msg += '\nSkipped (no email): ' + noEmail.join(', ')
     if (!confirm(msg)) return
@@ -972,7 +975,7 @@ function Invoices({ invoices, payments, reload, setModal, setSelected, initialSt
       const totalOwed = c.invoices.reduce((s, i) => s + getBalance(i, payments), 0)
       const invoiceLines = c.invoices.map(inv => {
         const bal = getBalance(inv, payments)
-        return '  - Invoice ' + inv.number + ': VT ' + Number(bal).toLocaleString() + ' (due ' + fmtDate(inv.due_date) + ')'
+        return '  - Invoice ' + inv.number + ': VT ' + r10(bal).toLocaleString() + ' (due ' + fmtDate(inv.due_date) + ')'
       }).join('\n')
 
       let sent = false
@@ -990,7 +993,7 @@ function Invoices({ invoices, payments, reload, setModal, setSelected, initialSt
         const bodyText = 'Dear ' + clientName + ',\n\n' +
           'This is a friendly reminder that the following invoices are overdue:\n\n' +
           invoiceLines + '\n\n' +
-          'Total outstanding: VT ' + Number(totalOwed).toLocaleString() + '\n\n' +
+          'Total outstanding: VT ' + r10(totalOwed).toLocaleString() + '\n\n' +
           'Please arrange payment at your earliest convenience.\n\n' +
           'Thank you,\nMalakesa Transfers and Tours\nTel: +678 22712 | accounts@malakesa.vu'
         window.location.href = 'mailto:' + c.email + '?subject=' + subject + '&body=' + encodeURIComponent(bodyText)
@@ -1047,10 +1050,10 @@ function Invoices({ invoices, payments, reload, setModal, setSelected, initialSt
     <div class='noprint'><span>Bulk Print — ${invs.length} selected invoice(s)</span><button class='printbtn' onclick='window.print()'>🖨️ Print / Save PDF</button></div>
     <div style='padding:20px 40px'>
       <h1>Malakesa Transfers &amp; Tours</h1>
-      <div class='sub'>Selected Invoices &nbsp;|&nbsp; ${invs.length} invoice(s) &nbsp;|&nbsp; ${now}<br>Total: VT ${Number(totalSel).toLocaleString()} &nbsp;|&nbsp; Outstanding: VT ${Number(totalBal).toLocaleString()}</div>
+      <div class='sub'>Selected Invoices &nbsp;|&nbsp; ${invs.length} invoice(s) &nbsp;|&nbsp; ${now}<br>Total: VT ${r10(totalSel).toLocaleString()} &nbsp;|&nbsp; Outstanding: VT ${r10(totalBal).toLocaleString()}</div>
       <table><thead><tr><th>Invoice #</th><th>Issue Date</th><th>Due Date</th><th>Client</th><th style='text-align:right'>Total</th><th style='text-align:right'>Balance</th><th>Status</th></tr></thead>
       <tbody>${rows}</tbody>
-      <tr style='background:#FBF3E4;font-weight:700'><td colspan='4' style='padding:9px 10px'>TOTAL (${invs.length} invoices)</td><td style='padding:9px 10px;text-align:right'>VT ${Number(totalSel).toLocaleString()}</td><td style='padding:9px 10px;text-align:right'>VT ${Number(totalBal).toLocaleString()}</td><td></td></tr>
+      <tr style='background:#FBF3E4;font-weight:700'><td colspan='4' style='padding:9px 10px'>TOTAL (${invs.length} invoices)</td><td style='padding:9px 10px;text-align:right'>VT ${r10(totalSel).toLocaleString()}</td><td style='padding:9px 10px;text-align:right'>VT ${r10(totalBal).toLocaleString()}</td><td></td></tr>
       </table></div><script>window.onload=()=>window.print()<\/script></body></html>`)
     w.document.close()
   }
@@ -1071,7 +1074,7 @@ function Invoices({ invoices, payments, reload, setModal, setSelected, initialSt
     let msg = `Send one reminder email per client for ${invs.length} selected invoice(s)?\n\n`
     withEmail.forEach(([name, c]) => {
       const total = c.invoices.reduce((s, i) => s + getBalance(i, payments), 0)
-      msg += '- ' + name + ': ' + c.invoices.length + ' invoice(s), VT ' + Number(total).toLocaleString() + ' outstanding\n'
+      msg += '- ' + name + ': ' + c.invoices.length + ' invoice(s), VT ' + r10(total).toLocaleString() + ' outstanding\n'
     })
     if (noEmail.length) msg += '\nSkipped (no email): ' + noEmail.join(', ')
     if (!confirm(msg)) return
@@ -1079,7 +1082,7 @@ function Invoices({ invoices, payments, reload, setModal, setSelected, initialSt
       const totalOwed = c.invoices.reduce((s, i) => s + getBalance(i, payments), 0)
       const invoiceLines = c.invoices.map(inv => {
         const bal = getBalance(inv, payments)
-        return '  - Invoice ' + inv.number + ': VT ' + Number(bal).toLocaleString() + ' (due ' + fmtDate(inv.due_date) + ')'
+        return '  - Invoice ' + inv.number + ': VT ' + r10(bal).toLocaleString() + ' (due ' + fmtDate(inv.due_date) + ')'
       }).join('\n')
       let sent = false
       try {
@@ -1090,7 +1093,7 @@ function Invoices({ invoices, payments, reload, setModal, setSelected, initialSt
       } catch(e) {}
       if (!sent) {
         const subject = encodeURIComponent('Payment Reminder — Outstanding Invoices')
-        const bodyText = 'Dear ' + clientName + ',\n\nThis is a friendly reminder that the following invoice' + (c.invoices.length > 1 ? 's are' : ' is') + ' outstanding:\n\n' + invoiceLines + '\n\nTotal outstanding: VT ' + Number(totalOwed).toLocaleString() + '\n\nPlease arrange payment at your earliest convenience.\n\nThank you,\nMalakesa Transfers and Tours\nTel: +678 22712 | accounts@malakesa.vu'
+        const bodyText = 'Dear ' + clientName + ',\n\nThis is a friendly reminder that the following invoice' + (c.invoices.length > 1 ? 's are' : ' is') + ' outstanding:\n\n' + invoiceLines + '\n\nTotal outstanding: VT ' + r10(totalOwed).toLocaleString() + '\n\nPlease arrange payment at your earliest convenience.\n\nThank you,\nMalakesa Transfers and Tours\nTel: +678 22712 | accounts@malakesa.vu'
         window.location.href = 'mailto:' + c.email + '?subject=' + subject + '&body=' + encodeURIComponent(bodyText)
       }
     }
@@ -1147,7 +1150,7 @@ function Invoices({ invoices, payments, reload, setModal, setSelected, initialSt
             // Fallback to mailto
             const bal = getBalance(inv, payments)
             const subject = encodeURIComponent('Invoice ' + inv.number + ' from Malakesa Transfers and Tours')
-            const body = encodeURIComponent('Dear ' + clientName + ',\n\nPlease find attached invoice ' + inv.number + ' for VT ' + Number(inv.total).toLocaleString() + ', due ' + fmtDate(inv.due_date) + '.\n\nPlease arrange payment at your earliest convenience.\n\nThank you,\nMalakesa Transfers and Tours\nTel: +678 22712 | accounts@malakesa.vu')
+            const body = encodeURIComponent('Dear ' + clientName + ',\n\nPlease find attached invoice ' + inv.number + ' for VT ' + r10(inv.total).toLocaleString() + ', due ' + fmtDate(inv.due_date) + '.\n\nPlease arrange payment at your earliest convenience.\n\nThank you,\nMalakesa Transfers and Tours\nTel: +678 22712 | accounts@malakesa.vu')
             window.location.href = 'mailto:' + inv.client_email + '?subject=' + subject + '&body=' + body
             sent++
           }
@@ -1193,9 +1196,9 @@ function Invoices({ invoices, payments, reload, setModal, setSelected, initialSt
       </style></head><body>
       <div class='rpt-hdr'><span style='font-size:12px;font-weight:700;color:#3D2214'>Malakesa Transfers &amp; Tours — Invoices Export — ${filterDesc}</span><span style='font-size:10px;color:#888'>${now}</span></div>
       <div class='noprint'><span>Invoices Export — ${filterDesc}</span><button class='printbtn' onclick='window.print()'>🖨️ Print / Save PDF</button></div>
-      <div style='padding:20px 40px'><h1>Malakesa Transfers &amp; Tours</h1><div class='sub'>Invoices Export &nbsp;|&nbsp; ${filterDesc} &nbsp;|&nbsp; ${now}<br>${filtered.length} invoice(s) &nbsp;|&nbsp; Total: VT ${Number(totalFiltered).toLocaleString()} &nbsp;|&nbsp; Outstanding: VT ${Number(totalBalance).toLocaleString()}</div>
+      <div style='padding:20px 40px'><h1>Malakesa Transfers &amp; Tours</h1><div class='sub'>Invoices Export &nbsp;|&nbsp; ${filterDesc} &nbsp;|&nbsp; ${now}<br>${filtered.length} invoice(s) &nbsp;|&nbsp; Total: VT ${r10(totalFiltered).toLocaleString()} &nbsp;|&nbsp; Outstanding: VT ${r10(totalBalance).toLocaleString()}</div>
       <table><thead><tr><th>Invoice #</th><th>Issue Date</th><th>Client</th><th style='text-align:right'>Subtotal</th><th style='text-align:right'>VAT</th><th style='text-align:right'>Total</th><th style='text-align:right'>Balance</th><th>Status</th></tr></thead><tbody>${rows}</tbody>
-      <tr style='background:#FBF3E4;font-weight:700'><td colspan='5' style='padding:9px 10px'>TOTAL (${filtered.length} invoices)</td><td style='padding:9px 10px;text-align:right'>VT ${Number(totalFiltered).toLocaleString()}</td><td style='padding:9px 10px;text-align:right'>VT ${Number(totalBalance).toLocaleString()} owing</td><td></td></tr>
+      <tr style='background:#FBF3E4;font-weight:700'><td colspan='5' style='padding:9px 10px'>TOTAL (${filtered.length} invoices)</td><td style='padding:9px 10px;text-align:right'>VT ${r10(totalFiltered).toLocaleString()}</td><td style='padding:9px 10px;text-align:right'>VT ${r10(totalBalance).toLocaleString()} owing</td><td></td></tr>
       </table></div><script>window.onload=()=>window.print()<\/script></body></html>`)
       w.document.close()
       return
@@ -1452,11 +1455,11 @@ function Payments({ payments, invoices, reload, setModal, setSelected }) {
       </div>
       <div class="section">
         <div class="row"><span class="label">Client</span><span class="val">${inv.client_name || '\u2014'}</span></div>
-        <div class="row"><span class="label">Invoice total</span><span class="val">VT ${Number(inv.total||0).toLocaleString()}</span></div>
+        <div class="row"><span class="label">Invoice total</span><span class="val">VT ${r10(inv.total||0).toLocaleString()}</span></div>
       </div>
       <div class="amount-box">
         <span style="color:#fff;font-weight:700;font-size:15px">AMOUNT RECEIVED</span>
-        <span style="color:#F5D98A;font-weight:700;font-size:22px">VT ${Number(payment.amount).toLocaleString()}</span>
+        <span style="color:#F5D98A;font-weight:700;font-size:22px">VT ${r10(payment.amount).toLocaleString()}</span>
       </div>
       <div class="thankyou">Tankiu Tumas \u2014 Thank you for your payment!</div>
     </div>
@@ -1620,7 +1623,7 @@ function Unpaid({ invoices, payments, reload, setModal, setSelected }) {
     } catch(e) {}
     const bal = getBalance(inv, payments)
     const subject = encodeURIComponent('Payment Reminder — ' + inv.number)
-    const body = encodeURIComponent('Dear ' + inv.client_name + ',\n\nThis is a friendly reminder that invoice ' + inv.number + ' has an outstanding balance of VT ' + Number(bal).toLocaleString() + ' due on ' + fmtDate(inv.due_date) + '.\n\nPlease arrange payment at your earliest convenience.\n\nThank you,\nMalakesa Transfers and Tours')
+    const body = encodeURIComponent('Dear ' + inv.client_name + ',\n\nThis is a friendly reminder that invoice ' + inv.number + ' has an outstanding balance of VT ' + r10(bal).toLocaleString() + ' due on ' + fmtDate(inv.due_date) + '.\n\nPlease arrange payment at your earliest convenience.\n\nThank you,\nMalakesa Transfers and Tours')
     window.open('mailto:' + (inv.client_email || '') + '?subject=' + subject + '&body=' + body, '_blank')
     setNotice('Email app opened for ' + inv.client_name)
     setTimeout(() => setNotice(''), 4000)
@@ -1670,9 +1673,9 @@ function Unpaid({ invoices, payments, reload, setModal, setSelected }) {
     <table><thead><tr><th>Invoice #</th><th>Client</th><th>Due Date</th><th>Amount</th><th>Balance</th><th>Status</th></tr></thead>
     <tbody>${filtered.map(inv => {
       const st = getStatus(inv, payments); const bal = getBalance(inv, payments)
-      return '<tr><td><strong>' + inv.number + '</strong></td><td>' + inv.client_name + '</td><td class="' + (st==='overdue'?'overdue':'') + '">' + fmtDate(inv.due_date) + '</td><td>VT ' + Number(inv.total).toLocaleString() + '</td><td style="font-weight:500">VT ' + Number(bal).toLocaleString() + '</td><td><span class="badge ' + (st==='overdue'?'overdue-b':st) + '">' + st + '</span></td></tr>'
+      return '<tr><td><strong>' + inv.number + '</strong></td><td>' + inv.client_name + '</td><td class="' + (st==='overdue'?'overdue':'') + '">' + fmtDate(inv.due_date) + '</td><td>VT ' + r10(inv.total).toLocaleString() + '</td><td style="font-weight:500">VT ' + r10(bal).toLocaleString() + '</td><td><span class="badge ' + (st==='overdue'?'overdue-b':st) + '">' + st + '</span></td></tr>'
     }).join('')}</tbody></table>
-    <div class="total">Total outstanding: VT ${Number(totalOut).toLocaleString()}</div>
+    <div class="total">Total outstanding: VT ${r10(totalOut).toLocaleString()}</div>
     </div>
     <script>window.onload=()=>window.print()<\/script></body></html>`)
     w.document.close()
@@ -1926,12 +1929,12 @@ function Reports({ invoices, payments, purchases, salaryRecords }) {
         <div class="vat-box">
           <div class="vat-item">
             <div class="vat-label">VAT Output Tax</div>
-            <div class="vat-value">VT ${Number(vatTotalTax).toLocaleString()}</div>
+            <div class="vat-value">VT ${r10(vatTotalTax).toLocaleString()}</div>
             <div class="vat-sub">Total VAT charged to clients</div>
           </div>
           <div class="vat-item">
             <div class="vat-label">Taxable Sales (ex-VAT)</div>
-            <div class="vat-value" style="color:#F5D98A">VT ${Number(vatTotalSubtotal).toLocaleString()}</div>
+            <div class="vat-value" style="color:#F5D98A">VT ${r10(vatTotalSubtotal).toLocaleString()}</div>
             <div class="vat-sub">${vatStandard.length} standard-rated invoice${vatStandard.length !== 1 ? 's' : ''}</div>
           </div>
           <div class="vat-item">
@@ -1941,7 +1944,7 @@ function Reports({ invoices, payments, purchases, salaryRecords }) {
           </div>
           <div class="vat-item">
             <div class="vat-label">Total Invoiced</div>
-            <div class="vat-value" style="color:#F5D98A">VT ${Number(vatTotalInv).toLocaleString()}</div>
+            <div class="vat-value" style="color:#F5D98A">VT ${r10(vatTotalInv).toLocaleString()}</div>
             <div class="vat-sub">${vatInvoices.length} invoice${vatInvoices.length !== 1 ? 's' : ''} total</div>
           </div>
         </div>
@@ -1951,7 +1954,7 @@ function Reports({ invoices, payments, purchases, salaryRecords }) {
         <table>
           <thead><tr><th>Invoice #</th><th>Date</th><th>Client</th><th class="right">Subtotal (ex-VAT)</th><th class="right">VAT (15%)</th><th class="right">Total</th></tr></thead>
           <tbody>
-            ${vatStandard.map(inv => '<tr><td><strong>' + inv.number + '</strong></td><td>' + fmtDate(inv.date) + '</td><td>' + inv.client_name + '</td><td class="right amt">VT ' + Number(inv.subtotal||0).toLocaleString() + '</td><td class="right vat-amt">VT ' + Number(inv.tax||0).toLocaleString() + '</td><td class="right amt">VT ' + Number(inv.total).toLocaleString() + '</td></tr>').join('')}
+            ${vatStandard.map(inv => '<tr><td><strong>' + inv.number + '</strong></td><td>' + fmtDate(inv.date) + '</td><td>' + inv.client_name + '</td><td class="right amt">VT ' + r10(inv.subtotal||0).toLocaleString() + '</td><td class="right vat-amt">VT ' + r10(inv.tax||0).toLocaleString() + '</td><td class="right amt">VT ' + r10(inv.total).toLocaleString() + '</td></tr>').join('')}
             <tr class="summary-row"><td colspan="3">SUBTOTAL — Standard Rated</td><td class="right">VT ${Number(vatStandard.reduce((s,i)=>s+Number(i.subtotal||0),0)).toLocaleString()}</td><td class="right">VT ${Number(vatStandard.reduce((s,i)=>s+Number(i.tax||0),0)).toLocaleString()}</td><td class="right">VT ${Number(vatStandard.reduce((s,i)=>s+Number(i.total),0)).toLocaleString()}</td></tr>
           </tbody>
         </table>`}
@@ -1961,7 +1964,7 @@ function Reports({ invoices, payments, purchases, salaryRecords }) {
         <table>
           <thead><tr><th>Invoice #</th><th>Date</th><th>Client</th><th class="right">Amount</th><th class="right">VAT</th></tr></thead>
           <tbody>
-            ${vatZeroRated.map(inv => '<tr><td><strong>' + inv.number + '</strong></td><td>' + fmtDate(inv.date) + '</td><td>' + inv.client_name + '</td><td class="right amt">VT ' + Number(inv.total).toLocaleString() + '</td><td class="right zero">Nil</td></tr>').join('')}
+            ${vatZeroRated.map(inv => '<tr><td><strong>' + inv.number + '</strong></td><td>' + fmtDate(inv.date) + '</td><td>' + inv.client_name + '</td><td class="right amt">VT ' + r10(inv.total).toLocaleString() + '</td><td class="right zero">Nil</td></tr>').join('')}
             <tr class="summary-row"><td colspan="3">SUBTOTAL — Zero Rated</td><td class="right">VT ${Number(vatZeroRated.reduce((s,i)=>s+Number(i.total),0)).toLocaleString()}</td><td class="right zero">Nil</td></tr>
           </tbody>
         </table>`}
@@ -1969,14 +1972,14 @@ function Reports({ invoices, payments, purchases, salaryRecords }) {
         <h2>VAT Summary</h2>
         <table style="max-width:480px">
           <tbody>
-            <tr><td>Total Sales (inc. VAT)</td><td class="right amt">VT ${Number(vatTotalInv).toLocaleString()}</td></tr>
-            <tr><td>Taxable Sales (ex-VAT)</td><td class="right amt">VT ${Number(vatTotalSubtotal).toLocaleString()}</td></tr>
+            <tr><td>Total Sales (inc. VAT)</td><td class="right amt">VT ${r10(vatTotalInv).toLocaleString()}</td></tr>
+            <tr><td>Taxable Sales (ex-VAT)</td><td class="right amt">VT ${r10(vatTotalSubtotal).toLocaleString()}</td></tr>
             <tr><td>Zero-Rated Sales</td><td class="right amt">VT ${Number(vatZeroRated.reduce((s,i)=>s+Number(i.total),0)).toLocaleString()}</td></tr>
-            <tr style="background:#FBF3E4;font-weight:700"><td>VAT Output Tax (Box 1)</td><td class="right" style="color:#2E7D2E">VT ${Number(vatTotalTax).toLocaleString()}</td></tr>
-            <tr style="background:#f9f9f9"><td>Total Purchases (inc. VAT)</td><td class="right amt">VT ${Number(vatPurchasesTotal).toLocaleString()}</td></tr>
-            <tr style="background:#f9f9f9"><td>Purchases (ex-VAT)</td><td class="right amt">VT ${Number(vatPurchasesExVat).toLocaleString()}</td></tr>
-            <tr style="background:#FBF3E4;font-weight:700"><td>VAT Input Tax (Box 2)</td><td class="right" style="color:#1A4D1A">VT ${Number(vatInputTax).toLocaleString()}</td></tr>
-            <tr style="background:#FAEEDA;font-weight:700;font-size:14px"><td>NET VAT PAYABLE (Box 1 − Box 2)</td><td class="right" style="color:#D85A30">VT ${Number(vatNetPayable).toLocaleString()}</td></tr>
+            <tr style="background:#FBF3E4;font-weight:700"><td>VAT Output Tax (Box 1)</td><td class="right" style="color:#2E7D2E">VT ${r10(vatTotalTax).toLocaleString()}</td></tr>
+            <tr style="background:#f9f9f9"><td>Total Purchases (inc. VAT)</td><td class="right amt">VT ${r10(vatPurchasesTotal).toLocaleString()}</td></tr>
+            <tr style="background:#f9f9f9"><td>Purchases (ex-VAT)</td><td class="right amt">VT ${r10(vatPurchasesExVat).toLocaleString()}</td></tr>
+            <tr style="background:#FBF3E4;font-weight:700"><td>VAT Input Tax (Box 2)</td><td class="right" style="color:#1A4D1A">VT ${r10(vatInputTax).toLocaleString()}</td></tr>
+            <tr style="background:#FAEEDA;font-weight:700;font-size:14px"><td>NET VAT PAYABLE (Box 1 − Box 2)</td><td class="right" style="color:#D85A30">VT ${r10(vatNetPayable).toLocaleString()}</td></tr>
           </tbody>
         </table>
 
@@ -1985,8 +1988,8 @@ function Reports({ invoices, payments, purchases, salaryRecords }) {
         <table>
           <thead><tr><th>Date</th><th>Supplier</th><th>Description</th><th>Category</th><th class="right">Ex-VAT</th><th class="right">Input VAT</th><th class="right">Total</th></tr></thead>
           <tbody>
-            ${vatPurchases.map(p => '<tr><td>' + fmtDate(p.date) + '</td><td><strong>' + p.supplier + '</strong></td><td>' + (p.description||'—') + '</td><td>' + (p.category||'Other') + '</td><td class="right">VT ' + Number(p.amount_ex_vat||0).toLocaleString() + '</td><td class="right" style="color:#1A4D1A;font-weight:500">' + (Number(p.vat)>0 ? 'VT '+Number(p.vat).toLocaleString() : 'Nil') + '</td><td class="right">VT ' + Number(p.amount||0).toLocaleString() + '</td></tr>').join('')}
-            <tr class="summary-row"><td colspan="4">SUBTOTAL</td><td class="right">VT ${Number(vatPurchasesExVat).toLocaleString()}</td><td class="right" style="color:#1A4D1A">VT ${Number(vatInputTax).toLocaleString()}</td><td class="right">VT ${Number(vatPurchasesTotal).toLocaleString()}</td></tr>
+            ${vatPurchases.map(p => '<tr><td>' + fmtDate(p.date) + '</td><td><strong>' + p.supplier + '</strong></td><td>' + (p.description||'—') + '</td><td>' + (p.category||'Other') + '</td><td class="right">VT ' + r10(p.amount_ex_vat||0).toLocaleString() + '</td><td class="right" style="color:#1A4D1A;font-weight:500">' + (Number(p.vat)>0 ? 'VT '+r10(p.vat).toLocaleString() : 'Nil') + '</td><td class="right">VT ' + r10(p.amount||0).toLocaleString() + '</td></tr>').join('')}
+            <tr class="summary-row"><td colspan="4">SUBTOTAL</td><td class="right">VT ${r10(vatPurchasesExVat).toLocaleString()}</td><td class="right" style="color:#1A4D1A">VT ${r10(vatInputTax).toLocaleString()}</td><td class="right">VT ${r10(vatPurchasesTotal).toLocaleString()}</td></tr>
           </tbody>
         </table>` : '<p style="color:#888;font-size:12px;margin-bottom:20px">No purchases recorded for this period — add purchases in the Purchases section.</p>'}
 
@@ -1999,9 +2002,9 @@ function Reports({ invoices, payments, purchases, salaryRecords }) {
           <div>VAT Period: ${vatMonthLabel}</div>
         </div>
         <div class="footer-r">
-          <div>Output Tax: VT ${Number(vatTotalTax).toLocaleString()}</div>
-          <div>Input Tax: VT ${Number(vatInputTax).toLocaleString()}</div>
-          <div style="font-weight:700">Net Payable: VT ${Number(vatNetPayable).toLocaleString()}</div>
+          <div>Output Tax: VT ${r10(vatTotalTax).toLocaleString()}</div>
+          <div>Input Tax: VT ${r10(vatInputTax).toLocaleString()}</div>
+          <div style="font-weight:700">Net Payable: VT ${r10(vatNetPayable).toLocaleString()}</div>
           <div style="font-size:10px;opacity:0.7">Computer generated — verify before filing</div>
         </div>
       </div>
@@ -2128,9 +2131,9 @@ function Reports({ invoices, payments, purchases, salaryRecords }) {
       </div>
       <div class="body">
         <div class="stats">
-          <div class="stat"><div class="stat-label">Total Spend</div><div class="stat-value">VT ${Number(supplierTotalSpend).toLocaleString()}</div></div>
-          <div class="stat"><div class="stat-label">Subtotal (ex-VAT)</div><div class="stat-value">VT ${Number(supplierTotalExVat).toLocaleString()}</div></div>
-          <div class="stat"><div class="stat-label">Input VAT</div><div class="stat-value" style="color:#2E7D2E">VT ${Number(supplierTotalVat).toLocaleString()}</div></div>
+          <div class="stat"><div class="stat-label">Total Spend</div><div class="stat-value">VT ${r10(supplierTotalSpend).toLocaleString()}</div></div>
+          <div class="stat"><div class="stat-label">Subtotal (ex-VAT)</div><div class="stat-value">VT ${r10(supplierTotalExVat).toLocaleString()}</div></div>
+          <div class="stat"><div class="stat-label">Input VAT</div><div class="stat-value" style="color:#2E7D2E">VT ${r10(supplierTotalVat).toLocaleString()}</div></div>
           <div class="stat"><div class="stat-label">Suppliers</div><div class="stat-value">${supplierRows.length}</div></div>
         </div>
 
@@ -2138,8 +2141,8 @@ function Reports({ invoices, payments, purchases, salaryRecords }) {
         <table>
           <thead><tr><th>Supplier</th><th>Category</th><th class="right">Purchases</th><th class="right">Ex-VAT</th><th class="right">VAT</th><th class="right">Total</th></tr></thead>
           <tbody>
-            ${supplierRows.map(s => '<tr><td><strong>' + s.name + '</strong></td><td>' + (s.category||'Other') + '</td><td class="right">' + s.count + '</td><td class="right">VT ' + Number(s.exVat).toLocaleString() + '</td><td class="right green">VT ' + Number(s.vat).toLocaleString() + '</td><td class="right">VT ' + Number(s.total).toLocaleString() + '</td></tr>').join('')}
-            <tr class="summary-row"><td colspan="2">TOTAL</td><td class="right">${fPurchases.length}</td><td class="right">VT ${Number(supplierTotalExVat).toLocaleString()}</td><td class="right">VT ${Number(supplierTotalVat).toLocaleString()}</td><td class="right">VT ${Number(supplierTotalSpend).toLocaleString()}</td></tr>
+            ${supplierRows.map(s => '<tr><td><strong>' + s.name + '</strong></td><td>' + (s.category||'Other') + '</td><td class="right">' + s.count + '</td><td class="right">VT ' + r10(s.exVat).toLocaleString() + '</td><td class="right green">VT ' + r10(s.vat).toLocaleString() + '</td><td class="right">VT ' + r10(s.total).toLocaleString() + '</td></tr>').join('')}
+            <tr class="summary-row"><td colspan="2">TOTAL</td><td class="right">${fPurchases.length}</td><td class="right">VT ${r10(supplierTotalExVat).toLocaleString()}</td><td class="right">VT ${r10(supplierTotalVat).toLocaleString()}</td><td class="right">VT ${r10(supplierTotalSpend).toLocaleString()}</td></tr>
           </tbody>
         </table>
 
@@ -2147,7 +2150,7 @@ function Reports({ invoices, payments, purchases, salaryRecords }) {
         <table>
           <thead><tr><th>Category</th><th class="right">Amount</th><th class="right">% of total</th></tr></thead>
           <tbody>
-            ${Object.entries(byCategory).sort((a,b) => b[1]-a[1]).map(([cat, amt]) => '<tr><td>' + cat + '</td><td class="right">VT ' + Number(amt).toLocaleString() + '</td><td class="right">' + (supplierTotalSpend > 0 ? Math.round((amt/supplierTotalSpend)*100) : 0) + '%</td></tr>').join('')}
+            ${Object.entries(byCategory).sort((a,b) => b[1]-a[1]).map(([cat, amt]) => '<tr><td>' + cat + '</td><td class="right">VT ' + r10(amt).toLocaleString() + '</td><td class="right">' + (supplierTotalSpend > 0 ? Math.round((amt/supplierTotalSpend)*100) : 0) + '%</td></tr>').join('')}
           </tbody>
         </table>
       </div>
@@ -2157,7 +2160,7 @@ function Reports({ invoices, payments, purchases, salaryRecords }) {
           <div>Port Vila, Vanuatu</div>
         </div>
         <div class="footer-r">
-          <div>Total Spend: VT ${Number(supplierTotalSpend).toLocaleString()}</div>
+          <div>Total Spend: VT ${r10(supplierTotalSpend).toLocaleString()}</div>
           <div style="font-size:10px;opacity:0.7">This report is confidential</div>
         </div>
       </div>
@@ -2209,23 +2212,23 @@ function Reports({ invoices, payments, purchases, salaryRecords }) {
     <h1 style="margin-top:20px">Malakesa Transfers &amp; Tours</h1>
     <div class="sub">Revenue Report &nbsp;|&nbsp; ${periodLabel}${filterClient ? ' &nbsp;|&nbsp; Client: ' + filterClient : ''} &nbsp;|&nbsp; Generated ${new Date().toLocaleDateString('en-GB', {day:'2-digit',month:'long',year:'numeric'})}</div>
     <div class="stats">
-      <div class="stat"><div class="stat-label">Total Invoiced</div><div class="stat-value">VT ${Number(totalInv).toLocaleString()}</div></div>
-      <div class="stat"><div class="stat-label">Subtotal (ex-VAT)</div><div class="stat-value">VT ${Number(totalSubtotal).toLocaleString()}</div></div>
-      <div class="stat"><div class="stat-label">VAT Collected</div><div class="stat-value">VT ${Number(totalVat).toLocaleString()}</div></div>
-      <div class="stat"><div class="stat-label">Collected</div><div class="stat-value" style="color:#3B6D11">VT ${Number(totalCol).toLocaleString()}</div></div>
-      <div class="stat"><div class="stat-label">Outstanding</div><div class="stat-value" style="color:#D85A30">VT ${Number(outstanding).toLocaleString()}</div></div>
+      <div class="stat"><div class="stat-label">Total Invoiced</div><div class="stat-value">VT ${r10(totalInv).toLocaleString()}</div></div>
+      <div class="stat"><div class="stat-label">Subtotal (ex-VAT)</div><div class="stat-value">VT ${r10(totalSubtotal).toLocaleString()}</div></div>
+      <div class="stat"><div class="stat-label">VAT Collected</div><div class="stat-value">VT ${r10(totalVat).toLocaleString()}</div></div>
+      <div class="stat"><div class="stat-label">Collected</div><div class="stat-value" style="color:#3B6D11">VT ${r10(totalCol).toLocaleString()}</div></div>
+      <div class="stat"><div class="stat-label">Outstanding</div><div class="stat-value" style="color:#D85A30">VT ${r10(outstanding).toLocaleString()}</div></div>
     </div>
     <h2>Revenue by Client</h2>
     <table><thead><tr><th>Client</th><th>Invoices</th><th class="right">Total</th><th class="right">Collected</th><th class="right">Outstanding</th></tr></thead>
-    <tbody>${clientRows.map(c => '<tr><td><strong>' + c.name + '</strong></td><td>' + c.count + '</td><td class="right">VT ' + Number(c.total).toLocaleString() + '</td><td class="right green">VT ' + Number(c.collected).toLocaleString() + '</td><td class="right ' + (c.outstanding > 0 ? 'red' : '') + '">VT ' + Number(c.outstanding).toLocaleString() + '</td></tr>').join('')}
-    <tr style="font-weight:bold;background:#f9f9f9"><td>TOTAL</td><td>${fi.length}</td><td class="right">VT ${Number(totalInv).toLocaleString()}</td><td class="right green">VT ${Number(totalCol).toLocaleString()}</td><td class="right red">VT ${Number(outstanding).toLocaleString()}</td></tr>
+    <tbody>${clientRows.map(c => '<tr><td><strong>' + c.name + '</strong></td><td>' + c.count + '</td><td class="right">VT ' + r10(c.total).toLocaleString() + '</td><td class="right green">VT ' + r10(c.collected).toLocaleString() + '</td><td class="right ' + (c.outstanding > 0 ? 'red' : '') + '">VT ' + r10(c.outstanding).toLocaleString() + '</td></tr>').join('')}
+    <tr style="font-weight:bold;background:#f9f9f9"><td>TOTAL</td><td>${fi.length}</td><td class="right">VT ${r10(totalInv).toLocaleString()}</td><td class="right green">VT ${r10(totalCol).toLocaleString()}</td><td class="right red">VT ${r10(outstanding).toLocaleString()}</td></tr>
     </tbody></table>
     <h2>Top Services</h2>
     <table><thead><tr><th>Service / Description</th><th class="right">Qty</th><th class="right">Revenue (ex-VAT)</th></tr></thead>
-    <tbody>${serviceRows.map(s => '<tr><td>' + s.desc + '</td><td class="right">' + s.qty + '</td><td class="right green">VT ' + Number(s.revenue).toLocaleString() + '</td></tr>').join('')}</tbody></table>
+    <tbody>${serviceRows.map(s => '<tr><td>' + s.desc + '</td><td class="right">' + s.qty + '</td><td class="right green">VT ' + r10(s.revenue).toLocaleString() + '</td></tr>').join('')}</tbody></table>
     <h2>Payment Methods</h2>
     <table><thead><tr><th>Method</th><th class="right">Amount</th><th class="right">% of collected</th></tr></thead>
-    <tbody>${Object.entries(byMethod).map(([m, a]) => '<tr><td>' + m + '</td><td class="right green">VT ' + Number(a).toLocaleString() + '</td><td class="right">' + (totalCol > 0 ? Math.round((a/totalCol)*100) : 0) + '%</td></tr>').join('')}</tbody></table>
+    <tbody>${Object.entries(byMethod).map(([m, a]) => '<tr><td>' + m + '</td><td class="right green">VT ' + r10(a).toLocaleString() + '</td><td class="right">' + (totalCol > 0 ? Math.round((a/totalCol)*100) : 0) + '%</td></tr>').join('')}</tbody></table>
     <div class="footer">Malakesa Transfers and Tours &nbsp;|&nbsp; Port Vila, Vanuatu &nbsp;|&nbsp; This report is confidential</div>
     <script>window.onload=()=>window.print()<\/script></body></html>`)
     w.document.close()
@@ -2730,11 +2733,11 @@ function Reports({ invoices, payments, purchases, salaryRecords }) {
             const rows = cashFlow.map(m => `
               <tr style='border-bottom:0.5px solid #eee'>
                 <td style='padding:8px 12px;font-weight:500'>${m.label}</td>
-                <td style='padding:8px 12px;text-align:right;color:#3B6D11'>VT ${Number(m.in).toLocaleString()}</td>
-                <td style='padding:8px 12px;text-align:right;color:#666'>VT ${Number(m.purchases).toLocaleString()}</td>
-                <td style='padding:8px 12px;text-align:right;color:#666'>VT ${Number(m.salaries).toLocaleString()}</td>
-                <td style='padding:8px 12px;text-align:right;color:#A32D2D'>VT ${Number(m.out).toLocaleString()}</td>
-                <td style='padding:8px 12px;text-align:right;font-weight:700;color:${m.net >= 0 ? '#3B6D11' : '#A32D2D'}'>VT ${Number(m.net).toLocaleString()}</td>
+                <td style='padding:8px 12px;text-align:right;color:#3B6D11'>VT ${r10(m.in).toLocaleString()}</td>
+                <td style='padding:8px 12px;text-align:right;color:#666'>VT ${r10(m.purchases).toLocaleString()}</td>
+                <td style='padding:8px 12px;text-align:right;color:#666'>VT ${r10(m.salaries).toLocaleString()}</td>
+                <td style='padding:8px 12px;text-align:right;color:#A32D2D'>VT ${r10(m.out).toLocaleString()}</td>
+                <td style='padding:8px 12px;text-align:right;font-weight:700;color:${m.net >= 0 ? '#3B6D11' : '#A32D2D'}'>VT ${r10(m.net).toLocaleString()}</td>
               </tr>`).join('')
             w.document.write(`<!DOCTYPE html><html><head><title>Cash Flow Report</title><style>
               body{font-family:Arial,sans-serif;color:#222;font-size:13px}
@@ -2752,20 +2755,20 @@ function Reports({ invoices, payments, purchases, salaryRecords }) {
               <h1>Malakesa Transfers &amp; Tours</h1>
               <div class='sub'>Cash Flow Report — Last 12 Months &nbsp;|&nbsp; Generated ${dateStr}</div>
               <div style='display:flex;gap:24px;margin-bottom:20px;flex-wrap:wrap'>
-                <div style='background:#EAF3DE;padding:12px 18px;border-radius:6px'><div style='font-size:11px;color:#555;margin-bottom:4px'>Total Money In</div><div style='font-size:18px;font-weight:700;color:#3B6D11'>VT ${Number(totalIn).toLocaleString()}</div></div>
-                <div style='background:#FCEBEB;padding:12px 18px;border-radius:6px'><div style='font-size:11px;color:#555;margin-bottom:4px'>Total Money Out</div><div style='font-size:18px;font-weight:700;color:#A32D2D'>VT ${Number(totalOut).toLocaleString()}</div></div>
-                <div style='background:${totalNet>=0?'#EAF3DE':'#FCEBEB'};padding:12px 18px;border-radius:6px'><div style='font-size:11px;color:#555;margin-bottom:4px'>Net Cash Flow</div><div style='font-size:18px;font-weight:700;color:${totalNet>=0?'#3B6D11':'#A32D2D'}'>VT ${Number(totalNet).toLocaleString()}</div></div>
+                <div style='background:#EAF3DE;padding:12px 18px;border-radius:6px'><div style='font-size:11px;color:#555;margin-bottom:4px'>Total Money In</div><div style='font-size:18px;font-weight:700;color:#3B6D11'>VT ${r10(totalIn).toLocaleString()}</div></div>
+                <div style='background:#FCEBEB;padding:12px 18px;border-radius:6px'><div style='font-size:11px;color:#555;margin-bottom:4px'>Total Money Out</div><div style='font-size:18px;font-weight:700;color:#A32D2D'>VT ${r10(totalOut).toLocaleString()}</div></div>
+                <div style='background:${totalNet>=0?'#EAF3DE':'#FCEBEB'};padding:12px 18px;border-radius:6px'><div style='font-size:11px;color:#555;margin-bottom:4px'>Net Cash Flow</div><div style='font-size:18px;font-weight:700;color:${totalNet>=0?'#3B6D11':'#A32D2D'}'>VT ${r10(totalNet).toLocaleString()}</div></div>
               </div>
               <table><thead><tr>
                 <th>Month</th><th style='text-align:right'>Money In (Receipts)</th><th style='text-align:right'>Purchases</th><th style='text-align:right'>Salaries</th><th style='text-align:right'>Total Out</th><th style='text-align:right'>Net Cash Flow</th>
               </tr></thead><tbody>${rows}
               <tr style='background:#FBF3E4;font-weight:700'>
                 <td style='padding:9px 12px'>TOTAL (${months.length} month${months.length===1?'':'s'})</td>
-                <td style='padding:9px 12px;text-align:right;color:#3B6D11'>VT ${Number(totalIn).toLocaleString()}</td>
-                <td style='padding:9px 12px;text-align:right'>VT ${Number(totalPurchases).toLocaleString()}</td>
-                <td style='padding:9px 12px;text-align:right'>VT ${Number(totalSalaries).toLocaleString()}</td>
-                <td style='padding:9px 12px;text-align:right;color:#A32D2D'>VT ${Number(totalOut).toLocaleString()}</td>
-                <td style='padding:9px 12px;text-align:right;color:${totalNet>=0?'#3B6D11':'#A32D2D'}'>VT ${Number(totalNet).toLocaleString()}</td>
+                <td style='padding:9px 12px;text-align:right;color:#3B6D11'>VT ${r10(totalIn).toLocaleString()}</td>
+                <td style='padding:9px 12px;text-align:right'>VT ${r10(totalPurchases).toLocaleString()}</td>
+                <td style='padding:9px 12px;text-align:right'>VT ${r10(totalSalaries).toLocaleString()}</td>
+                <td style='padding:9px 12px;text-align:right;color:#A32D2D'>VT ${r10(totalOut).toLocaleString()}</td>
+                <td style='padding:9px 12px;text-align:right;color:${totalNet>=0?'#3B6D11':'#A32D2D'}'>VT ${r10(totalNet).toLocaleString()}</td>
               </tr></tbody></table></div>
               <script>window.onload=()=>window.print()<\/script></body></html>`)
             w.document.close()
@@ -2926,13 +2929,13 @@ function Reports({ invoices, payments, purchases, salaryRecords }) {
                 <td style='padding:8px 12px'>${fmtDate(r.due_date)}</td>
                 <td style='padding:8px 12px;text-align:center'>${r.daysOverdue > 0 ? r.daysOverdue : 0}</td>
                 <td style='padding:8px 12px'>${r.bucket}</td>
-                <td style='padding:8px 12px;text-align:right;font-weight:600'>VT ${Number(r.balance).toLocaleString()}</td>
+                <td style='padding:8px 12px;text-align:right;font-weight:600'>VT ${r10(r.balance).toLocaleString()}</td>
               </tr>`).join('')
             const bucketRows = bucketOrder.map(b => `
               <tr>
                 <td style='padding:8px 12px;font-weight:600'>${b}</td>
                 <td style='padding:8px 12px' colspan='3'>${bucketTotals[b].count} invoice${bucketTotals[b].count === 1 ? '' : 's'}</td>
-                <td style='padding:8px 12px;text-align:right;font-weight:600' colspan='2'>VT ${Number(bucketTotals[b].total).toLocaleString()}</td>
+                <td style='padding:8px 12px;text-align:right;font-weight:600' colspan='2'>VT ${r10(bucketTotals[b].total).toLocaleString()}</td>
               </tr>`).join('')
             w.document.write(`<!DOCTYPE html><html><head><title>Aged Receivables Report</title><style>
               body{font-family:Arial,sans-serif;color:#222;font-size:13px}
@@ -2950,7 +2953,7 @@ function Reports({ invoices, payments, purchases, salaryRecords }) {
               <h1>Malakesa Transfers &amp; Tours</h1>
               <div class='sub'>Aged Receivables Report &nbsp;|&nbsp; Generated ${dateStr}</div>
               <div style='display:flex;gap:16px;margin-bottom:20px;flex-wrap:wrap'>
-                <div style='background:${grandTotal > 0 ? '#FCEBEB' : '#EAF3DE'};padding:12px 18px;border-radius:6px'><div style='font-size:11px;color:#555;margin-bottom:4px'>Total Outstanding</div><div style='font-size:18px;font-weight:700;color:${grandTotal > 0 ? '#A32D2D' : '#3B6D11'}'>VT ${Number(grandTotal).toLocaleString()}</div></div>
+                <div style='background:${grandTotal > 0 ? '#FCEBEB' : '#EAF3DE'};padding:12px 18px;border-radius:6px'><div style='font-size:11px;color:#555;margin-bottom:4px'>Total Outstanding</div><div style='font-size:18px;font-weight:700;color:${grandTotal > 0 ? '#A32D2D' : '#3B6D11'}'>VT ${r10(grandTotal).toLocaleString()}</div></div>
               </div>
               <h2 style='font-size:14px;color:#3D2214;margin-bottom:8px'>Summary by age</h2>
               <table><thead><tr><th>Bucket</th><th colspan='3'>Invoices</th><th colspan='2' style='text-align:right'>Balance</th></tr></thead><tbody>${bucketRows}</tbody></table>
@@ -2960,7 +2963,7 @@ function Reports({ invoices, payments, purchases, salaryRecords }) {
               </tr></thead><tbody>${rows}
               <tr style='background:#FBF3E4;font-weight:700'>
                 <td style='padding:9px 12px' colspan='5'>TOTAL OUTSTANDING</td>
-                <td style='padding:9px 12px;text-align:right'>VT ${Number(grandTotal).toLocaleString()}</td>
+                <td style='padding:9px 12px;text-align:right'>VT ${r10(grandTotal).toLocaleString()}</td>
               </tr></tbody></table>
             </div>
               <script>window.onload=()=>window.print()<\/script></body></html>`)
@@ -3151,7 +3154,7 @@ function PerformanceReport({ invoices, payments, purchases, salaryRecords }) {
 
   const grossSalaries = mSalaryRecords.reduce((s, r) => s + Number(r.gross || 0), 0)
   const vnpfEmployee = mSalaryRecords.reduce((s, r) => s + Number(r.vnpf_employee || 0), 0)
-  const vnpfEmployer = mSalaryRecords.reduce((s, r) => s + Math.round(Number(r.gross || 0) * 0.06), 0)
+  const vnpfEmployer = mSalaryRecords.reduce((s, r) => s + r10(Number(r.gross || 0) * 0.06), 0)
   const vnpfTotal = vnpfEmployee + vnpfEmployer
   const netSalariesPaid = mSalaryRecords.reduce((s, r) => s + Number(r.net_pay || 0), 0)
 
@@ -3212,9 +3215,9 @@ function PerformanceReport({ invoices, payments, purchases, salaryRecords }) {
     const trendRows = trend.map(t => `
       <tr>
         <td>${t.label} ${my}</td>
-        <td class="right green">VT ${Number(t.revenue).toLocaleString()}</td>
-        <td class="right red">VT ${Number(t.expenses).toLocaleString()}</td>
-        <td class="right" style="font-weight:700;color:${t.net >= 0 ? '#2E7D2E' : '#A32D2D'}">${t.net >= 0 ? '+' : ''}VT ${Number(t.net).toLocaleString()}</td>
+        <td class="right green">VT ${r10(t.revenue).toLocaleString()}</td>
+        <td class="right red">VT ${r10(t.expenses).toLocaleString()}</td>
+        <td class="right" style="font-weight:700;color:${t.net >= 0 ? '#2E7D2E' : '#A32D2D'}">${t.net >= 0 ? '+' : ''}VT ${r10(t.net).toLocaleString()}</td>
       </tr>`).join('')
 
     const trendBars = trend.map(t => {
@@ -3277,55 +3280,55 @@ function PerformanceReport({ invoices, payments, purchases, salaryRecords }) {
     </div>
     <div class="body">
       <div class="kpis">
-        <div class="kpi"><div class="kpi-label">Net Profit (accrual)</div><div class="kpi-value" style="color:${netProfit >= 0 ? '#2E7D2E' : '#A32D2D'}">${netProfit >= 0 ? '+' : ''}VT ${Number(netProfit).toLocaleString()}</div></div>
-        <div class="kpi"><div class="kpi-label">Net Cash Flow</div><div class="kpi-value" style="color:${netCashFlow >= 0 ? '#2E7D2E' : '#A32D2D'}">${netCashFlow >= 0 ? '+' : ''}VT ${Number(netCashFlow).toLocaleString()}</div></div>
-        <div class="kpi"><div class="kpi-label">Revenue Collected</div><div class="kpi-value">VT ${Number(totalCollected).toLocaleString()}</div></div>
-        <div class="kpi"><div class="kpi-label">VAT Net Payable</div><div class="kpi-value" style="color:#D85A30">VT ${Number(netVatPayable).toLocaleString()}</div></div>
+        <div class="kpi"><div class="kpi-label">Net Profit (accrual)</div><div class="kpi-value" style="color:${netProfit >= 0 ? '#2E7D2E' : '#A32D2D'}">${netProfit >= 0 ? '+' : ''}VT ${r10(netProfit).toLocaleString()}</div></div>
+        <div class="kpi"><div class="kpi-label">Net Cash Flow</div><div class="kpi-value" style="color:${netCashFlow >= 0 ? '#2E7D2E' : '#A32D2D'}">${netCashFlow >= 0 ? '+' : ''}VT ${r10(netCashFlow).toLocaleString()}</div></div>
+        <div class="kpi"><div class="kpi-label">Revenue Collected</div><div class="kpi-value">VT ${r10(totalCollected).toLocaleString()}</div></div>
+        <div class="kpi"><div class="kpi-label">VAT Net Payable</div><div class="kpi-value" style="color:#D85A30">VT ${r10(netVatPayable).toLocaleString()}</div></div>
       </div>
 
       <h2>Revenue Summary</h2>
       <table>
-        <tr><td>Invoiced this month (${mInvoices.length} invoice${mInvoices.length !== 1 ? 's' : ''})</td><td class="right">VT ${Number(totalInvoiced).toLocaleString()}</td></tr>
-        <tr><td>Ex-VAT subtotal</td><td class="right">VT ${Number(subtotalExVat).toLocaleString()}</td></tr>
-        <tr><td>VAT on sales (output VAT)</td><td class="right green">VT ${Number(outputVat).toLocaleString()}</td></tr>
-        <tr><td>Payments collected</td><td class="right green">VT ${Number(totalCollected).toLocaleString()}</td></tr>
-        <tr><td>Still outstanding (from this month's invoices)</td><td class="right red">VT ${Number(outstandingFromMonth).toLocaleString()}</td></tr>
+        <tr><td>Invoiced this month (${mInvoices.length} invoice${mInvoices.length !== 1 ? 's' : ''})</td><td class="right">VT ${r10(totalInvoiced).toLocaleString()}</td></tr>
+        <tr><td>Ex-VAT subtotal</td><td class="right">VT ${r10(subtotalExVat).toLocaleString()}</td></tr>
+        <tr><td>VAT on sales (output VAT)</td><td class="right green">VT ${r10(outputVat).toLocaleString()}</td></tr>
+        <tr><td>Payments collected</td><td class="right green">VT ${r10(totalCollected).toLocaleString()}</td></tr>
+        <tr><td>Still outstanding (from this month's invoices)</td><td class="right red">VT ${r10(outstandingFromMonth).toLocaleString()}</td></tr>
       </table>
 
       <h2>Expenses Summary</h2>
       <table>
-        <tr><td>Purchases (${mPurchases.length}), ex-VAT</td><td class="right">VT ${Number(purchasesExVat).toLocaleString()}</td></tr>
-        <tr><td>VAT on purchases (input VAT)</td><td class="right green">VT ${Number(inputVat).toLocaleString()}</td></tr>
-        <tr><td>Total purchases (incl. VAT)</td><td class="right">VT ${Number(totalPurchases).toLocaleString()}</td></tr>
-        <tr><td>Gross salaries${mSalaryRecords.length ? ` (${mSalaryRecords.length} pay run${mSalaryRecords.length !== 1 ? 's' : ''})` : ' (no pay runs recorded this month)'}</td><td class="right">VT ${Number(grossSalaries).toLocaleString()}</td></tr>
-        <tr><td>Net salaries paid</td><td class="right red">VT ${Number(netSalariesPaid).toLocaleString()}</td></tr>
+        <tr><td>Purchases (${mPurchases.length}), ex-VAT</td><td class="right">VT ${r10(purchasesExVat).toLocaleString()}</td></tr>
+        <tr><td>VAT on purchases (input VAT)</td><td class="right green">VT ${r10(inputVat).toLocaleString()}</td></tr>
+        <tr><td>Total purchases (incl. VAT)</td><td class="right">VT ${r10(totalPurchases).toLocaleString()}</td></tr>
+        <tr><td>Gross salaries${mSalaryRecords.length ? ` (${mSalaryRecords.length} pay run${mSalaryRecords.length !== 1 ? 's' : ''})` : ' (no pay runs recorded this month)'}</td><td class="right">VT ${r10(grossSalaries).toLocaleString()}</td></tr>
+        <tr><td>Net salaries paid</td><td class="right red">VT ${r10(netSalariesPaid).toLocaleString()}</td></tr>
       </table>
 
       <div class="two-col" style="margin-top:16px">
         <div>
           <h2>VAT Return Snapshot</h2>
           <div class="summary-box">
-            <div class="sum-row"><span>Output VAT (sales)</span><strong style="color:#2E7D2E">VT ${Number(outputVat).toLocaleString()}</strong></div>
-            <div class="sum-row"><span>Input VAT (purchases)</span><strong style="color:#1A4D1A">VT ${Number(inputVat).toLocaleString()}</strong></div>
-            <div class="net-row" style="color:#D85A30"><span>Net VAT Payable</span><span>VT ${Number(netVatPayable).toLocaleString()}</span></div>
+            <div class="sum-row"><span>Output VAT (sales)</span><strong style="color:#2E7D2E">VT ${r10(outputVat).toLocaleString()}</strong></div>
+            <div class="sum-row"><span>Input VAT (purchases)</span><strong style="color:#1A4D1A">VT ${r10(inputVat).toLocaleString()}</strong></div>
+            <div class="net-row" style="color:#D85A30"><span>Net VAT Payable</span><span>VT ${r10(netVatPayable).toLocaleString()}</span></div>
           </div>
         </div>
         <div>
           <h2>VNPF Snapshot</h2>
           <div class="summary-box">
-            <div class="sum-row"><span>Gross salaries</span><strong>VT ${Number(grossSalaries).toLocaleString()}</strong></div>
-            <div class="sum-row"><span>Employee contribution (6%)</span><strong>VT ${Number(vnpfEmployee).toLocaleString()}</strong></div>
-            <div class="sum-row"><span>Employer contribution (6%)</span><strong>VT ${Number(vnpfEmployer).toLocaleString()}</strong></div>
-            <div class="net-row" style="color:#8B6914"><span>Total VNPF Due</span><span>VT ${Number(vnpfTotal).toLocaleString()}</span></div>
+            <div class="sum-row"><span>Gross salaries</span><strong>VT ${r10(grossSalaries).toLocaleString()}</strong></div>
+            <div class="sum-row"><span>Employee contribution (6%)</span><strong>VT ${r10(vnpfEmployee).toLocaleString()}</strong></div>
+            <div class="sum-row"><span>Employer contribution (6%)</span><strong>VT ${r10(vnpfEmployer).toLocaleString()}</strong></div>
+            <div class="net-row" style="color:#8B6914"><span>Total VNPF Due</span><span>VT ${r10(vnpfTotal).toLocaleString()}</span></div>
           </div>
         </div>
       </div>
 
       <h2>Cash Flow — ${monthLabel}</h2>
       <div class="summary-box" style="margin-bottom:6px">
-        <div class="sum-row"><span>Money in (payments received)</span><strong style="color:#2E7D2E">VT ${Number(cashIn).toLocaleString()}</strong></div>
-        <div class="sum-row"><span>Money out (purchases + net salaries)</span><strong style="color:#A32D2D">VT ${Number(cashOut).toLocaleString()}</strong></div>
-        <div class="net-row" style="color:${netCashFlow >= 0 ? '#2E7D2E' : '#A32D2D'}"><span>Net Cash Flow</span><span>${netCashFlow >= 0 ? '+' : ''}VT ${Number(netCashFlow).toLocaleString()}</span></div>
+        <div class="sum-row"><span>Money in (payments received)</span><strong style="color:#2E7D2E">VT ${r10(cashIn).toLocaleString()}</strong></div>
+        <div class="sum-row"><span>Money out (purchases + net salaries)</span><strong style="color:#A32D2D">VT ${r10(cashOut).toLocaleString()}</strong></div>
+        <div class="net-row" style="color:${netCashFlow >= 0 ? '#2E7D2E' : '#A32D2D'}"><span>Net Cash Flow</span><span>${netCashFlow >= 0 ? '+' : ''}VT ${r10(netCashFlow).toLocaleString()}</span></div>
       </div>
 
       <h2>Year-to-Date Trend (Jan – ${MONTHS_LONG[mm - 1].slice(0, 3)} ${my})</h2>
@@ -3336,9 +3339,9 @@ function PerformanceReport({ invoices, payments, purchases, salaryRecords }) {
         <tbody>${trendRows}
         <tr style="background:#FBF3E4;font-weight:700">
           <td>YTD TOTAL</td>
-          <td class="right green">VT ${Number(ytdRevenue).toLocaleString()}</td>
-          <td class="right red">VT ${Number(ytdExpenses).toLocaleString()}</td>
-          <td class="right" style="color:${ytdNet >= 0 ? '#2E7D2E' : '#A32D2D'}">${ytdNet >= 0 ? '+' : ''}VT ${Number(ytdNet).toLocaleString()}</td>
+          <td class="right green">VT ${r10(ytdRevenue).toLocaleString()}</td>
+          <td class="right red">VT ${r10(ytdExpenses).toLocaleString()}</td>
+          <td class="right" style="color:${ytdNet >= 0 ? '#2E7D2E' : '#A32D2D'}">${ytdNet >= 0 ? '+' : ''}VT ${r10(ytdNet).toLocaleString()}</td>
         </tr>
         </tbody>
       </table>
@@ -4080,9 +4083,9 @@ function Purchases({ purchases, suppliers, customCategories, reload, setModal, s
       <div class='rpt-hdr'><span style='font-size:12px;font-weight:700;color:#3D2214'>Malakesa Transfers &amp; Tours — Purchases — ${filterDesc}</span><span style='font-size:10px;color:#888'>${now}</span></div>
       <div class='noprint'><span>Purchases Export — ${filterDesc}</span><button class='printbtn' onclick='window.print()'>🖨️ Print / Save PDF</button></div>
       <div style='padding:20px 30px'><h1>Malakesa Transfers &amp; Tours</h1>
-      <div class='sub'>Purchases Export &nbsp;|&nbsp; ${filterDesc} &nbsp;|&nbsp; ${now}<br>${filtered.length} purchase(s) &nbsp;|&nbsp; Total: VT ${Number(totalAmount).toLocaleString()} &nbsp;|&nbsp; Input VAT: VT ${Number(totalVat).toLocaleString()}</div>
+      <div class='sub'>Purchases Export &nbsp;|&nbsp; ${filterDesc} &nbsp;|&nbsp; ${now}<br>${filtered.length} purchase(s) &nbsp;|&nbsp; Total: VT ${r10(totalAmount).toLocaleString()} &nbsp;|&nbsp; Input VAT: VT ${r10(totalVat).toLocaleString()}</div>
       <table><thead><tr><th>Date</th><th>Supplier</th><th>Description</th><th>Category</th><th style='text-align:right'>Ex-VAT</th><th style='text-align:right'>VAT</th><th style='text-align:right'>Total</th><th>Payment</th><th>Ref</th></tr></thead><tbody>${rows}</tbody>
-      <tr style='background:#FBF3E4;font-weight:700'><td colspan='4' style='padding:8px'>TOTAL (${filtered.length})</td><td style='padding:8px;text-align:right'>VT ${Number(totalExVat).toLocaleString()}</td><td style='padding:8px;text-align:right;color:#2E7D2E'>VT ${Number(totalVat).toLocaleString()}</td><td style='padding:8px;text-align:right'>VT ${Number(totalAmount).toLocaleString()}</td><td colspan='2'></td></tr>
+      <tr style='background:#FBF3E4;font-weight:700'><td colspan='4' style='padding:8px'>TOTAL (${filtered.length})</td><td style='padding:8px;text-align:right'>VT ${r10(totalExVat).toLocaleString()}</td><td style='padding:8px;text-align:right;color:#2E7D2E'>VT ${r10(totalVat).toLocaleString()}</td><td style='padding:8px;text-align:right'>VT ${r10(totalAmount).toLocaleString()}</td><td colspan='2'></td></tr>
       </table></div><script>window.onload=()=>window.print()<\/script></body></html>`)
       w.document.close()
       return
@@ -4316,12 +4319,12 @@ function NewPurchaseModal({ suppliers, customCategories, purchases, purchase, on
   const [supplierList, setSupplierList] = useState(suppliers)
 
   const amount = parseFloat(form.amount) || 0
-  const vat = vatMode === 'calc15' ? Math.round(amount * 15 / 115 * 100) / 100
+  const vat = vatMode === 'calc15' ? r10(amount * 15 / 115)
              : vatMode === 'none' ? 0
              : parseFloat(form.vat) || 0
-  const amountExVat = vatMode === 'calc15' ? Math.round((amount - vat) * 100) / 100
+  const amountExVat = vatMode === 'calc15' ? r10(amount - vat)
                     : vatMode === 'none' ? amount
-                    : Math.round((amount - vat) * 100) / 100
+                    : r10(amount - vat)
 
   // Budget warning for the selected category
   const budgetInfo = (() => {
@@ -4888,8 +4891,8 @@ function VNPF({ employees, salaryRecords, reload, setModal, setSelected }) {
   const calc = (emp) => {
     if (emp?.vnpf_exempt) return { employee: 0, employer: 0, total: 0 }
     const s = Number(emp?.salary || 0)
-    const employee = Math.round(s * VNPF_EMPLOYEE_RATE)
-    const employer = Math.round(s * VNPF_EMPLOYER_RATE)
+    const employee = r10(s * VNPF_EMPLOYEE_RATE)
+    const employer = r10(s * VNPF_EMPLOYER_RATE)
     return { employee, employer, total: employee + employer }
   }
 
@@ -4991,10 +4994,10 @@ function VNPF({ employees, salaryRecords, reload, setModal, setSelected }) {
           ⚠️ <strong>Employer:</strong> Malakesa Transfers and Tours &nbsp;|&nbsp; TIN 445579 &nbsp;|&nbsp; Employee rate: 6% &nbsp;|&nbsp; Employer rate: 6% &nbsp;|&nbsp; Period: ${monthLabel}
         </div>
         <div class="stats">
-          <div class="stat"><div class="stat-label">Total Gross Salaries</div><div class="stat-value">VT ${Number(totalSalary).toLocaleString()}</div></div>
-          <div class="stat"><div class="stat-label">Employee Contributions (6%)</div><div class="stat-value">VT ${Number(totalEmployee).toLocaleString()}</div></div>
-          <div class="stat"><div class="stat-label">Employer Contributions (6%)</div><div class="stat-value">VT ${Number(totalEmployer).toLocaleString()}</div></div>
-          <div class="stat"><div class="stat-label">Total Payable to VNPF</div><div class="stat-value" style="color:#2E7D2E">VT ${Number(totalContribution).toLocaleString()}</div></div>
+          <div class="stat"><div class="stat-label">Total Gross Salaries</div><div class="stat-value">VT ${r10(totalSalary).toLocaleString()}</div></div>
+          <div class="stat"><div class="stat-label">Employee Contributions (6%)</div><div class="stat-value">VT ${r10(totalEmployee).toLocaleString()}</div></div>
+          <div class="stat"><div class="stat-label">Employer Contributions (6%)</div><div class="stat-value">VT ${r10(totalEmployer).toLocaleString()}</div></div>
+          <div class="stat"><div class="stat-label">Total Payable to VNPF</div><div class="stat-value" style="color:#2E7D2E">VT ${r10(totalContribution).toLocaleString()}</div></div>
         </div>
         <table>
           <thead><tr>
@@ -5005,8 +5008,8 @@ function VNPF({ employees, salaryRecords, reload, setModal, setSelected }) {
             <th class="right">Total Contribution</th>
           </tr></thead>
           <tbody>
-            ${rows.map(r => '<tr><td><strong>' + r.name + '</strong></td><td>' + (r.job_title || '—') + '</td><td>' + (r.vnpf_number || '—') + '</td><td class="right">VT ' + Number(r.salary || 0).toLocaleString() + '</td><td class="right">VT ' + Number(r.employee).toLocaleString() + '</td><td class="right">VT ' + Number(r.employer).toLocaleString() + '</td><td class="right green">VT ' + Number(r.total).toLocaleString() + '</td></tr>').join('')}
-            <tr class="summary-row"><td colspan="2">TOTAL (${rows.length} employees)</td><td class="right">VT ${Number(totalSalary).toLocaleString()}</td><td class="right">VT ${Number(totalEmployee).toLocaleString()}</td><td class="right">VT ${Number(totalEmployer).toLocaleString()}</td><td class="right">VT ${Number(totalContribution).toLocaleString()}</td></tr>
+            ${rows.map(r => '<tr><td><strong>' + r.name + '</strong></td><td>' + (r.job_title || '—') + '</td><td>' + (r.vnpf_number || '—') + '</td><td class="right">VT ' + r10(r.salary || 0).toLocaleString() + '</td><td class="right">VT ' + r10(r.employee).toLocaleString() + '</td><td class="right">VT ' + r10(r.employer).toLocaleString() + '</td><td class="right green">VT ' + r10(r.total).toLocaleString() + '</td></tr>').join('')}
+            <tr class="summary-row"><td colspan="2">TOTAL (${rows.length} employees)</td><td class="right">VT ${r10(totalSalary).toLocaleString()}</td><td class="right">VT ${r10(totalEmployee).toLocaleString()}</td><td class="right">VT ${r10(totalEmployer).toLocaleString()}</td><td class="right">VT ${r10(totalContribution).toLocaleString()}</td></tr>
           </tbody>
         </table>
         <p style="margin-top:16px;font-size:11px;color:#888">* Please verify all figures before submitting to the Vanuatu National Provident Fund. This schedule is computer generated.</p>
@@ -5019,7 +5022,7 @@ function VNPF({ employees, salaryRecords, reload, setModal, setSelected }) {
         </div>
         <div class="footer-r">
           <div>Employees: ${rows.length}</div>
-          <div>Total Payable: VT ${Number(totalContribution).toLocaleString()}</div>
+          <div>Total Payable: VT ${r10(totalContribution).toLocaleString()}</div>
           <div style="font-size:10px;opacity:0.7">Computer generated — verify before filing</div>
         </div>
       </div>
@@ -5128,7 +5131,7 @@ function VNPFContributions({ rows, totalSalary, totalEmployee, totalEmployer, to
       const proc = processedByEmp[r.id]
       if (proc) {
         const empVnpf = r.vnpf_exempt ? 0 : proc.vnpf
-        const emplVnpf = r.vnpf_exempt ? 0 : Math.round(proc.gross * 0.06)
+        const emplVnpf = r.vnpf_exempt ? 0 : r10(proc.gross * 0.06)
         return { ...r, gross: proc.gross, employee: empVnpf, employer: emplVnpf, total: empVnpf + emplVnpf, runs: proc.runs, processed: true }
       }
       return { ...r, runs: 0, processed: false }
@@ -5284,22 +5287,22 @@ function SalariesTab({ employees, salaryRecords, reload, fmt }) {
       const noteBits = [r.notes || (r.period_from && r.period_to ? periodRangeLabel(r.period_from, r.period_to) : null), ...(r.allowances||[]).filter(a=>a.label).map(a=>a.label), ...(r.deductions||[]).filter(d=>d.label).map(d=>d.label)].filter(Boolean)
       return `<tr>
         <td>${r.pay_date ? fmtDate(r.pay_date) : mLabel}</td>
-        <td class='num'>VT ${gross.toLocaleString()}</td>
-        <td class='num grn'>${allow > 0 ? '+VT ' + allow.toLocaleString() : '—'}</td>
-        <td class='num red'>${emp.vnpf_exempt ? 'N/A' : 'VT ' + vnpf.toLocaleString()}</td>
-        <td class='num red'>${otherDed > 0 ? 'VT ' + otherDed.toLocaleString() : '—'}</td>
-        <td class='num grn bold'>VT ${net.toLocaleString()}</td>
+        <td class='num'>VT ${r10(gross).toLocaleString()}</td>
+        <td class='num grn'>${allow > 0 ? '+VT ' + r10(allow).toLocaleString() : '—'}</td>
+        <td class='num red'>${emp.vnpf_exempt ? 'N/A' : 'VT ' + r10(vnpf).toLocaleString()}</td>
+        <td class='num red'>${otherDed > 0 ? 'VT ' + r10(otherDed).toLocaleString() : '—'}</td>
+        <td class='num grn bold'>VT ${r10(net).toLocaleString()}</td>
         <td class='notes'>${noteBits.length ? noteBits.join(', ') : '—'}</td>
       </tr>`
     }).join('')
 
     const totalRow = `<tr class='total'>
         <td>TOTAL (${recs.length} run${recs.length!==1?'s':''})</td>
-        <td class='num'>VT ${Number(totalGross).toLocaleString()}</td>
-        <td class='num grn'>VT ${Number(totalAllowances).toLocaleString()}</td>
-        <td class='num red'>${emp.vnpf_exempt ? 'N/A' : 'VT ' + Number(totalVnpf).toLocaleString()}</td>
-        <td class='num red'>${totalOtherDed > 0 ? 'VT ' + Number(totalOtherDed).toLocaleString() : '—'}</td>
-        <td class='num grn bold'>VT ${Number(totalNet).toLocaleString()}</td>
+        <td class='num'>VT ${r10(totalGross).toLocaleString()}</td>
+        <td class='num grn'>VT ${r10(totalAllowances).toLocaleString()}</td>
+        <td class='num red'>${emp.vnpf_exempt ? 'N/A' : 'VT ' + r10(totalVnpf).toLocaleString()}</td>
+        <td class='num red'>${totalOtherDed > 0 ? 'VT ' + r10(totalOtherDed).toLocaleString() : '—'}</td>
+        <td class='num grn bold'>VT ${r10(totalNet).toLocaleString()}</td>
         <td></td>
       </tr>`
 
@@ -5599,10 +5602,10 @@ function PayRunModal({ emp, defaultMonth, onClose, onSave, fmt }) {
 
   const setF = (key, val) => setForm(f => ({ ...f, [key]: val }))
 
-  const gross = Number(form.gross || 0)
-  const totalAllowances = form.allowances.reduce((s, a) => s + Number(a.amount || 0), 0)
-  const vnpfDeduction = emp.vnpf_exempt ? 0 : Math.round(gross * 0.06)
-  const otherDeductions = form.deductions.reduce((s, d) => s + Number(d.amount || 0), 0)
+  const gross = r10(Number(form.gross || 0))
+  const totalAllowances = r10(form.allowances.reduce((s, a) => s + Number(a.amount || 0), 0))
+  const vnpfDeduction = emp.vnpf_exempt ? 0 : r10(gross * 0.06)
+  const otherDeductions = r10(form.deductions.reduce((s, d) => s + Number(d.amount || 0), 0))
   const totalDeductions = vnpfDeduction + otherDeductions
   const netPay = gross + totalAllowances - totalDeductions
 
@@ -5767,8 +5770,8 @@ function PayRunModal({ emp, defaultMonth, onClose, onSave, fmt }) {
               ) : (
                 <>
                   <span>VNPF Employee (6%): <strong style={{ color: '#ff8a8a' }}>{fmt(vnpfDeduction)}</strong></span>
-                  <span>VNPF Employer (6%): <strong style={{ color: '#ff8a8a' }}>{fmt(Math.round(gross * 0.06))}</strong></span>
-                  <span>Total VNPF contribution: <strong style={{ color: '#F5D98A' }}>{fmt(Math.round(gross * 0.12))}</strong></span>
+                  <span>VNPF Employer (6%): <strong style={{ color: '#ff8a8a' }}>{fmt(r10(gross * 0.06))}</strong></span>
+                  <span>Total VNPF contribution: <strong style={{ color: '#F5D98A' }}>{fmt(r10(gross * 0.12))}</strong></span>
                 </>
               )}
             </div>
@@ -5841,8 +5844,8 @@ function NewEmployeeModal({ employee, onClose, onSave }) {
   const [error, setError] = useState('')
 
   const salary = parseFloat(form.salary) || 0
-  const employeeContrib = Math.round(salary * VNPF_EMPLOYEE_RATE)
-  const employerContrib = Math.round(salary * VNPF_EMPLOYER_RATE)
+  const employeeContrib = r10(salary * VNPF_EMPLOYEE_RATE)
+  const employerContrib = r10(salary * VNPF_EMPLOYER_RATE)
 
   const handleSave = async () => {
     setError('')
@@ -5952,9 +5955,9 @@ function Clients({ clients, invoices, payments, reload, setModal }) {
         <td>${i.number}</td>
         <td>${fmtDate(i.date)}</td>
         <td>${fmtDate(i.due_date)}</td>
-        <td class="text-right">VT ${Number(i.total || 0).toLocaleString()}</td>
-        <td class="text-right">VT ${paidForThis.toLocaleString()}</td>
-        <td class="text-right" style="color:${bal > 0 ? '#D85A30' : '#3B6D11'};font-weight:600">VT ${bal.toLocaleString()}</td>
+        <td class="text-right">VT ${r10(i.total || 0).toLocaleString()}</td>
+        <td class="text-right">VT ${r10(paidForThis).toLocaleString()}</td>
+        <td class="text-right" style="color:${bal > 0 ? '#D85A30' : '#3B6D11'};font-weight:600">VT ${r10(bal).toLocaleString()}</td>
       </tr>`
     }).join('')
 
@@ -5962,7 +5965,7 @@ function Clients({ clients, invoices, payments, reload, setModal }) {
         <td>${fmtDate(p.date)}</td>
         <td>${invById[p.invoice_id]?.number || '—'}</td>
         <td>${p.method || '—'}</td>
-        <td class="text-right">VT ${Number(p.amount || 0).toLocaleString()}</td>
+        <td class="text-right">VT ${r10(p.amount || 0).toLocaleString()}</td>
       </tr>`).join('')
 
     w.document.write(`<!DOCTYPE html><html><head><title>Statement — ${client.name}</title><style>
@@ -6019,9 +6022,9 @@ function Clients({ clients, invoices, payments, reload, setModal }) {
         </table>` : ''}
 
         <div class="summary">
-          <div class="srow"><span>Total invoiced</span><span>VT ${totalInvoiced.toLocaleString()}</span></div>
-          <div class="srow"><span>Total paid</span><span>VT ${totalPaid.toLocaleString()}</span></div>
-          <div class="srow grand"><span>Balance due</span><span style="color:${balance > 0 ? '#D85A30' : '#3B6D11'}">VT ${balance.toLocaleString()}</span></div>
+          <div class="srow"><span>Total invoiced</span><span>VT ${r10(totalInvoiced).toLocaleString()}</span></div>
+          <div class="srow"><span>Total paid</span><span>VT ${r10(totalPaid).toLocaleString()}</span></div>
+          <div class="srow grand"><span>Balance due</span><span style="color:${balance > 0 ? '#D85A30' : '#3B6D11'}">VT ${r10(balance).toLocaleString()}</span></div>
         </div>
       </div>
     </div>
@@ -6205,12 +6208,12 @@ function previewInvoice(inv) {
       ${inv.notes ? '<div class="notes"><strong>Notes:</strong> ' + inv.notes + '</div>' : ''}
       <table>
         <thead><tr><th style="width:15%;white-space:nowrap">Date</th><th style="width:16%">Name</th><th style="width:17%">Description</th><th style="width:10%">Voucher #</th><th class="text-right" style="width:7%;white-space:nowrap">Qty</th><th class="text-right" style="width:15%;white-space:nowrap">Rate (VT)</th><th class="text-right" style="width:20%;white-space:nowrap">Amount (VT)</th></tr></thead>
-        <tbody>${(inv.items || []).map(it => '<tr>' + (it.date ? '<td style="white-space:nowrap">' + it.date + '</td>' : '<td style="color:#ccc">-</td>') + (it.name ? '<td>' + it.name + '</td>' : '<td style="color:#ccc">-</td>') + '<td>' + (it.description || '') + '</td>' + (it.voucher ? '<td>' + it.voucher + '</td>' : '<td style="color:#ccc">-</td>') + '<td class="text-right" style="white-space:nowrap">' + (it.qty || 0) + '</td><td class="text-right" style="white-space:nowrap">VT&nbsp;' + Number(it.rate || 0).toLocaleString() + '</td><td class="text-right" style="white-space:nowrap">VT&nbsp;' + Number(it.total || 0).toLocaleString() + '</td></tr>').join('')}</tbody>
+        <tbody>${(inv.items || []).map(it => '<tr>' + (it.date ? '<td style="white-space:nowrap">' + it.date + '</td>' : '<td style="color:#ccc">-</td>') + (it.name ? '<td>' + it.name + '</td>' : '<td style="color:#ccc">-</td>') + '<td>' + (it.description || '') + '</td>' + (it.voucher ? '<td>' + it.voucher + '</td>' : '<td style="color:#ccc">-</td>') + '<td class="text-right" style="white-space:nowrap">' + (it.qty || 0) + '</td><td class="text-right" style="white-space:nowrap">VT&nbsp;' + r10(it.rate || 0).toLocaleString() + '</td><td class="text-right" style="white-space:nowrap">VT&nbsp;' + r10(it.total || 0).toLocaleString() + '</td></tr>').join('')}</tbody>
       </table>
       <div class="totals">
-        <div class="trow"><span>Subtotal</span><span>VT ${Number(inv.subtotal || 0).toLocaleString()}</span></div>
-        <div class="trow"><span>${inv.tax > 0 ? 'VAT (15%)' : 'VAT'}</span><span>${inv.tax > 0 ? 'VT ' + Number(inv.tax).toLocaleString() : 'Not applicable'}</span></div>
-        <div class="trow grand"><span>TOTAL DUE</span><span>VT ${Number(inv.total || 0).toLocaleString()}</span></div>
+        <div class="trow"><span>Subtotal</span><span>VT ${r10(inv.subtotal || 0).toLocaleString()}</span></div>
+        <div class="trow"><span>${inv.tax > 0 ? 'VAT (15%)' : 'VAT'}</span><span>${inv.tax > 0 ? 'VT ' + r10(inv.tax).toLocaleString() : 'Not applicable'}</span></div>
+        <div class="trow grand"><span>TOTAL DUE</span><span>VT ${r10(inv.total || 0).toLocaleString()}</span></div>
       </div>
       <div style="margin-top:20px;padding:14px 18px;border:1px solid #ddd;border-radius:6px;font-size:12px;line-height:1.9;color:#444">
         <div style="font-weight:700;color:#3D2214;margin-bottom:4px">Invoice Payment by Electronic Transfer to the following Account:</div>
@@ -6312,14 +6315,14 @@ function NewInvoiceModal({ clients, invoice, onClose, onSave }) {
   const updateItem = (id, field, value) => setItems(items => items.map(item => {
     if (item.id !== id) return item
     const u = { ...item, [field]: value }
-    u.total = (parseFloat(u.qty) || 0) * (parseFloat(u.rate) || 0)
+    u.total = r10((parseFloat(u.qty) || 0) * (parseFloat(u.rate) || 0))
     return u
   }))
   const lineTotal = items.reduce((s, i) => s + (i.total || 0), 0)
   // VAT-inclusive: rate entered includes VAT, so we extract it
   // VAT-exclusive: rate is pre-VAT, we add VAT on top
-  const subtotal = applyVat && vatInclusive ? Math.round(lineTotal / 1.15) : lineTotal
-  const tax = applyVat ? Math.round(subtotal * 0.15) : 0
+  const subtotal = applyVat && vatInclusive ? r10(lineTotal / 1.15) : lineTotal
+  const tax = applyVat ? r10(subtotal * 0.15) : 0
   const total = applyVat && vatInclusive ? lineTotal : subtotal + tax
 
   const handleSave = async () => {
@@ -6580,15 +6583,15 @@ function ViewInvoiceModal({ invoice, payments, onClose, onPay }) {
       ${invoice.notes ? '<div class="notes"><strong>Notes:</strong> ' + invoice.notes + '</div>' : ''}
       <table>
         <thead><tr><th style="width:15%;white-space:nowrap">Date</th><th style="width:16%">Name</th><th style="width:17%">Description</th><th style="width:10%">Voucher #</th><th class="text-right" style="width:7%;white-space:nowrap">Qty</th><th class="text-right" style="width:15%;white-space:nowrap">Rate (VT)</th><th class="text-right" style="width:20%;white-space:nowrap">Amount (VT)</th></tr></thead>
-        <tbody>${(invoice.items || []).map(it => '<tr>' + (it.date ? '<td style="white-space:nowrap">' + it.date + '</td>' : '<td style="color:#ccc">-</td>') + (it.name ? '<td>' + it.name + '</td>' : '<td style="color:#ccc">-</td>') + '<td>' + (it.description || '') + '</td>' + (it.voucher ? '<td>' + it.voucher + '</td>' : '<td style="color:#ccc">-</td>') + '<td class="text-right" style="white-space:nowrap">' + (it.qty || 0) + '</td><td class="text-right" style="white-space:nowrap">VT&nbsp;' + Number(it.rate || 0).toLocaleString() + '</td><td class="text-right" style="white-space:nowrap">VT&nbsp;' + Number(it.total || 0).toLocaleString() + '</td></tr>').join('')}</tbody>
+        <tbody>${(invoice.items || []).map(it => '<tr>' + (it.date ? '<td style="white-space:nowrap">' + it.date + '</td>' : '<td style="color:#ccc">-</td>') + (it.name ? '<td>' + it.name + '</td>' : '<td style="color:#ccc">-</td>') + '<td>' + (it.description || '') + '</td>' + (it.voucher ? '<td>' + it.voucher + '</td>' : '<td style="color:#ccc">-</td>') + '<td class="text-right" style="white-space:nowrap">' + (it.qty || 0) + '</td><td class="text-right" style="white-space:nowrap">VT&nbsp;' + r10(it.rate || 0).toLocaleString() + '</td><td class="text-right" style="white-space:nowrap">VT&nbsp;' + r10(it.total || 0).toLocaleString() + '</td></tr>').join('')}</tbody>
       </table>
       <div class="totals">
-        <div class="trow"><span>Subtotal</span><span>VT ${Number(invoice.subtotal || 0).toLocaleString()}</span></div>
-        <div class="trow"><span>${invoice.tax > 0 ? 'VAT (15%)' : 'VAT'}</span><span>${invoice.tax > 0 ? 'VT ' + Number(invoice.tax).toLocaleString() : 'Not applicable'}</span></div>
-        <div class="trow grand"><span>TOTAL DUE</span><span>VT ${Number(invoice.total || 0).toLocaleString()}</span></div>
-        <div class="trow balance" style="color:${balance > 0 ? '#D85A30' : '#3B6D11'}"><span>Balance due</span><span>VT ${Number(balance).toLocaleString()}</span></div>
+        <div class="trow"><span>Subtotal</span><span>VT ${r10(invoice.subtotal || 0).toLocaleString()}</span></div>
+        <div class="trow"><span>${invoice.tax > 0 ? 'VAT (15%)' : 'VAT'}</span><span>${invoice.tax > 0 ? 'VT ' + r10(invoice.tax).toLocaleString() : 'Not applicable'}</span></div>
+        <div class="trow grand"><span>TOTAL DUE</span><span>VT ${r10(invoice.total || 0).toLocaleString()}</span></div>
+        <div class="trow balance" style="color:${balance > 0 ? '#D85A30' : '#3B6D11'}"><span>Balance due</span><span>VT ${r10(balance).toLocaleString()}</span></div>
       </div>
-      ${invPayments.length > 0 ? `<div class="payments"><div class="payments-title">Payments received</div>${invPayments.map(p => `<div class="payrow"><span>${fmtDate(p.date)} — ${p.method}</span><span style="color:#3B6D11;font-weight:bold">VT ${Number(p.amount).toLocaleString()}</span></div>`).join('')}</div>` : ''}
+      ${invPayments.length > 0 ? `<div class="payments"><div class="payments-title">Payments received</div>${invPayments.map(p => `<div class="payrow"><span>${fmtDate(p.date)} — ${p.method}</span><span style="color:#3B6D11;font-weight:bold">VT ${r10(p.amount).toLocaleString()}</span></div>`).join('')}</div>` : ''}
       ${balance > 0 ? `<div style="margin-top:20px;padding:14px 18px;border:1px solid #ddd;border-radius:6px;font-size:12px;line-height:1.9;color:#444">
         <div style="font-weight:700;color:#3D2214;margin-bottom:4px">Invoice Payment by Electronic Transfer to the following Account:</div>
         <div>ANZ Vanuatu Ltd, Port Vila, Vanuatu</div>
@@ -6702,15 +6705,15 @@ function ViewInvoiceModal({ invoice, payments, onClose, onPay }) {
       ${invoice.notes ? '<div class="notes"><strong>Notes:</strong> ' + invoice.notes + '</div>' : ''}
       <table>
         <thead><tr><th style="width:15%;white-space:nowrap">Date</th><th style="width:16%">Name</th><th style="width:17%">Description</th><th style="width:10%">Voucher #</th><th class="text-right" style="width:7%;white-space:nowrap">Qty</th><th class="text-right" style="width:15%;white-space:nowrap">Rate (VT)</th><th class="text-right" style="width:20%;white-space:nowrap">Amount (VT)</th></tr></thead>
-        <tbody>${(invoice.items || []).map(it => '<tr>' + (it.date ? '<td style="white-space:nowrap">' + it.date + '</td>' : '<td style="color:#ccc">-</td>') + (it.name ? '<td>' + it.name + '</td>' : '<td style="color:#ccc">-</td>') + '<td>' + (it.description || '') + '</td>' + (it.voucher ? '<td>' + it.voucher + '</td>' : '<td style="color:#ccc">-</td>') + '<td class="text-right" style="white-space:nowrap">' + (it.qty || 0) + '</td><td class="text-right" style="white-space:nowrap">VT&nbsp;' + Number(it.rate || 0).toLocaleString() + '</td><td class="text-right" style="white-space:nowrap">VT&nbsp;' + Number(it.total || 0).toLocaleString() + '</td></tr>').join('')}</tbody>
+        <tbody>${(invoice.items || []).map(it => '<tr>' + (it.date ? '<td style="white-space:nowrap">' + it.date + '</td>' : '<td style="color:#ccc">-</td>') + (it.name ? '<td>' + it.name + '</td>' : '<td style="color:#ccc">-</td>') + '<td>' + (it.description || '') + '</td>' + (it.voucher ? '<td>' + it.voucher + '</td>' : '<td style="color:#ccc">-</td>') + '<td class="text-right" style="white-space:nowrap">' + (it.qty || 0) + '</td><td class="text-right" style="white-space:nowrap">VT&nbsp;' + r10(it.rate || 0).toLocaleString() + '</td><td class="text-right" style="white-space:nowrap">VT&nbsp;' + r10(it.total || 0).toLocaleString() + '</td></tr>').join('')}</tbody>
       </table>
       <div class="totals">
-        <div class="trow"><span>Subtotal</span><span>VT ${Number(invoice.subtotal || 0).toLocaleString()}</span></div>
-        <div class="trow"><span>${invoice.tax > 0 ? 'VAT (15%)' : 'VAT'}</span><span>${invoice.tax > 0 ? 'VT ' + Number(invoice.tax).toLocaleString() : 'Not applicable'}</span></div>
-        <div class="trow grand"><span>TOTAL DUE</span><span>VT ${Number(invoice.total || 0).toLocaleString()}</span></div>
-        <div class="trow balance" style="color:${balance > 0 ? '#D85A30' : '#3B6D11'}"><span>Balance due</span><span>VT ${Number(balance).toLocaleString()}</span></div>
+        <div class="trow"><span>Subtotal</span><span>VT ${r10(invoice.subtotal || 0).toLocaleString()}</span></div>
+        <div class="trow"><span>${invoice.tax > 0 ? 'VAT (15%)' : 'VAT'}</span><span>${invoice.tax > 0 ? 'VT ' + r10(invoice.tax).toLocaleString() : 'Not applicable'}</span></div>
+        <div class="trow grand"><span>TOTAL DUE</span><span>VT ${r10(invoice.total || 0).toLocaleString()}</span></div>
+        <div class="trow balance" style="color:${balance > 0 ? '#D85A30' : '#3B6D11'}"><span>Balance due</span><span>VT ${r10(balance).toLocaleString()}</span></div>
       </div>
-      ${invPayments.length > 0 ? `<div class="payments"><div class="payments-title">Payments received</div>${invPayments.map(p => `<div class="payrow"><span>${fmtDate(p.date)} — ${p.method}</span><span style="color:#3B6D11;font-weight:bold">VT ${Number(p.amount).toLocaleString()}</span></div>`).join('')}</div>` : ''}
+      ${invPayments.length > 0 ? `<div class="payments"><div class="payments-title">Payments received</div>${invPayments.map(p => `<div class="payrow"><span>${fmtDate(p.date)} — ${p.method}</span><span style="color:#3B6D11;font-weight:bold">VT ${r10(p.amount).toLocaleString()}</span></div>`).join('')}</div>` : ''}
       ${balance > 0 ? `<div style="margin-top:20px;padding:14px 18px;border:1px solid #ddd;border-radius:6px;font-size:12px;line-height:1.9;color:#444">
         <div style="font-weight:700;color:#3D2214;margin-bottom:4px">Invoice Payment by Electronic Transfer to the following Account:</div>
         <div>ANZ Vanuatu Ltd, Port Vila, Vanuatu</div>
@@ -6837,11 +6840,11 @@ function ViewInvoiceModal({ invoice, payments, onClose, onPay }) {
       </div>
       <div class="section">
         <div class="row"><span class="label">Client</span><span class="val">${invoice.client_name}</span></div>
-        <div class="row"><span class="label">Invoice total</span><span class="val">VT ${Number(invoice.total).toLocaleString()}</span></div>
+        <div class="row"><span class="label">Invoice total</span><span class="val">VT ${r10(invoice.total).toLocaleString()}</span></div>
       </div>
       <div class="amount-box">
         <span style="color:#fff;font-weight:700;font-size:15px">AMOUNT RECEIVED</span>
-        <span style="color:#F5D98A;font-weight:700;font-size:22px">VT ${Number(payment.amount).toLocaleString()}</span>
+        <span style="color:#F5D98A;font-weight:700;font-size:22px">VT ${r10(payment.amount).toLocaleString()}</span>
       </div>
       <div class="thankyou">Tankiu Tumas — Thank you for your payment!</div>
     </div>
