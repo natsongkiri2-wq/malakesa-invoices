@@ -15,6 +15,66 @@ const localMonthStr = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padS
 const addDays = (d, n) => { const dt = new Date(d); dt.setDate(dt.getDate() + n); return dt.toISOString().split('T')[0] }
 const uid = () => Math.random().toString(36).slice(2)
 
+// Invoice line-item dates are entered as free text (e.g. "10JUL", "10 Jul", "5/8", "2026-08-05")
+// so we parse flexibly to get a sortable value. Returns a timestamp, or null if unparseable.
+const ITEM_DATE_MONTHS = { jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5, jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11 }
+const parseItemDateValue = (str, refYear) => {
+  const s = String(str || '').trim()
+  if (!s) return null
+  const year = refYear || new Date().getFullYear()
+  let m
+  // ISO: 2026-08-05
+  if ((m = s.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})$/))) {
+    const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]))
+    return isNaN(d) ? null : d.getTime()
+  }
+  // dd/mm/yyyy or dd-mm-yyyy
+  if ((m = s.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})$/))) {
+    const d = new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1]))
+    return isNaN(d) ? null : d.getTime()
+  }
+  // day + month name/abbreviation: 10JUL, 10 JUL, 10-Jul, 5th August
+  if ((m = s.match(/^(\d{1,2})(?:st|nd|rd|th)?[\s\-\/]*([A-Za-z]{3,})/))) {
+    const day = Number(m[1]), monKey = m[2].slice(0, 3).toLowerCase()
+    if (ITEM_DATE_MONTHS.hasOwnProperty(monKey) && day >= 1 && day <= 31) {
+      const d = new Date(year, ITEM_DATE_MONTHS[monKey], day)
+      return isNaN(d) ? null : d.getTime()
+    }
+  }
+  // month name then day: Jul 10, July 10th
+  if ((m = s.match(/^([A-Za-z]{3,})[\s\-\/]*(\d{1,2})/))) {
+    const monKey = m[1].slice(0, 3).toLowerCase(), day = Number(m[2])
+    if (ITEM_DATE_MONTHS.hasOwnProperty(monKey) && day >= 1 && day <= 31) {
+      const d = new Date(year, ITEM_DATE_MONTHS[monKey], day)
+      return isNaN(d) ? null : d.getTime()
+    }
+  }
+  // dd/mm or dd-mm without year
+  if ((m = s.match(/^(\d{1,2})[-\/](\d{1,2})$/))) {
+    const day = Number(m[1]), month = Number(m[2])
+    if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+      const d = new Date(year, month - 1, day)
+      return isNaN(d) ? null : d.getTime()
+    }
+  }
+  const t = Date.parse(s)
+  return isNaN(t) ? null : t
+}
+// Sorts line items by their (flexibly parsed) date, ascending. Items with an unparseable/blank
+// date are pushed to the end, keeping their original relative order (stable).
+const sortItemsByDate = (items, refDateStr) => {
+  const refYear = refDateStr ? new Date(refDateStr + 'T00:00:00').getFullYear() : new Date().getFullYear()
+  return items
+    .map((item, idx) => ({ item, idx, key: parseItemDateValue(item.date, refYear) }))
+    .sort((a, b) => {
+      if (a.key === null && b.key === null) return a.idx - b.idx
+      if (a.key === null) return 1
+      if (b.key === null) return -1
+      return a.key - b.key || a.idx - b.idx
+    })
+    .map(x => x.item)
+}
+
 // e.g. periodRangeLabel('2026-08-08','2026-08-21') -> "8th to 21st August 2026"
 const ordinalSuffix = (n) => {
   const v = n % 100
@@ -6304,7 +6364,7 @@ function NewInvoiceModal({ clients, invoice, onClose, onSave }) {
     ? { client_id: invoice.client_id || '', client_name: invoice.client_name || '', client_email: invoice.client_email || '', date: invoice.date || todayStr(), due_date: invoice.due_date || addDays(todayStr(), 14), notes: invoice.notes || '' }
     : { client_id: '', client_name: '', client_email: '', date: todayStr(), due_date: addDays(todayStr(), 14), notes: '' })
   const [items, setItems] = useState(isEdit && invoice.items && invoice.items.length
-    ? invoice.items.map(it => ({ id: uid(), date: it.date || '', description: it.description || '', name: it.name || '', voucher: it.voucher || '', qty: it.qty || 1, rate: it.rate || '', total: it.total || 0 }))
+    ? sortItemsByDate(invoice.items.map(it => ({ id: uid(), date: it.date || '', description: it.description || '', name: it.name || '', voucher: it.voucher || '', qty: it.qty || 1, rate: it.rate || '', total: it.total || 0 })), invoice.date)
     : [{ id: uid(), date: '', description: '', name: '', voucher: '', qty: 1, rate: '', total: 0 }, { id: uid(), date: '', description: '', name: '', voucher: '', qty: 1, rate: '', total: 0 }])
   const [applyVat, setApplyVat] = useState(isEdit ? (typeof invoice.vat_applied === 'boolean' ? invoice.vat_applied : Number(invoice.tax) > 0) : true)
   const vatInclusive = true // Rates are always VAT-inclusive at Malakesa
@@ -6383,7 +6443,7 @@ function NewInvoiceModal({ clients, invoice, onClose, onSave }) {
   const handleSave = async () => {
     setError('')
     if (!form.client_id) { setError('Please select a client'); return }
-    const validItems = items.filter(i => i.description.trim())
+    const validItems = sortItemsByDate(items.filter(i => i.description.trim()), form.date)
     if (!validItems.length) { setError('Add at least one line item'); return }
     setSaving(true)
     try {
@@ -6475,7 +6535,7 @@ function NewInvoiceModal({ clients, invoice, onClose, onSave }) {
         )}
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 20 }}>
-        <button className="btn" onClick={() => previewInvoice({ ...form, items: items.filter(i => i.description.trim()), subtotal, tax, total })}>
+        <button className="btn" onClick={() => previewInvoice({ ...form, items: sortItemsByDate(items.filter(i => i.description.trim()), form.date), subtotal, tax, total })}>
           <i className="ti ti-eye"></i> Preview Invoice
         </button>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
