@@ -16,6 +16,32 @@ const localMonthStr = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padS
 const addDays = (d, n) => { const dt = new Date(d); dt.setDate(dt.getDate() + n); return dt.toISOString().split('T')[0] }
 const uid = () => Math.random().toString(36).slice(2)
 
+// Auto-shrink-to-fit for printed/emailed invoices: if the invoice content (table +
+// totals + payment details) would spill past the bottom of the first printed page,
+// scale the whole page down just enough that everything — including the totals —
+// stays on one page, instead of letting the totals section spill onto page 2.
+// Only applies when the overflow is modest (scale would stay >= MIN_SCALE); a
+// genuinely long invoice that would need to shrink below readable size is left to
+// paginate normally rather than becoming illegible.
+const INVOICE_FIT_TO_PAGE_SCRIPT = `
+function fitInvoiceToOnePage(sel, pageHeightMM, marginTopMM, marginBottomMM, minScale) {
+  var el = document.querySelector(sel);
+  if (!el) return;
+  var usablePx = (pageHeightMM - marginTopMM - marginBottomMM) * 96 / 25.4;
+  var naturalPx = el.scrollHeight;
+  if (naturalPx <= usablePx) return;
+  var scale = usablePx / naturalPx;
+  if (scale < minScale) return;
+  if ('zoom' in el.style) {
+    el.style.zoom = scale;
+  } else {
+    el.style.transformOrigin = 'top left';
+    el.style.transform = 'scale(' + scale + ')';
+    el.style.width = (100 / scale) + '%';
+  }
+}
+`
+
 // Invoice line-item dates are entered as free text (e.g. "10JUL", "10 Jul", "5/8", "2026-08-05")
 // so we parse flexibly to get a sortable value. Returns a timestamp, or null if unparseable.
 const ITEM_DATE_MONTHS = { jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5, jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11 }
@@ -6356,7 +6382,9 @@ function previewInvoice(inv) {
       </div>
     </div>
   </div>
-  <script>window.document.close()<\/script>
+  <script>${INVOICE_FIT_TO_PAGE_SCRIPT}
+  window.onload=()=>{ fitInvoiceToOnePage('.page', 297, 18, 22, 0.55); };
+  window.document.close()<\/script>
   </body></html>`)
 }
 
@@ -6733,7 +6761,9 @@ function ViewInvoiceModal({ invoice, payments, onClose, onPay }) {
       </div>
     </div>
   </div>
-  <script>window.onload=()=>window.print()<\/script></body></html>`)
+  <script>${INVOICE_FIT_TO_PAGE_SCRIPT}
+  window.onload=()=>{ fitInvoiceToOnePage('.page', 297, 18, 22, 0.55); window.print(); }
+  <\/script></body></html>`)
     w.document.close()
   }
 
@@ -6873,8 +6903,24 @@ function ViewInvoiceModal({ invoice, payments, onClose, onPay }) {
     const { jsPDF } = window.jspdf
     const pdf = new jsPDF('p', 'mm', 'a4')
     const pageWidth = 210, pageHeight = 297
-    const imgWidth = pageWidth
-    const imgHeight = canvas.height * imgWidth / canvas.width
+    let imgWidth = pageWidth
+    let imgHeight = canvas.height * imgWidth / canvas.width
+    // If the invoice overflows the first page by a modest amount (e.g. the totals /
+    // payment details / thank-you note spilling over), shrink the whole invoice down
+    // proportionally so it still fits on a single page, instead of splitting the
+    // totals across a second page. A genuinely long invoice that would need to shrink
+    // below a readable size (MIN_SCALE) is left to paginate normally.
+    const MIN_SCALE = 0.55
+    if (imgHeight > pageHeight) {
+      const scale = pageHeight / imgHeight
+      if (scale >= MIN_SCALE) {
+        imgHeight = pageHeight
+        imgWidth = imgWidth * scale
+        pdf.addImage(imgData, 'JPEG', (pageWidth - imgWidth) / 2, 0, imgWidth, imgHeight)
+        document.body.removeChild(iframe)
+        return pdf
+      }
+    }
     let heightLeft = imgHeight
     let position = 0
     pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight)
