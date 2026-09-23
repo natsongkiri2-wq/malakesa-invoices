@@ -6080,102 +6080,7 @@ function Clients({ clients, invoices, payments, reload, setModal }) {
 
   const cancelEdit = () => { setEditingClient(null); setEditForm({}) }
 
-  const printStatement = (client) => {
-    const w = window.open('', '_blank')
-    if (!w) { alert('Please allow popups to print statements.'); return }
-
-    const clientInvoices = invoices.filter(i => i.client_id === client.id).sort((a, b) => a.date > b.date ? 1 : -1)
-    const invoiceIds = new Set(clientInvoices.map(i => i.id))
-    const clientPayments = (payments || []).filter(p => invoiceIds.has(p.invoice_id)).sort((a, b) => a.date > b.date ? 1 : -1)
-    const invById = Object.fromEntries(clientInvoices.map(i => [i.id, i]))
-
-    const totalInvoiced = clientInvoices.reduce((s, i) => s + Number(i.total || 0), 0)
-    const totalPaid = clientPayments.reduce((s, p) => s + Number(p.amount || 0), 0)
-    const balance = totalInvoiced - totalPaid
-
-    const rows = clientInvoices.map(i => {
-      const paidForThis = clientPayments.filter(p => p.invoice_id === i.id).reduce((s, p) => s + Number(p.amount), 0)
-      const bal = Number(i.total || 0) - paidForThis
-      return `<tr>
-        <td>${i.number}</td>
-        <td>${fmtDate(i.date)}</td>
-        <td>${fmtDate(i.due_date)}</td>
-        <td class="text-right">VT ${r10(i.total || 0).toLocaleString()}</td>
-        <td class="text-right">VT ${r10(paidForThis).toLocaleString()}</td>
-        <td class="text-right" style="color:${bal > 0 ? '#D85A30' : '#3B6D11'};font-weight:600">VT ${r10(bal).toLocaleString()}</td>
-      </tr>`
-    }).join('')
-
-    const paymentRows = clientPayments.map(p => `<tr>
-        <td>${fmtDate(p.date)}</td>
-        <td>${invById[p.invoice_id]?.number || '—'}</td>
-        <td>${p.method || '—'}</td>
-        <td class="text-right">VT ${r10(p.amount || 0).toLocaleString()}</td>
-      </tr>`).join('')
-
-    w.document.write(`<!DOCTYPE html><html><head><title>Statement — ${client.name}</title><style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: Arial, sans-serif; color: #222; font-size: 13px; }
-    .page { max-width: 800px; margin: 0 auto; }
-    .header { background: linear-gradient(135deg, #6B4423 0%, #8B5E34 50%, #A67C42 100%); padding: 14px 28px; display: flex; justify-content: space-between; align-items: center; }
-    .logo-contact { font-size: 9px; color: rgba(255,255,255,0.7); margin-top: 3px; line-height: 1.4; }
-    .meta { text-align: right; color: #fff; }
-    .body { padding: 24px 32px; }
-    .bill-label { font-size: 9px; font-weight: 800; color: #8B6914; text-transform: uppercase; letter-spacing: 2px; border-bottom: 2px solid #8B6914; padding-bottom: 3px; margin-bottom: 8px; display: inline-block; }
-    table { width: 100%; border-collapse: collapse; margin: 10px 0 24px; }
-    thead tr { background: linear-gradient(135deg, #3D2214, #8B6914); }
-    th { padding: 8px 12px; text-align: left; font-size: 10px; font-weight: 700; color: #FFD700; letter-spacing: 1px; text-transform: uppercase; }
-    td { padding: 9px 12px; border-bottom: 1px solid #f0ebe0; }
-    .text-right { text-align: right; }
-    .summary { margin-left: auto; width: 280px; }
-    .srow { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid #eee; font-size: 13px; color: #555; }
-    .srow.grand { border-bottom: none; font-size: 17px; font-weight: 800; color: #3D2214; padding-top: 12px; }
-    h2 { font-size: 14px; color: #3D2214; margin-bottom: 4px; }
-    @media print { .header { -webkit-print-color-adjust: exact; print-color-adjust: exact; } thead tr { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
-    </style></head><body>
-    <div class="page">
-      <div class="header">
-        <div>
-          <img src="${MALAKESA_LOGO}" alt="Malakesa Transfers and Tours" style="width:120px;border-radius:4px;display:block" />
-          <div class="logo-contact">📍 Port Vila, Vanuatu &nbsp;|&nbsp; 📞 +678 22712 &nbsp;|&nbsp; ✉️ accounts@malakesa.vu</div>
-        </div>
-        <div class="meta">
-          <div style="font-size:10px;color:rgba(255,255,255,0.75);letter-spacing:1px">STATEMENT OF ACCOUNT</div>
-          <div style="font-size:19px;font-weight:700;color:#F5D98A">${client.name}</div>
-          <div style="font-size:10px;color:rgba(255,255,255,0.8)">As at ${fmtDate(todayStr())}</div>
-        </div>
-      </div>
-      <div class="body">
-        <div class="bill-label">Client details</div>
-        <div style="margin-bottom:20px;color:#555">
-          <div><strong>${client.name}</strong></div>
-          <div>${[client.email, client.email2, client.email3].filter(Boolean).join(', ') || ''}</div>
-          <div>${client.phone || ''}</div>
-          <div>${client.address || ''}</div>
-        </div>
-
-        <h2>Invoices</h2>
-        <table>
-          <thead><tr><th>Invoice #</th><th>Issue Date</th><th>Due Date</th><th class="text-right">Total</th><th class="text-right">Paid</th><th class="text-right">Balance</th></tr></thead>
-          <tbody>${rows || '<tr><td colspan="6" style="text-align:center;color:#999">No invoices</td></tr>'}</tbody>
-        </table>
-
-        ${paymentRows ? `<h2>Payments received</h2>
-        <table>
-          <thead><tr><th>Date</th><th>Invoice #</th><th>Method</th><th class="text-right">Amount</th></tr></thead>
-          <tbody>${paymentRows}</tbody>
-        </table>` : ''}
-
-        <div class="summary">
-          <div class="srow"><span>Total invoiced</span><span>VT ${r10(totalInvoiced).toLocaleString()}</span></div>
-          <div class="srow"><span>Total paid</span><span>VT ${r10(totalPaid).toLocaleString()}</span></div>
-          <div class="srow grand"><span>Balance due</span><span style="color:${balance > 0 ? '#D85A30' : '#3B6D11'}">VT ${r10(balance).toLocaleString()}</span></div>
-        </div>
-      </div>
-    </div>
-    <script>window.onload=()=>window.print()<\/script></body></html>`)
-    w.document.close()
-  }
+  const [statementClient, setStatementClient] = useState(null)
 
   const saveEdit = async (id) => {
     if (!editForm.name.trim()) return
@@ -6248,7 +6153,7 @@ function Clients({ clients, invoices, payments, reload, setModal }) {
                       <td style={{ padding: '11px 14px' }}>
                         <div style={{ display: 'flex', gap: 5, justifyContent: 'center' }}>
                           <button className="btn btn-sm" onClick={() => startEdit(c)}><i className="ti ti-pencil"></i> Edit</button>
-                          <button className="btn btn-sm" style={{ borderColor: '#8B6914', color: '#8B6914' }} onClick={() => printStatement(c)}><i className="ti ti-file-text"></i> Statement</button>
+                          <button className="btn btn-sm" style={{ borderColor: '#8B6914', color: '#8B6914' }} onClick={() => setStatementClient(c)}><i className="ti ti-file-text"></i> Statement</button>
                           <button className="btn btn-sm" style={{ borderColor: '#A32D2D', color: '#A32D2D' }} onClick={() => handleDelete(c.id)}><i className="ti ti-trash"></i></button>
                         </div>
                       </td>
@@ -6260,7 +6165,421 @@ function Clients({ clients, invoices, payments, reload, setModal }) {
           )}
         </Card>
       </div>
+      {statementClient && <ClientStatementModal client={statementClient} invoices={invoices} payments={payments} onClose={() => setStatementClient(null)} />}
     </>
+  )
+}
+
+// ── Client Statement of Account ───────────────────────────
+// Builds a full statement for one client over a chosen period:
+// opening balance, dated ledger (invoices / payments) with running balance,
+// closing balance, outstanding invoices, ageing and bank remittance details.
+const stmtEsc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+const stmtVT = (n) => { const v = r10(n); return (v < 0 ? '-VT ' : 'VT ') + Math.abs(v).toLocaleString() }
+// Whole-day difference between two 'YYYY-MM-DD' strings (UTC-safe, no timezone drift)
+const stmtDays = (from, to) => {
+  const p = (s) => { const [y, m, d] = String(s).slice(0, 10).split('-').map(Number); return Date.UTC(y, m - 1, d) }
+  return Math.round((p(to) - p(from)) / 86400000)
+}
+const stmtPayDate = (p) => (p.date || String(p.created_at || '').slice(0, 10) || '')
+
+function computeClientStatement(client, invoices, payments, from, to) {
+  const clientInvoices = (invoices || []).filter(i => i.client_id === client.id && i.date)
+  const invById = Object.fromEntries(clientInvoices.map(i => [i.id, i]))
+  const clientPayments = (payments || []).filter(p => invById[p.invoice_id] && stmtPayDate(p))
+
+  const inRange = (d) => (!from || d >= from) && d <= to
+  const before = (d) => from && d < from
+
+  // Opening balance: everything dated before the period start
+  const opening = clientInvoices.filter(i => before(i.date)).reduce((s, i) => s + Number(i.total || 0), 0)
+    - clientPayments.filter(p => before(stmtPayDate(p))).reduce((s, p) => s + Number(p.amount || 0), 0)
+
+  // Ledger lines inside the period (invoices before payments on the same day)
+  const lines = [
+    ...clientInvoices.filter(i => inRange(i.date)).map(i => ({
+      date: i.date, type: 'inv', ref: i.number, detail: 'Invoice' + (i.due_date ? ' — due ' + fmtDate(i.due_date) : ''), debit: Number(i.total || 0), credit: 0,
+    })),
+    ...clientPayments.filter(p => inRange(stmtPayDate(p))).map(p => ({
+      date: stmtPayDate(p), type: 'pay', ref: p.receipt_number || '—', detail: 'Payment' + (p.method ? ' (' + p.method + ')' : '') + ' — ' + (invById[p.invoice_id]?.number || ''), debit: 0, credit: Number(p.amount || 0),
+    })),
+  ].sort((a, b) => a.date === b.date ? (a.type === b.type ? String(a.ref).localeCompare(String(b.ref)) : (a.type === 'inv' ? -1 : 1)) : (a.date > b.date ? 1 : -1))
+
+  let running = opening
+  lines.forEach(l => { running += l.debit - l.credit; l.balance = running })
+  const invoiced = lines.reduce((s, l) => s + l.debit, 0)
+  const paid = lines.reduce((s, l) => s + l.credit, 0)
+  const closing = opening + invoiced - paid
+
+  // Outstanding invoices + ageing as at the statement date
+  const aging = { current: 0, d30: 0, d60: 0, d90: 0, d90p: 0 }
+  const outstanding = clientInvoices.filter(i => i.date <= to).map(i => {
+    const paidToDate = clientPayments.filter(p => p.invoice_id === i.id && stmtPayDate(p) <= to).reduce((s, p) => s + Number(p.amount || 0), 0)
+    const bal = Number(i.total || 0) - paidToDate
+    const overdue = i.due_date ? stmtDays(i.due_date, to) : 0
+    return { ...i, paidToDate, bal, overdue }
+  }).filter(i => r10(i.bal) > 0).sort((a, b) => a.date > b.date ? 1 : -1)
+  outstanding.forEach(i => {
+    if (i.overdue <= 0) aging.current += i.bal
+    else if (i.overdue <= 30) aging.d30 += i.bal
+    else if (i.overdue <= 60) aging.d60 += i.bal
+    else if (i.overdue <= 90) aging.d90 += i.bal
+    else aging.d90p += i.bal
+  })
+
+  return { opening, lines, invoiced, paid, closing, outstanding, aging }
+}
+
+function buildClientStatementHtml(client, data, from, to, note, mode) {
+  const { opening, lines, invoiced, paid, closing, outstanding, aging } = data
+  const periodLabel = from ? `${fmtDate(from)} – ${fmtDate(to)}` : `All transactions to ${fmtDate(to)}`
+  const emails = [client.email, client.email2, client.email3].filter(Boolean).join(', ')
+  const balColor = closing > 0 ? '#D85A30' : '#3B6D11'
+
+  const ledgerRows = lines.map(l => `<tr>
+      <td style="white-space:nowrap">${fmtDate(l.date)}</td>
+      <td style="white-space:nowrap">${stmtEsc(l.ref)}</td>
+      <td>${stmtEsc(l.detail)}</td>
+      <td class="r">${l.debit ? stmtVT(l.debit) : ''}</td>
+      <td class="r" style="color:#3B6D11">${l.credit ? stmtVT(l.credit) : ''}</td>
+      <td class="r" style="font-weight:600">${stmtVT(l.balance)}</td>
+    </tr>`).join('')
+
+  const outstandingRows = outstanding.map(i => `<tr>
+      <td style="white-space:nowrap">${stmtEsc(i.number)}</td>
+      <td style="white-space:nowrap">${fmtDate(i.date)}</td>
+      <td style="white-space:nowrap">${fmtDate(i.due_date)}</td>
+      <td class="r">${stmtVT(i.total)}</td>
+      <td class="r">${stmtVT(i.paidToDate)}</td>
+      <td class="r" style="font-weight:600;color:#D85A30">${stmtVT(i.bal)}</td>
+      <td class="r" style="color:${i.overdue > 0 ? '#A32D2D' : '#666'}">${i.overdue > 0 ? i.overdue + ' days' : 'Not due'}</td>
+    </tr>`).join('')
+
+  const agingCell = (label, v, hot) => `<div class="age"><div class="age-l">${label}</div><div class="age-v" style="color:${v > 0 && hot ? '#A32D2D' : '#3D2214'}">${stmtVT(v)}</div></div>`
+
+  const printCss = mode === 'print' ? `
+    @page { size: A4; margin: 10mm; }
+    @media print {
+      .header, .footer, thead tr, .summary-box, .ages { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      thead { display: table-header-group; }
+      tr { page-break-inside: avoid; }
+    }` : ''
+
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Statement — ${stmtEsc(client.name)}</title><style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; color: #222; font-size: 12px; background: #fff; }
+    .page { width: 800px; margin: 0 auto; background: #fff; }
+    .header { background: linear-gradient(135deg, #6B4423 0%, #8B5E34 50%, #A67C42 100%); padding: 12px 28px; display: flex; justify-content: space-between; align-items: center; }
+    .logo-contact { font-size: 9px; color: rgba(255,255,255,0.7); margin-top: 3px; line-height: 1.4; }
+    .meta { text-align: right; color: #fff; }
+    .body { padding: 24px 32px; }
+    .row2 { display: flex; justify-content: space-between; gap: 20px; margin-bottom: 18px; }
+    .label { font-size: 9px; font-weight: 800; color: #8B6914; text-transform: uppercase; letter-spacing: 2px; border-bottom: 2px solid #8B6914; padding-bottom: 3px; margin-bottom: 8px; display: inline-block; }
+    .detail { font-size: 12px; color: #555; line-height: 1.7; }
+    .summary-box { display: flex; border: 1px solid #E8DCC4; border-radius: 6px; overflow: hidden; margin-bottom: 18px; }
+    .sb { flex: 1; padding: 10px 12px; background: #FBF6EC; border-right: 1px solid #E8DCC4; }
+    .sb:last-child { border-right: none; background: #3D2214; }
+    .sb-l { font-size: 9px; text-transform: uppercase; letter-spacing: 1px; color: #8B6914; margin-bottom: 4px; }
+    .sb-v { font-size: 15px; font-weight: 700; color: #3D2214; }
+    .sb:last-child .sb-l { color: #F5D98A; }
+    .sb:last-child .sb-v { color: #fff; font-size: 17px; }
+    h2 { font-size: 13px; color: #3D2214; margin: 6px 0 2px; }
+    table { width: 100%; border-collapse: collapse; margin: 6px 0 18px; }
+    thead tr { background: linear-gradient(135deg, #8B5E34, #8B6914); }
+    th { padding: 8px 10px; text-align: left; font-size: 9.5px; font-weight: 700; color: #F5D98A; letter-spacing: 1px; text-transform: uppercase; }
+    td { padding: 7px 10px; border-bottom: 1px solid #F3EADB; font-size: 12px; vertical-align: top; }
+    tbody tr:nth-child(even) td { background: #FBF7EF; }
+    .r { text-align: right; white-space: nowrap; }
+    tr.ob td { background: #F5EEDF !important; font-style: italic; color: #555; }
+    tr.cb td { background: #EFE4CE !important; font-weight: 700; color: #3D2214; border-top: 2px solid #8B6914; }
+    .ages { display: flex; gap: 0; border: 1px solid #E8DCC4; border-radius: 6px; overflow: hidden; margin: 6px 0 18px; }
+    .age { flex: 1; padding: 8px 10px; text-align: center; border-right: 1px solid #E8DCC4; background: #FBF6EC; }
+    .age:last-child { border-right: none; background: #3D2214; }
+    .age-l { font-size: 9px; text-transform: uppercase; letter-spacing: 1px; color: #8B6914; margin-bottom: 3px; }
+    .age-v { font-size: 13px; font-weight: 700; }
+    .age:last-child .age-l { color: #F5D98A; }
+    .age:last-child .age-v { color: #fff !important; }
+    .note { background: #faf6ee; border-left: 4px solid #8B6914; padding: 10px 14px; border-radius: 0 6px 6px 0; margin-bottom: 18px; font-size: 12px; color: #555; white-space: pre-wrap; }
+    .bank { padding: 12px 16px; border: 1px solid #ddd; border-radius: 6px; font-size: 12px; line-height: 1.8; color: #444; }
+    .thankyou { text-align: center; font-size: 13px; font-weight: 600; color: #8B6914; margin: 20px 0 8px; font-style: italic; }
+    .footer { background: linear-gradient(135deg, #6B4423, #A67C42); padding: 14px 32px; display: flex; justify-content: space-between; align-items: center; }
+    .footer-l { color: rgba(255,255,255,0.85); font-size: 10.5px; line-height: 1.8; }
+    .footer-r { text-align: right; color: #F5D98A; font-size: 10.5px; line-height: 1.8; }
+    ${printCss}
+  </style></head><body>
+  <div class="page">
+    <div class="header">
+      <div>
+        <img src="${MALAKESA_LOGO}" alt="Malakesa Transfers and Tours" style="width:120px;border-radius:4px;display:block" />
+        <div class="logo-contact">📍 Port Vila, Vanuatu &nbsp;|&nbsp; 📞 +678 22712 &nbsp;|&nbsp; ✉️ accounts@malakesa.vu</div>
+      </div>
+      <div class="meta">
+        <div style="font-size:10px;color:rgba(255,255,255,0.75);letter-spacing:1px">STATEMENT OF ACCOUNT &nbsp;·&nbsp; TIN #445579</div>
+        <div style="font-size:19px;font-weight:700;color:#F5D98A">${stmtEsc(client.name)}</div>
+        <div style="font-size:10px;color:rgba(255,255,255,0.85)">Statement date: <strong>${fmtDate(to)}</strong></div>
+      </div>
+    </div>
+
+    <div class="body">
+      <div class="row2">
+        <div>
+          <div class="label">Statement to</div>
+          <div style="font-size:15px;font-weight:700;margin-bottom:3px">${stmtEsc(client.name)}</div>
+          <div class="detail">
+            ${client.address ? stmtEsc(client.address) + '<br/>' : ''}
+            ${client.phone ? stmtEsc(client.phone) + '<br/>' : ''}
+            ${emails ? stmtEsc(emails) : ''}
+          </div>
+        </div>
+        <div style="text-align:right">
+          <div class="label">Statement details</div>
+          <div class="detail">Period: <strong>${periodLabel}</strong></div>
+          <div class="detail">Statement date: <strong>${fmtDate(to)}</strong></div>
+          <div class="detail">Currency: <strong>Vatu (VT)</strong></div>
+        </div>
+      </div>
+
+      <div class="summary-box">
+        <div class="sb"><div class="sb-l">Opening balance</div><div class="sb-v">${stmtVT(opening)}</div></div>
+        <div class="sb"><div class="sb-l">Invoiced</div><div class="sb-v">${stmtVT(invoiced)}</div></div>
+        <div class="sb"><div class="sb-l">Payments received</div><div class="sb-v" style="color:#3B6D11">${stmtVT(paid)}</div></div>
+        <div class="sb"><div class="sb-l">Balance due</div><div class="sb-v">${stmtVT(closing)}</div></div>
+      </div>
+
+      ${note ? `<div class="note">${stmtEsc(note)}</div>` : ''}
+
+      <h2>Account activity</h2>
+      <table>
+        <thead><tr><th style="width:14%">Date</th><th style="width:13%">Reference</th><th>Details</th><th class="r" style="width:14%">Charges</th><th class="r" style="width:14%">Payments</th><th class="r" style="width:15%">Balance</th></tr></thead>
+        <tbody>
+          <tr class="ob"><td>${from ? fmtDate(from) : ''}</td><td></td><td>Opening balance</td><td></td><td></td><td class="r">${stmtVT(opening)}</td></tr>
+          ${ledgerRows || '<tr><td colspan="6" style="text-align:center;color:#999;padding:14px">No transactions in this period</td></tr>'}
+          <tr class="cb"><td>${fmtDate(to)}</td><td></td><td>Closing balance</td><td class="r">${stmtVT(invoiced)}</td><td class="r">${stmtVT(paid)}</td><td class="r" style="color:${balColor}">${stmtVT(closing)}</td></tr>
+        </tbody>
+      </table>
+
+      ${outstanding.length ? `<h2>Outstanding invoices</h2>
+      <table>
+        <thead><tr><th style="width:14%">Invoice #</th><th style="width:14%">Issued</th><th style="width:14%">Due</th><th class="r">Total</th><th class="r">Paid</th><th class="r">Balance</th><th class="r" style="width:12%">Overdue</th></tr></thead>
+        <tbody>${outstandingRows}</tbody>
+      </table>
+
+      <h2>Ageing summary</h2>
+      <div class="ages">
+        ${agingCell('Current', aging.current, false)}
+        ${agingCell('1–30 days', aging.d30, true)}
+        ${agingCell('31–60 days', aging.d60, true)}
+        ${agingCell('61–90 days', aging.d90, true)}
+        ${agingCell('90+ days', aging.d90p, true)}
+        ${agingCell('Total due', aging.current + aging.d30 + aging.d60 + aging.d90 + aging.d90p, false)}
+      </div>` : `<div style="padding:12px 16px;background:#EAF3DE;color:#27500A;border-radius:6px;margin-bottom:18px;font-weight:600">✓ This account is fully paid as at ${fmtDate(to)}. Thank you!</div>`}
+
+      ${r10(closing) > 0 ? `<div class="bank">
+        <div style="font-weight:700;color:#3D2214;margin-bottom:4px">Please pay by electronic transfer to the following account, quoting the invoice number(s) as reference:</div>
+        <div>ANZ Vanuatu Ltd, Port Vila, Vanuatu</div>
+        <div><strong>ACCOUNT NAME:</strong> Malakesa Transfers &amp; Tours</div>
+        <div><strong>BRANCH BSB NO:</strong> 010982 &nbsp;&nbsp; <strong>ACCOUNT NO:</strong> 1406817 &nbsp;&nbsp; <strong>SWIFT CODE:</strong> ANZBVUVX</div>
+        <div style="margin-top:4px;font-size:11px;color:#777">If you have already made payment, please disregard this statement or send us your remittance advice at accounts@malakesa.vu.</div>
+      </div>` : ''}
+
+      <div class="thankyou">Tankiu Tumas — Thank you for choosing Malakesa Transfers &amp; Tours!</div>
+    </div>
+
+    <div class="footer">
+      <div class="footer-l">
+        <div><strong style="color:#F5D98A">Malakesa Transfers &amp; Tours</strong></div>
+        <div>Port Vila, Shefa Province, Vanuatu</div>
+        <div>📞 +678 22712 &nbsp;|&nbsp; 📱 +678 7798712 &nbsp;|&nbsp; ✉️ accounts@malakesa.vu</div>
+      </div>
+      <div class="footer-r">
+        <div>Balance due: ${stmtVT(closing)}</div>
+        <div style="opacity:0.7">Computer generated statement</div>
+      </div>
+    </div>
+  </div>
+  ${mode === 'print' ? '<script>window.onload=()=>setTimeout(()=>window.print(),300)<\/script>' : ''}
+  </body></html>`
+}
+
+function loadStatementPdfLibs() {
+  if (!window.__pdfLibsPromise) {
+    const loadScript = (src) => new Promise((resolve, reject) => {
+      if (document.querySelector(`script[src="${src}"]`)) { resolve(); return }
+      const s = document.createElement('script')
+      s.src = src
+      s.onload = () => resolve()
+      s.onerror = () => reject(new Error('Failed to load PDF library'))
+      document.head.appendChild(s)
+    })
+    window.__pdfLibsPromise = Promise.all([
+      loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js'),
+      loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'),
+    ])
+  }
+  return window.__pdfLibsPromise
+}
+
+async function buildClientStatementPdf(html) {
+  await loadStatementPdfLibs()
+  const iframe = document.createElement('iframe')
+  iframe.style.position = 'fixed'
+  iframe.style.left = '-99999px'
+  iframe.style.top = '0'
+  iframe.style.width = '820px'
+  iframe.style.height = '1200px'
+  iframe.style.border = 'none'
+  document.body.appendChild(iframe)
+  try {
+    iframe.srcdoc = html
+    await new Promise(resolve => { iframe.onload = resolve })
+    await new Promise(r => setTimeout(r, 400))
+    const pageEl = iframe.contentDocument.querySelector('.page')
+    const canvas = await window.html2canvas(pageEl, { scale: 1.5, useCORS: true, backgroundColor: '#ffffff' })
+    const { jsPDF } = window.jspdf
+    const pdf = new jsPDF('p', 'mm', 'a4')
+    const pageWidth = 210, pageHeight = 297
+    const fullHeight = canvas.height * pageWidth / canvas.width
+    const MIN_SCALE = 0.8
+    // Slightly too long → shrink onto one page
+    if (fullHeight <= pageHeight || pageHeight / fullHeight >= MIN_SCALE) {
+      const scale = Math.min(1, pageHeight / fullHeight)
+      const w = pageWidth * scale, h = fullHeight * scale
+      pdf.addImage(canvas.toDataURL('image/jpeg', 0.85), 'JPEG', (pageWidth - w) / 2, 0, w, h)
+      return pdf
+    }
+    // Long statement → cut into A4 slices at row boundaries so no line is split
+    const pxPerMm = canvas.width / pageWidth
+    const pagePx = Math.floor(pageHeight * pxPerMm)
+    const pageTop = pageEl.getBoundingClientRect().top
+    const ratio = canvas.height / pageEl.offsetHeight
+    const cuts = Array.from(pageEl.querySelectorAll('tr, h2, .ages, .bank, .summary-box, .thankyou, .footer, .note, .row2'))
+      .map(el => Math.round((el.getBoundingClientRect().top - pageTop) * ratio))
+      .filter(y => y > 0).sort((a, b) => a - b)
+    const TOP_MARGIN = 8 // mm on continuation pages
+    let start = 0, first = true
+    while (start < canvas.height - 2) {
+      const avail = first ? pagePx : Math.floor((pageHeight - TOP_MARGIN) * pxPerMm)
+      let end = Math.min(start + avail, canvas.height)
+      if (end < canvas.height) {
+        const candidates = cuts.filter(y => y > start + avail * 0.5 && y <= end)
+        if (candidates.length) end = candidates[candidates.length - 1]
+      }
+      const slice = document.createElement('canvas')
+      slice.width = canvas.width
+      slice.height = end - start
+      const ctx = slice.getContext('2d')
+      ctx.fillStyle = '#ffffff'
+      ctx.fillRect(0, 0, slice.width, slice.height)
+      ctx.drawImage(canvas, 0, start, canvas.width, end - start, 0, 0, canvas.width, end - start)
+      if (!first) pdf.addPage()
+      pdf.addImage(slice.toDataURL('image/jpeg', 0.85), 'JPEG', 0, first ? 0 : TOP_MARGIN, pageWidth, (end - start) / pxPerMm)
+      first = false
+      start = end
+    }
+    return pdf
+  } finally {
+    document.body.removeChild(iframe)
+  }
+}
+
+function ClientStatementModal({ client, invoices, payments, onClose }) {
+  const today = todayStr()
+  const ym = (y, m) => { const d = new Date(y, m, 1); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}` }
+  const lastDay = (y, m) => { const d = new Date(y, m + 1, 0); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` }
+  const [Y, M] = today.split('-').map(Number)
+  const presets = {
+    all: { label: 'All time', from: '', to: today },
+    thisMonth: { label: 'This month', from: `${ym(Y, M - 1)}-01`, to: today },
+    lastMonth: { label: 'Last month', from: `${ym(Y, M - 2)}-01`, to: lastDay(Y, M - 2) },
+    last3: { label: 'Last 3 months', from: `${ym(Y, M - 3)}-01`, to: today },
+    thisYear: { label: 'This year', from: `${Y}-01-01`, to: today },
+  }
+  const [preset, setPreset] = useState('all')
+  const [from, setFrom] = useState('')
+  const [to, setTo] = useState(today)
+  const [note, setNote] = useState('')
+  const [busy, setBusy] = useState(false)
+
+  const applyPreset = (k) => { setPreset(k); if (presets[k]) { setFrom(presets[k].from); setTo(presets[k].to) } }
+  const validRange = to && (!from || from <= to)
+  const data = validRange ? computeClientStatement(client, invoices, payments, from, to) : null
+
+  const doPrint = () => {
+    if (!data) return
+    const w = window.open('', '_blank')
+    if (!w) { alert('Please allow popups to print statements.'); return }
+    w.document.write(buildClientStatementHtml(client, data, from, to, note.trim(), 'print'))
+    w.document.close()
+  }
+
+  const doPdf = async () => {
+    if (!data) return
+    setBusy(true)
+    try {
+      const pdf = await buildClientStatementPdf(buildClientStatementHtml(client, data, from, to, note.trim(), 'pdf'))
+      const safe = String(client.name || 'Client').replace(/[^a-z0-9]+/gi, '_').replace(/^_|_$/g, '')
+      pdf.save(`Statement_${safe}_${to}.pdf`)
+    } catch (err) {
+      alert('Could not generate PDF: ' + err.message)
+    }
+    setBusy(false)
+  }
+
+  const box = (label, value, color) => (
+    <div style={{ flex: 1, padding: '10px 12px', background: '#FBF6EC', border: '0.5px solid #E8DCC4', borderRadius: 8 }}>
+      <div style={{ fontSize: 10, color: '#8B6914', textTransform: 'uppercase', letterSpacing: 0.6 }}>{label}</div>
+      <div style={{ fontSize: 15, fontWeight: 600, color: color || '#3D2214', marginTop: 2 }}>{stmtVT(value)}</div>
+    </div>
+  )
+
+  return (
+    <Modal title={`Statement — ${client.name}`} onClose={onClose} wide>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 14 }}>
+        {Object.entries(presets).map(([k, p]) => (
+          <button key={k} className="btn btn-sm" onClick={() => applyPreset(k)}
+            style={preset === k ? { background: '#8B6914', borderColor: '#8B6914', color: '#fff' } : {}}>{p.label}</button>
+        ))}
+      </div>
+
+      <div style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
+        <Field label="From (blank = from the start)" style={{ flex: 1 }}>
+          <input type="date" value={from} onChange={e => { setFrom(e.target.value); setPreset('custom') }} style={inputStyle} />
+        </Field>
+        <Field label="Statement date (to)" style={{ flex: 1 }}>
+          <input type="date" value={to} onChange={e => { setTo(e.target.value); setPreset('custom') }} style={inputStyle} />
+        </Field>
+      </div>
+
+      <Field label="Message to client (optional — printed on the statement)" style={{ marginBottom: 14 }}>
+        <textarea value={note} onChange={e => setNote(e.target.value)} rows={2} style={{ ...inputStyle, resize: 'vertical', fontFamily: 'inherit' }}
+          placeholder="e.g. Kindly settle the overdue balance by 30 September." />
+      </Field>
+
+      {!validRange && <Alert type="danger">The "From" date must be on or before the statement date.</Alert>}
+
+      {data && (
+        <>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+            {box('Opening', data.opening)}
+            {box('Invoiced', data.invoiced)}
+            {box('Paid', data.paid, '#3B6D11')}
+            {box('Balance due', data.closing, data.closing > 0 ? '#D85A30' : '#3B6D11')}
+          </div>
+          <div style={{ fontSize: 12, color: '#666', marginBottom: 16 }}>
+            {data.lines.length} transaction{data.lines.length === 1 ? '' : 's'} in period · {data.outstanding.length} unpaid invoice{data.outstanding.length === 1 ? '' : 's'}
+            {(data.aging.d30 + data.aging.d60 + data.aging.d90 + data.aging.d90p) > 0 && (
+              <span style={{ color: '#A32D2D', fontWeight: 600 }}> · Overdue: {stmtVT(data.aging.d30 + data.aging.d60 + data.aging.d90 + data.aging.d90p)}</span>
+            )}
+          </div>
+        </>
+      )}
+
+      <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+        <button className="btn" onClick={onClose}>Close</button>
+        <button className="btn" style={{ borderColor: '#8B6914', color: '#8B6914' }} onClick={doPrint} disabled={!data}><i className="ti ti-printer"></i> Print</button>
+        <button className="btn btn-primary" onClick={doPdf} disabled={!data || busy}><i className="ti ti-download"></i> {busy ? 'Generating…' : 'Download PDF'}</button>
+      </div>
+    </Modal>
   )
 }
 
