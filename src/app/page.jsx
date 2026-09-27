@@ -1,13 +1,12 @@
 'use client'
-import { useEffect, useState, useRef, Fragment } from 'react'
+import { useEffect, useState, useRef } from 'react'
 
 const MALAKESA_LOGO = "data:image/png;base64,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"
 
 // ── Helpers ──────────────────────────────────────────────
-// Vanuatu Vatu has no cents. Round every computed money amount to the nearest 5 vatu
+// Vanuatu Vatu has no cents. Round every computed money amount to the nearest 10 vatu
 // so figures like VT 2300.57 never appear anywhere — on screen, on printed documents, or saved to the database.
-// (Function name kept as r10 for historical reasons — it now rounds to 5, not 10.)
-const r10 = (n) => Math.round(Number(n || 0) / 5) * 5
+const r10 = (n) => Math.round(Number(n || 0) / 10) * 10
 const fmt = (n) => 'VT ' + r10(n).toLocaleString()
 const fmtDate = (d) => { if (!d) return ''; try { return new Date(d + 'T00:00:00').toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) } catch(e) { return d } }
 // Use local date components (not toISOString/UTC) so this is correct for Vanuatu (UTC+11) at any hour of the day
@@ -15,92 +14,6 @@ const todayStr = () => { const d = new Date(); return `${d.getFullYear()}-${Stri
 const localMonthStr = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
 const addDays = (d, n) => { const dt = new Date(d); dt.setDate(dt.getDate() + n); return dt.toISOString().split('T')[0] }
 const uid = () => Math.random().toString(36).slice(2)
-
-// Auto-shrink-to-fit for printed/emailed invoices: if the invoice content (table +
-// totals + payment details) would spill past the bottom of the first printed page,
-// scale the whole page down just enough that everything — including the totals —
-// stays on one page, instead of letting the totals section spill onto page 2.
-// Only applies when the overflow is modest (scale would stay >= MIN_SCALE); a
-// genuinely long invoice that would need to shrink below readable size is left to
-// paginate normally rather than becoming illegible.
-const INVOICE_FIT_TO_PAGE_SCRIPT = `
-function fitInvoiceToOnePage(sel, pageHeightMM, marginTopMM, marginBottomMM, minScale) {
-  var el = document.querySelector(sel);
-  if (!el) return;
-  var usablePx = (pageHeightMM - marginTopMM - marginBottomMM) * 96 / 25.4;
-  var naturalPx = el.scrollHeight;
-  if (naturalPx <= usablePx) return;
-  var scale = usablePx / naturalPx;
-  if (scale < minScale) return;
-  if ('zoom' in el.style) {
-    el.style.zoom = scale;
-  } else {
-    el.style.transformOrigin = 'top left';
-    el.style.transform = 'scale(' + scale + ')';
-    el.style.width = (100 / scale) + '%';
-  }
-}
-`
-
-// Invoice line-item dates are entered as free text (e.g. "10JUL", "10 Jul", "5/8", "2026-08-05")
-// so we parse flexibly to get a sortable value. Returns a timestamp, or null if unparseable.
-const ITEM_DATE_MONTHS = { jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5, jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11 }
-const parseItemDateValue = (str, refYear) => {
-  const s = String(str || '').trim()
-  if (!s) return null
-  const year = refYear || new Date().getFullYear()
-  let m
-  // ISO: 2026-08-05
-  if ((m = s.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})$/))) {
-    const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]))
-    return isNaN(d) ? null : d.getTime()
-  }
-  // dd/mm/yyyy or dd-mm-yyyy
-  if ((m = s.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})$/))) {
-    const d = new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1]))
-    return isNaN(d) ? null : d.getTime()
-  }
-  // day + month name/abbreviation: 10JUL, 10 JUL, 10-Jul, 5th August
-  if ((m = s.match(/^(\d{1,2})(?:st|nd|rd|th)?[\s\-\/]*([A-Za-z]{3,})/))) {
-    const day = Number(m[1]), monKey = m[2].slice(0, 3).toLowerCase()
-    if (ITEM_DATE_MONTHS.hasOwnProperty(monKey) && day >= 1 && day <= 31) {
-      const d = new Date(year, ITEM_DATE_MONTHS[monKey], day)
-      return isNaN(d) ? null : d.getTime()
-    }
-  }
-  // month name then day: Jul 10, July 10th
-  if ((m = s.match(/^([A-Za-z]{3,})[\s\-\/]*(\d{1,2})/))) {
-    const monKey = m[1].slice(0, 3).toLowerCase(), day = Number(m[2])
-    if (ITEM_DATE_MONTHS.hasOwnProperty(monKey) && day >= 1 && day <= 31) {
-      const d = new Date(year, ITEM_DATE_MONTHS[monKey], day)
-      return isNaN(d) ? null : d.getTime()
-    }
-  }
-  // dd/mm or dd-mm without year
-  if ((m = s.match(/^(\d{1,2})[-\/](\d{1,2})$/))) {
-    const day = Number(m[1]), month = Number(m[2])
-    if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {
-      const d = new Date(year, month - 1, day)
-      return isNaN(d) ? null : d.getTime()
-    }
-  }
-  const t = Date.parse(s)
-  return isNaN(t) ? null : t
-}
-// Sorts line items by their (flexibly parsed) date, ascending. Items with an unparseable/blank
-// date are pushed to the end, keeping their original relative order (stable).
-const sortItemsByDate = (items, refDateStr) => {
-  const refYear = refDateStr ? new Date(refDateStr + 'T00:00:00').getFullYear() : new Date().getFullYear()
-  return items
-    .map((item, idx) => ({ item, idx, key: parseItemDateValue(item.date, refYear) }))
-    .sort((a, b) => {
-      if (a.key === null && b.key === null) return a.idx - b.idx
-      if (a.key === null) return 1
-      if (b.key === null) return -1
-      return a.key - b.key || a.idx - b.idx
-    })
-    .map(x => x.item)
-}
 
 // e.g. periodRangeLabel('2026-08-08','2026-08-21') -> "8th to 21st August 2026"
 const ordinalSuffix = (n) => {
@@ -323,11 +236,11 @@ export default function App() {
     { id: 'dashboard', label: 'Dashboard', icon: 'ti-layout-dashboard' },
     { id: 'invoices', label: 'Invoices', icon: 'ti-file-invoice' },
     { id: 'payments', label: 'Payments Received', icon: 'ti-cash-register' },
-    { id: 'clients', label: 'Clients', icon: 'ti-users', dividerAfter: true },
+    { id: 'clients', label: 'Clients', icon: 'ti-users' },
     { id: 'purchases', label: 'Purchases', icon: 'ti-shopping-cart' },
     { id: 'suppliers', label: 'Suppliers', icon: 'ti-truck' },
     { id: 'vnpf', label: 'Salaries & VNPF', icon: 'ti-building-bank' },
-    { id: 'vat', label: 'VAT Return', icon: 'ti-receipt-tax', dividerAfter: true },
+    { id: 'vat', label: 'VAT Return', icon: 'ti-receipt-tax' },
     { id: 'performance', label: 'Performance Report', icon: 'ti-report-money' },
     { id: 'reports', label: 'Reports', icon: 'ti-chart-bar' },
     { id: 'trash', label: 'Trash', icon: 'ti-trash' },
@@ -398,14 +311,11 @@ export default function App() {
         </div>
         <nav style={{ flex: 1, padding: '8px 0' }}>
           {nav.map(item => (
-            <Fragment key={item.id}>
-              <div onClick={() => setPage(item.id)}
-                style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 16px', fontSize: 13, color: '#1a1a1a', cursor: 'pointer', borderLeft: page === item.id ? '2px solid #8B6914' : '2px solid transparent', background: page === item.id ? '#EDD9A3' : 'transparent', fontWeight: page === item.id ? 500 : 400 }}>
-                <i className={`ti ${item.icon}`} style={{ fontSize: 16 }}></i>
-                {item.label}
-              </div>
-              {item.dividerAfter && <div style={{ height: 1, margin: '8px 16px', background: 'rgba(0,0,0,0.15)' }} />}
-            </Fragment>
+            <div key={item.id} onClick={() => setPage(item.id)}
+              style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 16px', fontSize: 13, color: '#1a1a1a', cursor: 'pointer', borderLeft: page === item.id ? '2px solid #8B6914' : '2px solid transparent', background: page === item.id ? '#EDD9A3' : 'transparent', fontWeight: page === item.id ? 500 : 400 }}>
+              <i className={`ti ${item.icon}`} style={{ fontSize: 16 }}></i>
+              {item.label}
+            </div>
           ))}
         </nav>
         <div style={{ padding: '10px 16px', borderTop: '1px solid rgba(255,215,0,0.15)' }}>
@@ -4117,7 +4027,18 @@ function Purchases({ purchases, suppliers, customCategories, reload, setModal, s
     return { value: localMonthStr(d), label: MONTHS[d.getMonth()] + ' ' + d.getFullYear() }
   }).reverse()
 
-  let filtered = [...purchases].sort((a,b) => b.date > a.date ? 1 : -1)
+  // Order by payment cheque number (ascending) so cheque-book reconciliation reads in sequence;
+  // purchases with no cheque number (cash, bank transfer, etc.) fall back to date, newest first, at the end of the list.
+  let filtered = [...purchases].sort((a, b) => {
+    const an = parseInt(a.cheque_number, 10)
+    const bn = parseInt(b.cheque_number, 10)
+    const aHas = a.payment_method === 'Cheque' && !isNaN(an)
+    const bHas = b.payment_method === 'Cheque' && !isNaN(bn)
+    if (aHas && bHas) return an - bn
+    if (aHas) return -1
+    if (bHas) return 1
+    return b.date > a.date ? 1 : -1
+  })
   if (search) filtered = filtered.filter(p => p.supplier?.toLowerCase().includes(search.toLowerCase()) || p.description?.toLowerCase().includes(search.toLowerCase()))
   if (filterMonth) filtered = filtered.filter(p => p.date?.startsWith(filterMonth))
   if (filterCategory) filtered = filtered.filter(p => p.category === filterCategory)
@@ -6080,7 +6001,102 @@ function Clients({ clients, invoices, payments, reload, setModal }) {
 
   const cancelEdit = () => { setEditingClient(null); setEditForm({}) }
 
-  const [statementClient, setStatementClient] = useState(null)
+  const printStatement = (client) => {
+    const w = window.open('', '_blank')
+    if (!w) { alert('Please allow popups to print statements.'); return }
+
+    const clientInvoices = invoices.filter(i => i.client_id === client.id).sort((a, b) => a.date > b.date ? 1 : -1)
+    const invoiceIds = new Set(clientInvoices.map(i => i.id))
+    const clientPayments = (payments || []).filter(p => invoiceIds.has(p.invoice_id)).sort((a, b) => a.date > b.date ? 1 : -1)
+    const invById = Object.fromEntries(clientInvoices.map(i => [i.id, i]))
+
+    const totalInvoiced = clientInvoices.reduce((s, i) => s + Number(i.total || 0), 0)
+    const totalPaid = clientPayments.reduce((s, p) => s + Number(p.amount || 0), 0)
+    const balance = totalInvoiced - totalPaid
+
+    const rows = clientInvoices.map(i => {
+      const paidForThis = clientPayments.filter(p => p.invoice_id === i.id).reduce((s, p) => s + Number(p.amount), 0)
+      const bal = Number(i.total || 0) - paidForThis
+      return `<tr>
+        <td>${i.number}</td>
+        <td>${fmtDate(i.date)}</td>
+        <td>${fmtDate(i.due_date)}</td>
+        <td class="text-right">VT ${r10(i.total || 0).toLocaleString()}</td>
+        <td class="text-right">VT ${r10(paidForThis).toLocaleString()}</td>
+        <td class="text-right" style="color:${bal > 0 ? '#D85A30' : '#3B6D11'};font-weight:600">VT ${r10(bal).toLocaleString()}</td>
+      </tr>`
+    }).join('')
+
+    const paymentRows = clientPayments.map(p => `<tr>
+        <td>${fmtDate(p.date)}</td>
+        <td>${invById[p.invoice_id]?.number || '—'}</td>
+        <td>${p.method || '—'}</td>
+        <td class="text-right">VT ${r10(p.amount || 0).toLocaleString()}</td>
+      </tr>`).join('')
+
+    w.document.write(`<!DOCTYPE html><html><head><title>Statement — ${client.name}</title><style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; color: #222; font-size: 13px; }
+    .page { max-width: 800px; margin: 0 auto; }
+    .header { background: linear-gradient(135deg, #6B4423 0%, #8B5E34 50%, #A67C42 100%); padding: 14px 28px; display: flex; justify-content: space-between; align-items: center; }
+    .logo-contact { font-size: 9px; color: rgba(255,255,255,0.7); margin-top: 3px; line-height: 1.4; }
+    .meta { text-align: right; color: #fff; }
+    .body { padding: 24px 32px; }
+    .bill-label { font-size: 9px; font-weight: 800; color: #8B6914; text-transform: uppercase; letter-spacing: 2px; border-bottom: 2px solid #8B6914; padding-bottom: 3px; margin-bottom: 8px; display: inline-block; }
+    table { width: 100%; border-collapse: collapse; margin: 10px 0 24px; }
+    thead tr { background: linear-gradient(135deg, #3D2214, #8B6914); }
+    th { padding: 8px 12px; text-align: left; font-size: 10px; font-weight: 700; color: #FFD700; letter-spacing: 1px; text-transform: uppercase; }
+    td { padding: 9px 12px; border-bottom: 1px solid #f0ebe0; }
+    .text-right { text-align: right; }
+    .summary { margin-left: auto; width: 280px; }
+    .srow { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid #eee; font-size: 13px; color: #555; }
+    .srow.grand { border-bottom: none; font-size: 17px; font-weight: 800; color: #3D2214; padding-top: 12px; }
+    h2 { font-size: 14px; color: #3D2214; margin-bottom: 4px; }
+    @media print { .header { -webkit-print-color-adjust: exact; print-color-adjust: exact; } thead tr { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+    </style></head><body>
+    <div class="page">
+      <div class="header">
+        <div>
+          <img src="${MALAKESA_LOGO}" alt="Malakesa Transfers and Tours" style="width:120px;border-radius:4px;display:block" />
+          <div class="logo-contact">📍 Port Vila, Vanuatu &nbsp;|&nbsp; 📞 +678 22712 &nbsp;|&nbsp; ✉️ accounts@malakesa.vu</div>
+        </div>
+        <div class="meta">
+          <div style="font-size:10px;color:rgba(255,255,255,0.75);letter-spacing:1px">STATEMENT OF ACCOUNT</div>
+          <div style="font-size:19px;font-weight:700;color:#F5D98A">${client.name}</div>
+          <div style="font-size:10px;color:rgba(255,255,255,0.8)">As at ${fmtDate(todayStr())}</div>
+        </div>
+      </div>
+      <div class="body">
+        <div class="bill-label">Client details</div>
+        <div style="margin-bottom:20px;color:#555">
+          <div><strong>${client.name}</strong></div>
+          <div>${[client.email, client.email2, client.email3].filter(Boolean).join(', ') || ''}</div>
+          <div>${client.phone || ''}</div>
+          <div>${client.address || ''}</div>
+        </div>
+
+        <h2>Invoices</h2>
+        <table>
+          <thead><tr><th>Invoice #</th><th>Issue Date</th><th>Due Date</th><th class="text-right">Total</th><th class="text-right">Paid</th><th class="text-right">Balance</th></tr></thead>
+          <tbody>${rows || '<tr><td colspan="6" style="text-align:center;color:#999">No invoices</td></tr>'}</tbody>
+        </table>
+
+        ${paymentRows ? `<h2>Payments received</h2>
+        <table>
+          <thead><tr><th>Date</th><th>Invoice #</th><th>Method</th><th class="text-right">Amount</th></tr></thead>
+          <tbody>${paymentRows}</tbody>
+        </table>` : ''}
+
+        <div class="summary">
+          <div class="srow"><span>Total invoiced</span><span>VT ${r10(totalInvoiced).toLocaleString()}</span></div>
+          <div class="srow"><span>Total paid</span><span>VT ${r10(totalPaid).toLocaleString()}</span></div>
+          <div class="srow grand"><span>Balance due</span><span style="color:${balance > 0 ? '#D85A30' : '#3B6D11'}">VT ${r10(balance).toLocaleString()}</span></div>
+        </div>
+      </div>
+    </div>
+    <script>window.onload=()=>window.print()<\/script></body></html>`)
+    w.document.close()
+  }
 
   const saveEdit = async (id) => {
     if (!editForm.name.trim()) return
@@ -6153,7 +6169,7 @@ function Clients({ clients, invoices, payments, reload, setModal }) {
                       <td style={{ padding: '11px 14px' }}>
                         <div style={{ display: 'flex', gap: 5, justifyContent: 'center' }}>
                           <button className="btn btn-sm" onClick={() => startEdit(c)}><i className="ti ti-pencil"></i> Edit</button>
-                          <button className="btn btn-sm" style={{ borderColor: '#8B6914', color: '#8B6914' }} onClick={() => setStatementClient(c)}><i className="ti ti-file-text"></i> Statement</button>
+                          <button className="btn btn-sm" style={{ borderColor: '#8B6914', color: '#8B6914' }} onClick={() => printStatement(c)}><i className="ti ti-file-text"></i> Statement</button>
                           <button className="btn btn-sm" style={{ borderColor: '#A32D2D', color: '#A32D2D' }} onClick={() => handleDelete(c.id)}><i className="ti ti-trash"></i></button>
                         </div>
                       </td>
@@ -6165,421 +6181,7 @@ function Clients({ clients, invoices, payments, reload, setModal }) {
           )}
         </Card>
       </div>
-      {statementClient && <ClientStatementModal client={statementClient} invoices={invoices} payments={payments} onClose={() => setStatementClient(null)} />}
     </>
-  )
-}
-
-// ── Client Statement of Account ───────────────────────────
-// Builds a full statement for one client over a chosen period:
-// opening balance, dated ledger (invoices / payments) with running balance,
-// closing balance, outstanding invoices, ageing and bank remittance details.
-const stmtEsc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
-const stmtVT = (n) => { const v = r10(n); return (v < 0 ? '-VT ' : 'VT ') + Math.abs(v).toLocaleString() }
-// Whole-day difference between two 'YYYY-MM-DD' strings (UTC-safe, no timezone drift)
-const stmtDays = (from, to) => {
-  const p = (s) => { const [y, m, d] = String(s).slice(0, 10).split('-').map(Number); return Date.UTC(y, m - 1, d) }
-  return Math.round((p(to) - p(from)) / 86400000)
-}
-const stmtPayDate = (p) => (p.date || String(p.created_at || '').slice(0, 10) || '')
-
-function computeClientStatement(client, invoices, payments, from, to) {
-  const clientInvoices = (invoices || []).filter(i => i.client_id === client.id && i.date)
-  const invById = Object.fromEntries(clientInvoices.map(i => [i.id, i]))
-  const clientPayments = (payments || []).filter(p => invById[p.invoice_id] && stmtPayDate(p))
-
-  const inRange = (d) => (!from || d >= from) && d <= to
-  const before = (d) => from && d < from
-
-  // Opening balance: everything dated before the period start
-  const opening = clientInvoices.filter(i => before(i.date)).reduce((s, i) => s + Number(i.total || 0), 0)
-    - clientPayments.filter(p => before(stmtPayDate(p))).reduce((s, p) => s + Number(p.amount || 0), 0)
-
-  // Ledger lines inside the period (invoices before payments on the same day)
-  const lines = [
-    ...clientInvoices.filter(i => inRange(i.date)).map(i => ({
-      date: i.date, type: 'inv', ref: i.number, detail: 'Invoice' + (i.due_date ? ' — due ' + fmtDate(i.due_date) : ''), debit: Number(i.total || 0), credit: 0,
-    })),
-    ...clientPayments.filter(p => inRange(stmtPayDate(p))).map(p => ({
-      date: stmtPayDate(p), type: 'pay', ref: p.receipt_number || '—', detail: 'Payment' + (p.method ? ' (' + p.method + ')' : '') + ' — ' + (invById[p.invoice_id]?.number || ''), debit: 0, credit: Number(p.amount || 0),
-    })),
-  ].sort((a, b) => a.date === b.date ? (a.type === b.type ? String(a.ref).localeCompare(String(b.ref)) : (a.type === 'inv' ? -1 : 1)) : (a.date > b.date ? 1 : -1))
-
-  let running = opening
-  lines.forEach(l => { running += l.debit - l.credit; l.balance = running })
-  const invoiced = lines.reduce((s, l) => s + l.debit, 0)
-  const paid = lines.reduce((s, l) => s + l.credit, 0)
-  const closing = opening + invoiced - paid
-
-  // Outstanding invoices + ageing as at the statement date
-  const aging = { current: 0, d30: 0, d60: 0, d90: 0, d90p: 0 }
-  const outstanding = clientInvoices.filter(i => i.date <= to).map(i => {
-    const paidToDate = clientPayments.filter(p => p.invoice_id === i.id && stmtPayDate(p) <= to).reduce((s, p) => s + Number(p.amount || 0), 0)
-    const bal = Number(i.total || 0) - paidToDate
-    const overdue = i.due_date ? stmtDays(i.due_date, to) : 0
-    return { ...i, paidToDate, bal, overdue }
-  }).filter(i => r10(i.bal) > 0).sort((a, b) => a.date > b.date ? 1 : -1)
-  outstanding.forEach(i => {
-    if (i.overdue <= 0) aging.current += i.bal
-    else if (i.overdue <= 30) aging.d30 += i.bal
-    else if (i.overdue <= 60) aging.d60 += i.bal
-    else if (i.overdue <= 90) aging.d90 += i.bal
-    else aging.d90p += i.bal
-  })
-
-  return { opening, lines, invoiced, paid, closing, outstanding, aging }
-}
-
-function buildClientStatementHtml(client, data, from, to, note, mode) {
-  const { opening, lines, invoiced, paid, closing, outstanding, aging } = data
-  const periodLabel = from ? `${fmtDate(from)} – ${fmtDate(to)}` : `All transactions to ${fmtDate(to)}`
-  const emails = [client.email, client.email2, client.email3].filter(Boolean).join(', ')
-  const balColor = closing > 0 ? '#D85A30' : '#3B6D11'
-
-  const ledgerRows = lines.map(l => `<tr>
-      <td style="white-space:nowrap">${fmtDate(l.date)}</td>
-      <td style="white-space:nowrap">${stmtEsc(l.ref)}</td>
-      <td>${stmtEsc(l.detail)}</td>
-      <td class="r">${l.debit ? stmtVT(l.debit) : ''}</td>
-      <td class="r" style="color:#3B6D11">${l.credit ? stmtVT(l.credit) : ''}</td>
-      <td class="r" style="font-weight:600">${stmtVT(l.balance)}</td>
-    </tr>`).join('')
-
-  const outstandingRows = outstanding.map(i => `<tr>
-      <td style="white-space:nowrap">${stmtEsc(i.number)}</td>
-      <td style="white-space:nowrap">${fmtDate(i.date)}</td>
-      <td style="white-space:nowrap">${fmtDate(i.due_date)}</td>
-      <td class="r">${stmtVT(i.total)}</td>
-      <td class="r">${stmtVT(i.paidToDate)}</td>
-      <td class="r" style="font-weight:600;color:#D85A30">${stmtVT(i.bal)}</td>
-      <td class="r" style="color:${i.overdue > 0 ? '#A32D2D' : '#666'}">${i.overdue > 0 ? i.overdue + ' days' : 'Not due'}</td>
-    </tr>`).join('')
-
-  const agingCell = (label, v, hot) => `<div class="age"><div class="age-l">${label}</div><div class="age-v" style="color:${v > 0 && hot ? '#A32D2D' : '#3D2214'}">${stmtVT(v)}</div></div>`
-
-  const printCss = mode === 'print' ? `
-    @page { size: A4; margin: 10mm; }
-    @media print {
-      .header, .footer, thead tr, .summary-box, .ages { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-      thead { display: table-header-group; }
-      tr { page-break-inside: avoid; }
-    }` : ''
-
-  return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Statement — ${stmtEsc(client.name)}</title><style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: Arial, sans-serif; color: #222; font-size: 12px; background: #fff; }
-    .page { width: 800px; margin: 0 auto; background: #fff; }
-    .header { background: linear-gradient(135deg, #6B4423 0%, #8B5E34 50%, #A67C42 100%); padding: 12px 28px; display: flex; justify-content: space-between; align-items: center; }
-    .logo-contact { font-size: 9px; color: rgba(255,255,255,0.7); margin-top: 3px; line-height: 1.4; }
-    .meta { text-align: right; color: #fff; }
-    .body { padding: 24px 32px; }
-    .row2 { display: flex; justify-content: space-between; gap: 20px; margin-bottom: 18px; }
-    .label { font-size: 9px; font-weight: 800; color: #8B6914; text-transform: uppercase; letter-spacing: 2px; border-bottom: 2px solid #8B6914; padding-bottom: 3px; margin-bottom: 8px; display: inline-block; }
-    .detail { font-size: 12px; color: #555; line-height: 1.7; }
-    .summary-box { display: flex; border: 1px solid #E8DCC4; border-radius: 6px; overflow: hidden; margin-bottom: 18px; }
-    .sb { flex: 1; padding: 10px 12px; background: #FBF6EC; border-right: 1px solid #E8DCC4; }
-    .sb:last-child { border-right: none; background: #3D2214; }
-    .sb-l { font-size: 9px; text-transform: uppercase; letter-spacing: 1px; color: #8B6914; margin-bottom: 4px; }
-    .sb-v { font-size: 15px; font-weight: 700; color: #3D2214; }
-    .sb:last-child .sb-l { color: #F5D98A; }
-    .sb:last-child .sb-v { color: #fff; font-size: 17px; }
-    h2 { font-size: 13px; color: #3D2214; margin: 6px 0 2px; }
-    table { width: 100%; border-collapse: collapse; margin: 6px 0 18px; }
-    thead tr { background: linear-gradient(135deg, #8B5E34, #8B6914); }
-    th { padding: 8px 10px; text-align: left; font-size: 9.5px; font-weight: 700; color: #F5D98A; letter-spacing: 1px; text-transform: uppercase; }
-    td { padding: 7px 10px; border-bottom: 1px solid #F3EADB; font-size: 12px; vertical-align: top; }
-    tbody tr:nth-child(even) td { background: #FBF7EF; }
-    .r { text-align: right; white-space: nowrap; }
-    tr.ob td { background: #F5EEDF !important; font-style: italic; color: #555; }
-    tr.cb td { background: #EFE4CE !important; font-weight: 700; color: #3D2214; border-top: 2px solid #8B6914; }
-    .ages { display: flex; gap: 0; border: 1px solid #E8DCC4; border-radius: 6px; overflow: hidden; margin: 6px 0 18px; }
-    .age { flex: 1; padding: 8px 10px; text-align: center; border-right: 1px solid #E8DCC4; background: #FBF6EC; }
-    .age:last-child { border-right: none; background: #3D2214; }
-    .age-l { font-size: 9px; text-transform: uppercase; letter-spacing: 1px; color: #8B6914; margin-bottom: 3px; }
-    .age-v { font-size: 13px; font-weight: 700; }
-    .age:last-child .age-l { color: #F5D98A; }
-    .age:last-child .age-v { color: #fff !important; }
-    .note { background: #faf6ee; border-left: 4px solid #8B6914; padding: 10px 14px; border-radius: 0 6px 6px 0; margin-bottom: 18px; font-size: 12px; color: #555; white-space: pre-wrap; }
-    .bank { padding: 12px 16px; border: 1px solid #ddd; border-radius: 6px; font-size: 12px; line-height: 1.8; color: #444; }
-    .thankyou { text-align: center; font-size: 13px; font-weight: 600; color: #8B6914; margin: 20px 0 8px; font-style: italic; }
-    .footer { background: linear-gradient(135deg, #6B4423, #A67C42); padding: 14px 32px; display: flex; justify-content: space-between; align-items: center; }
-    .footer-l { color: rgba(255,255,255,0.85); font-size: 10.5px; line-height: 1.8; }
-    .footer-r { text-align: right; color: #F5D98A; font-size: 10.5px; line-height: 1.8; }
-    ${printCss}
-  </style></head><body>
-  <div class="page">
-    <div class="header">
-      <div>
-        <img src="${MALAKESA_LOGO}" alt="Malakesa Transfers and Tours" style="width:120px;border-radius:4px;display:block" />
-        <div class="logo-contact">📍 Port Vila, Vanuatu &nbsp;|&nbsp; 📞 +678 22712 &nbsp;|&nbsp; ✉️ accounts@malakesa.vu</div>
-      </div>
-      <div class="meta">
-        <div style="font-size:10px;color:rgba(255,255,255,0.75);letter-spacing:1px">STATEMENT OF ACCOUNT &nbsp;·&nbsp; TIN #445579</div>
-        <div style="font-size:19px;font-weight:700;color:#F5D98A">${stmtEsc(client.name)}</div>
-        <div style="font-size:10px;color:rgba(255,255,255,0.85)">Statement date: <strong>${fmtDate(to)}</strong></div>
-      </div>
-    </div>
-
-    <div class="body">
-      <div class="row2">
-        <div>
-          <div class="label">Statement to</div>
-          <div style="font-size:15px;font-weight:700;margin-bottom:3px">${stmtEsc(client.name)}</div>
-          <div class="detail">
-            ${client.address ? stmtEsc(client.address) + '<br/>' : ''}
-            ${client.phone ? stmtEsc(client.phone) + '<br/>' : ''}
-            ${emails ? stmtEsc(emails) : ''}
-          </div>
-        </div>
-        <div style="text-align:right">
-          <div class="label">Statement details</div>
-          <div class="detail">Period: <strong>${periodLabel}</strong></div>
-          <div class="detail">Statement date: <strong>${fmtDate(to)}</strong></div>
-          <div class="detail">Currency: <strong>Vatu (VT)</strong></div>
-        </div>
-      </div>
-
-      <div class="summary-box">
-        <div class="sb"><div class="sb-l">Opening balance</div><div class="sb-v">${stmtVT(opening)}</div></div>
-        <div class="sb"><div class="sb-l">Invoiced</div><div class="sb-v">${stmtVT(invoiced)}</div></div>
-        <div class="sb"><div class="sb-l">Payments received</div><div class="sb-v" style="color:#3B6D11">${stmtVT(paid)}</div></div>
-        <div class="sb"><div class="sb-l">Balance due</div><div class="sb-v">${stmtVT(closing)}</div></div>
-      </div>
-
-      ${note ? `<div class="note">${stmtEsc(note)}</div>` : ''}
-
-      <h2>Account activity</h2>
-      <table>
-        <thead><tr><th style="width:14%">Date</th><th style="width:13%">Reference</th><th>Details</th><th class="r" style="width:14%">Charges</th><th class="r" style="width:14%">Payments</th><th class="r" style="width:15%">Balance</th></tr></thead>
-        <tbody>
-          <tr class="ob"><td>${from ? fmtDate(from) : ''}</td><td></td><td>Opening balance</td><td></td><td></td><td class="r">${stmtVT(opening)}</td></tr>
-          ${ledgerRows || '<tr><td colspan="6" style="text-align:center;color:#999;padding:14px">No transactions in this period</td></tr>'}
-          <tr class="cb"><td>${fmtDate(to)}</td><td></td><td>Closing balance</td><td class="r">${stmtVT(invoiced)}</td><td class="r">${stmtVT(paid)}</td><td class="r" style="color:${balColor}">${stmtVT(closing)}</td></tr>
-        </tbody>
-      </table>
-
-      ${outstanding.length ? `<h2>Outstanding invoices</h2>
-      <table>
-        <thead><tr><th style="width:14%">Invoice #</th><th style="width:14%">Issued</th><th style="width:14%">Due</th><th class="r">Total</th><th class="r">Paid</th><th class="r">Balance</th><th class="r" style="width:12%">Overdue</th></tr></thead>
-        <tbody>${outstandingRows}</tbody>
-      </table>
-
-      <h2>Ageing summary</h2>
-      <div class="ages">
-        ${agingCell('Current', aging.current, false)}
-        ${agingCell('1–30 days', aging.d30, true)}
-        ${agingCell('31–60 days', aging.d60, true)}
-        ${agingCell('61–90 days', aging.d90, true)}
-        ${agingCell('90+ days', aging.d90p, true)}
-        ${agingCell('Total due', aging.current + aging.d30 + aging.d60 + aging.d90 + aging.d90p, false)}
-      </div>` : `<div style="padding:12px 16px;background:#EAF3DE;color:#27500A;border-radius:6px;margin-bottom:18px;font-weight:600">✓ This account is fully paid as at ${fmtDate(to)}. Thank you!</div>`}
-
-      ${r10(closing) > 0 ? `<div class="bank">
-        <div style="font-weight:700;color:#3D2214;margin-bottom:4px">Please pay by electronic transfer to the following account, quoting the invoice number(s) as reference:</div>
-        <div>ANZ Vanuatu Ltd, Port Vila, Vanuatu</div>
-        <div><strong>ACCOUNT NAME:</strong> Malakesa Transfers &amp; Tours</div>
-        <div><strong>BRANCH BSB NO:</strong> 010982 &nbsp;&nbsp; <strong>ACCOUNT NO:</strong> 1406817 &nbsp;&nbsp; <strong>SWIFT CODE:</strong> ANZBVUVX</div>
-        <div style="margin-top:4px;font-size:11px;color:#777">If you have already made payment, please disregard this statement or send us your remittance advice at accounts@malakesa.vu.</div>
-      </div>` : ''}
-
-      <div class="thankyou">Tankiu Tumas — Thank you for choosing Malakesa Transfers &amp; Tours!</div>
-    </div>
-
-    <div class="footer">
-      <div class="footer-l">
-        <div><strong style="color:#F5D98A">Malakesa Transfers &amp; Tours</strong></div>
-        <div>Port Vila, Shefa Province, Vanuatu</div>
-        <div>📞 +678 22712 &nbsp;|&nbsp; 📱 +678 7798712 &nbsp;|&nbsp; ✉️ accounts@malakesa.vu</div>
-      </div>
-      <div class="footer-r">
-        <div>Balance due: ${stmtVT(closing)}</div>
-        <div style="opacity:0.7">Computer generated statement</div>
-      </div>
-    </div>
-  </div>
-  ${mode === 'print' ? '<script>window.onload=()=>setTimeout(()=>window.print(),300)<\/script>' : ''}
-  </body></html>`
-}
-
-function loadStatementPdfLibs() {
-  if (!window.__pdfLibsPromise) {
-    const loadScript = (src) => new Promise((resolve, reject) => {
-      if (document.querySelector(`script[src="${src}"]`)) { resolve(); return }
-      const s = document.createElement('script')
-      s.src = src
-      s.onload = () => resolve()
-      s.onerror = () => reject(new Error('Failed to load PDF library'))
-      document.head.appendChild(s)
-    })
-    window.__pdfLibsPromise = Promise.all([
-      loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js'),
-      loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'),
-    ])
-  }
-  return window.__pdfLibsPromise
-}
-
-async function buildClientStatementPdf(html) {
-  await loadStatementPdfLibs()
-  const iframe = document.createElement('iframe')
-  iframe.style.position = 'fixed'
-  iframe.style.left = '-99999px'
-  iframe.style.top = '0'
-  iframe.style.width = '820px'
-  iframe.style.height = '1200px'
-  iframe.style.border = 'none'
-  document.body.appendChild(iframe)
-  try {
-    iframe.srcdoc = html
-    await new Promise(resolve => { iframe.onload = resolve })
-    await new Promise(r => setTimeout(r, 400))
-    const pageEl = iframe.contentDocument.querySelector('.page')
-    const canvas = await window.html2canvas(pageEl, { scale: 1.5, useCORS: true, backgroundColor: '#ffffff' })
-    const { jsPDF } = window.jspdf
-    const pdf = new jsPDF('p', 'mm', 'a4')
-    const pageWidth = 210, pageHeight = 297
-    const fullHeight = canvas.height * pageWidth / canvas.width
-    const MIN_SCALE = 0.8
-    // Slightly too long → shrink onto one page
-    if (fullHeight <= pageHeight || pageHeight / fullHeight >= MIN_SCALE) {
-      const scale = Math.min(1, pageHeight / fullHeight)
-      const w = pageWidth * scale, h = fullHeight * scale
-      pdf.addImage(canvas.toDataURL('image/jpeg', 0.85), 'JPEG', (pageWidth - w) / 2, 0, w, h)
-      return pdf
-    }
-    // Long statement → cut into A4 slices at row boundaries so no line is split
-    const pxPerMm = canvas.width / pageWidth
-    const pagePx = Math.floor(pageHeight * pxPerMm)
-    const pageTop = pageEl.getBoundingClientRect().top
-    const ratio = canvas.height / pageEl.offsetHeight
-    const cuts = Array.from(pageEl.querySelectorAll('tr, h2, .ages, .bank, .summary-box, .thankyou, .footer, .note, .row2'))
-      .map(el => Math.round((el.getBoundingClientRect().top - pageTop) * ratio))
-      .filter(y => y > 0).sort((a, b) => a - b)
-    const TOP_MARGIN = 8 // mm on continuation pages
-    let start = 0, first = true
-    while (start < canvas.height - 2) {
-      const avail = first ? pagePx : Math.floor((pageHeight - TOP_MARGIN) * pxPerMm)
-      let end = Math.min(start + avail, canvas.height)
-      if (end < canvas.height) {
-        const candidates = cuts.filter(y => y > start + avail * 0.5 && y <= end)
-        if (candidates.length) end = candidates[candidates.length - 1]
-      }
-      const slice = document.createElement('canvas')
-      slice.width = canvas.width
-      slice.height = end - start
-      const ctx = slice.getContext('2d')
-      ctx.fillStyle = '#ffffff'
-      ctx.fillRect(0, 0, slice.width, slice.height)
-      ctx.drawImage(canvas, 0, start, canvas.width, end - start, 0, 0, canvas.width, end - start)
-      if (!first) pdf.addPage()
-      pdf.addImage(slice.toDataURL('image/jpeg', 0.85), 'JPEG', 0, first ? 0 : TOP_MARGIN, pageWidth, (end - start) / pxPerMm)
-      first = false
-      start = end
-    }
-    return pdf
-  } finally {
-    document.body.removeChild(iframe)
-  }
-}
-
-function ClientStatementModal({ client, invoices, payments, onClose }) {
-  const today = todayStr()
-  const ym = (y, m) => { const d = new Date(y, m, 1); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}` }
-  const lastDay = (y, m) => { const d = new Date(y, m + 1, 0); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` }
-  const [Y, M] = today.split('-').map(Number)
-  const presets = {
-    all: { label: 'All time', from: '', to: today },
-    thisMonth: { label: 'This month', from: `${ym(Y, M - 1)}-01`, to: today },
-    lastMonth: { label: 'Last month', from: `${ym(Y, M - 2)}-01`, to: lastDay(Y, M - 2) },
-    last3: { label: 'Last 3 months', from: `${ym(Y, M - 3)}-01`, to: today },
-    thisYear: { label: 'This year', from: `${Y}-01-01`, to: today },
-  }
-  const [preset, setPreset] = useState('all')
-  const [from, setFrom] = useState('')
-  const [to, setTo] = useState(today)
-  const [note, setNote] = useState('')
-  const [busy, setBusy] = useState(false)
-
-  const applyPreset = (k) => { setPreset(k); if (presets[k]) { setFrom(presets[k].from); setTo(presets[k].to) } }
-  const validRange = to && (!from || from <= to)
-  const data = validRange ? computeClientStatement(client, invoices, payments, from, to) : null
-
-  const doPrint = () => {
-    if (!data) return
-    const w = window.open('', '_blank')
-    if (!w) { alert('Please allow popups to print statements.'); return }
-    w.document.write(buildClientStatementHtml(client, data, from, to, note.trim(), 'print'))
-    w.document.close()
-  }
-
-  const doPdf = async () => {
-    if (!data) return
-    setBusy(true)
-    try {
-      const pdf = await buildClientStatementPdf(buildClientStatementHtml(client, data, from, to, note.trim(), 'pdf'))
-      const safe = String(client.name || 'Client').replace(/[^a-z0-9]+/gi, '_').replace(/^_|_$/g, '')
-      pdf.save(`Statement_${safe}_${to}.pdf`)
-    } catch (err) {
-      alert('Could not generate PDF: ' + err.message)
-    }
-    setBusy(false)
-  }
-
-  const box = (label, value, color) => (
-    <div style={{ flex: 1, padding: '10px 12px', background: '#FBF6EC', border: '0.5px solid #E8DCC4', borderRadius: 8 }}>
-      <div style={{ fontSize: 10, color: '#8B6914', textTransform: 'uppercase', letterSpacing: 0.6 }}>{label}</div>
-      <div style={{ fontSize: 15, fontWeight: 600, color: color || '#3D2214', marginTop: 2 }}>{stmtVT(value)}</div>
-    </div>
-  )
-
-  return (
-    <Modal title={`Statement — ${client.name}`} onClose={onClose} wide>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 14 }}>
-        {Object.entries(presets).map(([k, p]) => (
-          <button key={k} className="btn btn-sm" onClick={() => applyPreset(k)}
-            style={preset === k ? { background: '#8B6914', borderColor: '#8B6914', color: '#fff' } : {}}>{p.label}</button>
-        ))}
-      </div>
-
-      <div style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
-        <Field label="From (blank = from the start)" style={{ flex: 1 }}>
-          <input type="date" value={from} onChange={e => { setFrom(e.target.value); setPreset('custom') }} style={inputStyle} />
-        </Field>
-        <Field label="Statement date (to)" style={{ flex: 1 }}>
-          <input type="date" value={to} onChange={e => { setTo(e.target.value); setPreset('custom') }} style={inputStyle} />
-        </Field>
-      </div>
-
-      <Field label="Message to client (optional — printed on the statement)" style={{ marginBottom: 14 }}>
-        <textarea value={note} onChange={e => setNote(e.target.value)} rows={2} style={{ ...inputStyle, resize: 'vertical', fontFamily: 'inherit' }}
-          placeholder="e.g. Kindly settle the overdue balance by 30 September." />
-      </Field>
-
-      {!validRange && <Alert type="danger">The "From" date must be on or before the statement date.</Alert>}
-
-      {data && (
-        <>
-          <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
-            {box('Opening', data.opening)}
-            {box('Invoiced', data.invoiced)}
-            {box('Paid', data.paid, '#3B6D11')}
-            {box('Balance due', data.closing, data.closing > 0 ? '#D85A30' : '#3B6D11')}
-          </div>
-          <div style={{ fontSize: 12, color: '#666', marginBottom: 16 }}>
-            {data.lines.length} transaction{data.lines.length === 1 ? '' : 's'} in period · {data.outstanding.length} unpaid invoice{data.outstanding.length === 1 ? '' : 's'}
-            {(data.aging.d30 + data.aging.d60 + data.aging.d90 + data.aging.d90p) > 0 && (
-              <span style={{ color: '#A32D2D', fontWeight: 600 }}> · Overdue: {stmtVT(data.aging.d30 + data.aging.d60 + data.aging.d90 + data.aging.d90p)}</span>
-            )}
-          </div>
-        </>
-      )}
-
-      <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-        <button className="btn" onClick={onClose}>Close</button>
-        <button className="btn" style={{ borderColor: '#8B6914', color: '#8B6914' }} onClick={doPrint} disabled={!data}><i className="ti ti-printer"></i> Print</button>
-        <button className="btn btn-primary" onClick={doPdf} disabled={!data || busy}><i className="ti ti-download"></i> {busy ? 'Generating…' : 'Download PDF'}</button>
-      </div>
-    </Modal>
   )
 }
 
@@ -6701,9 +6303,7 @@ function previewInvoice(inv) {
       </div>
     </div>
   </div>
-  <script>${INVOICE_FIT_TO_PAGE_SCRIPT}
-  window.onload=()=>{ fitInvoiceToOnePage('.page', 297, 18, 22, 0.55); };
-  window.document.close()<\/script>
+  <script>window.document.close()<\/script>
   </body></html>`)
 }
 
@@ -6715,7 +6315,7 @@ function NewInvoiceModal({ clients, invoice, onClose, onSave }) {
     ? { client_id: invoice.client_id || '', client_name: invoice.client_name || '', client_email: invoice.client_email || '', date: invoice.date || todayStr(), due_date: invoice.due_date || addDays(todayStr(), 14), notes: invoice.notes || '' }
     : { client_id: '', client_name: '', client_email: '', date: todayStr(), due_date: addDays(todayStr(), 14), notes: '' })
   const [items, setItems] = useState(isEdit && invoice.items && invoice.items.length
-    ? sortItemsByDate(invoice.items.map(it => ({ id: uid(), date: it.date || '', description: it.description || '', name: it.name || '', voucher: it.voucher || '', qty: it.qty || 1, rate: it.rate || '', total: it.total || 0 })), invoice.date)
+    ? invoice.items.map(it => ({ id: uid(), date: it.date || '', description: it.description || '', name: it.name || '', voucher: it.voucher || '', qty: it.qty || 1, rate: it.rate || '', total: it.total || 0 }))
     : [{ id: uid(), date: '', description: '', name: '', voucher: '', qty: 1, rate: '', total: 0 }, { id: uid(), date: '', description: '', name: '', voucher: '', qty: 1, rate: '', total: 0 }])
   const [applyVat, setApplyVat] = useState(isEdit ? (typeof invoice.vat_applied === 'boolean' ? invoice.vat_applied : Number(invoice.tax) > 0) : true)
   const vatInclusive = true // Rates are always VAT-inclusive at Malakesa
@@ -6794,7 +6394,7 @@ function NewInvoiceModal({ clients, invoice, onClose, onSave }) {
   const handleSave = async () => {
     setError('')
     if (!form.client_id) { setError('Please select a client'); return }
-    const validItems = sortItemsByDate(items.filter(i => i.description.trim()), form.date)
+    const validItems = items.filter(i => i.description.trim())
     if (!validItems.length) { setError('Add at least one line item'); return }
     setSaving(true)
     try {
@@ -6886,7 +6486,7 @@ function NewInvoiceModal({ clients, invoice, onClose, onSave }) {
         )}
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 20 }}>
-        <button className="btn" onClick={() => previewInvoice({ ...form, items: sortItemsByDate(items.filter(i => i.description.trim()), form.date), subtotal, tax, total })}>
+        <button className="btn" onClick={() => previewInvoice({ ...form, items: items.filter(i => i.description.trim()), subtotal, tax, total })}>
           <i className="ti ti-eye"></i> Preview Invoice
         </button>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -7080,9 +6680,7 @@ function ViewInvoiceModal({ invoice, payments, onClose, onPay }) {
       </div>
     </div>
   </div>
-  <script>${INVOICE_FIT_TO_PAGE_SCRIPT}
-  window.onload=()=>{ fitInvoiceToOnePage('.page', 297, 18, 22, 0.55); window.print(); }
-  <\/script></body></html>`)
+  <script>window.onload=()=>window.print()<\/script></body></html>`)
     w.document.close()
   }
 
@@ -7222,24 +6820,8 @@ function ViewInvoiceModal({ invoice, payments, onClose, onPay }) {
     const { jsPDF } = window.jspdf
     const pdf = new jsPDF('p', 'mm', 'a4')
     const pageWidth = 210, pageHeight = 297
-    let imgWidth = pageWidth
-    let imgHeight = canvas.height * imgWidth / canvas.width
-    // If the invoice overflows the first page by a modest amount (e.g. the totals /
-    // payment details / thank-you note spilling over), shrink the whole invoice down
-    // proportionally so it still fits on a single page, instead of splitting the
-    // totals across a second page. A genuinely long invoice that would need to shrink
-    // below a readable size (MIN_SCALE) is left to paginate normally.
-    const MIN_SCALE = 0.55
-    if (imgHeight > pageHeight) {
-      const scale = pageHeight / imgHeight
-      if (scale >= MIN_SCALE) {
-        imgHeight = pageHeight
-        imgWidth = imgWidth * scale
-        pdf.addImage(imgData, 'JPEG', (pageWidth - imgWidth) / 2, 0, imgWidth, imgHeight)
-        document.body.removeChild(iframe)
-        return pdf
-      }
-    }
+    const imgWidth = pageWidth
+    const imgHeight = canvas.height * imgWidth / canvas.width
     let heightLeft = imgHeight
     let position = 0
     pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight)
