@@ -8,6 +8,19 @@ const MALAKESA_LOGO = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAbgAAAB0CAY
 // so figures like VT 2300.57 never appear anywhere — on screen, on printed documents, or saved to the database.
 const r10 = (n) => Math.round(Number(n || 0) / 10) * 10
 const fmt = (n) => 'VT ' + r10(n).toLocaleString()
+
+// Fire-and-forget activity log entry. Never blocks or fails the action it's logging.
+const logActivity = (action, entityType, entityLabel, details) => {
+  try {
+    let actor = 'Unknown'
+    try { actor = sessionStorage.getItem('malakesa_actor') || 'Unknown' } catch (e) {}
+    fetch('/api/activity-log', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ actor, action, entity_type: entityType, entity_label: entityLabel || null, details: details || null })
+    }).catch(() => {})
+  } catch (e) {}
+}
 const fmtDate = (d) => { if (!d) return ''; try { return new Date(d + 'T00:00:00').toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) } catch(e) { return d } }
 // Use local date components (not toISOString/UTC) so this is correct for Vanuatu (UTC+11) at any hour of the day
 const todayStr = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` }
@@ -66,6 +79,7 @@ const Badge = ({ status }) => {
 // ── Main App ──────────────────────────────────────────────
 function LoginScreen({ onLogin }) {
   const [pw, setPw] = useState('')
+  const [name, setName] = useState('')
   const [error, setError] = useState('')
   const [show, setShow] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -76,6 +90,7 @@ function LoginScreen({ onLogin }) {
       const res = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: pw }) })
       if (res.ok) {
         setError('')
+        try { sessionStorage.setItem('malakesa_actor', name.trim() || 'Unknown') } catch(e) {}
         onLogin()
         return
       }
@@ -103,6 +118,18 @@ function LoginScreen({ onLogin }) {
               <i className="ti ti-alert-circle"></i> {error}
             </div>
           )}
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ display: 'block', color: 'rgba(255,255,255,0.6)', fontSize: 11, fontWeight: 600, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 1 }}>Your name</label>
+            <input
+              type="text"
+              value={name}
+              onChange={e => setName(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && handleLogin()}
+              placeholder="e.g. Frank"
+              style={{ width: '100%', padding: '12px 14px', borderRadius: 10, border: '1px solid rgba(255,215,0,0.2)', background: 'rgba(255,255,255,0.08)', color: '#fff', fontSize: 15, outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit' }}
+            />
+            <div style={{ color: 'rgba(255,255,255,0.35)', fontSize: 11, marginTop: 6 }}>Shown against anything you create, edit or delete in the Activity Log.</div>
+          </div>
           <div style={{ marginBottom: 20 }}>
             <label style={{ display: 'block', color: 'rgba(255,255,255,0.6)', fontSize: 11, fontWeight: 600, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 1 }}>Password</label>
             <div style={{ position: 'relative' }}>
@@ -164,7 +191,7 @@ export default function App() {
         fetch('/api/invoices'), fetch('/api/payments'), fetch('/api/clients'), fetch('/api/purchases'), fetch('/api/suppliers'), fetch('/api/employees'), fetch('/api/purchase-categories'), fetch('/api/salary-records'), fetch('/api/vat-filings')
       ])
       if ([invRes, pmtRes, clRes, purRes, supRes, empRes, catRes, salRes, vatRes].some(r => r.status === 401)) {
-        try { sessionStorage.removeItem('malakesa_auth') } catch(e) {}
+        try { sessionStorage.removeItem('malakesa_auth'); sessionStorage.removeItem('malakesa_actor') } catch(e) {}
         setIsLoggedIn(false)
         setLoading(false)
         return
@@ -194,7 +221,7 @@ export default function App() {
 
   const doLogout = async () => {
     try { await fetch('/api/logout', { method: 'POST' }) } catch (e) {}
-    try { sessionStorage.removeItem('malakesa_auth') } catch (e) {}
+    try { sessionStorage.removeItem('malakesa_auth'); sessionStorage.removeItem('malakesa_actor') } catch (e) {}
     setIsLoggedIn(false)
     setIdleWarning(null)
     warningActiveRef.current = false
@@ -244,6 +271,7 @@ export default function App() {
     { id: 'performance', label: 'Performance Report', icon: 'ti-report-money' },
     { id: 'reports', label: 'Reports', icon: 'ti-chart-bar' },
     { id: 'trash', label: 'Trash', icon: 'ti-trash' },
+    { id: 'activityLog', label: 'Activity Log', icon: 'ti-history' },
   ]
 
   if (!isLoggedIn) return <LoginScreen onLogin={() => { try { sessionStorage.setItem('malakesa_auth', 'yes') } catch(e) {}; setIsLoggedIn(true) }} />
@@ -372,6 +400,7 @@ export default function App() {
             {page === 'vat' && <VatPage invoices={invoices} payments={payments} purchases={purchases} vatFilings={vatFilings} reload={reload} />}
             {page === 'performance' && <PerformanceReport invoices={invoices} payments={payments} purchases={purchases} salaryRecords={salaryRecords} />}
             {page === 'trash' && <TrashPage employees={employees} reload={reload} />}
+            {page === 'activityLog' && <ActivityLogPage />}
             {page === 'clients' && <Clients clients={clients} invoices={invoices} payments={payments} reload={reload} setModal={setModal} />}
           </>
         )}
@@ -1007,8 +1036,10 @@ function Invoices({ invoices, payments, reload, setModal, setSelected, initialSt
 
   const handleDelete = async (id) => {
     if (!confirm('Move this invoice to Trash? You can restore it from Trash within 30 days.')) return
+    const inv = invoices.find(i => i.id === id)
     const res = await fetch('/api/invoices/' + id, { method: 'DELETE' })
     if (!res.ok) { const d = await res.json().catch(() => ({})); alert(d.error || 'Could not delete this invoice'); return }
+    logActivity('deleted', 'invoice', inv?.number)
     reload()
   }
 
@@ -1387,6 +1418,7 @@ function Payments({ payments, invoices, reload, setModal, setSelected }) {
     setReversing(payment.id)
     try {
       await fetch('/api/payments/' + payment.id, { method: 'DELETE' })
+      logActivity('deleted', 'payment', inv?.number, fmt(payment.amount))
       reload()
     } catch (e) {
       alert('Failed to reverse payment — please check your connection and try again.')
@@ -3696,6 +3728,153 @@ function TrashPage({ employees, reload }) {
   )
 }
 
+// ── Activity Log ──────────────────────────────────────────
+function ActivityLogPage() {
+  const [log, setLog] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [entityFilter, setEntityFilter] = useState('all')
+  const [actionFilter, setActionFilter] = useState('all')
+  const [search, setSearch] = useState('')
+
+  const ENTITY_LABELS = {
+    invoice: 'Invoice',
+    payment: 'Payment',
+    purchase: 'Purchase',
+    client: 'Client',
+    supplier: 'Supplier',
+    employee: 'Employee',
+    salary_record: 'Pay Run',
+  }
+
+  const ACTION_STYLE = {
+    created: { background: '#EAF3DE', color: '#27500A', border: '#C0DD97', icon: 'ti-circle-plus' },
+    updated: { background: '#FAEEDA', color: '#633806', border: '#FAC775', icon: 'ti-pencil' },
+    deleted: { background: '#FCEBEB', color: '#791F1F', border: '#F3B8B8', icon: 'ti-trash' },
+    paid: { background: '#E3EEFB', color: '#0B3D75', border: '#AECBEE', icon: 'ti-cash' },
+    restored: { background: '#EFEAFB', color: '#3D1F79', border: '#CBAEEE', icon: 'ti-arrow-back-up' },
+  }
+
+  const loadLog = async () => {
+    setLoading(true)
+    setError('')
+    try {
+      const res = await fetch('/api/activity-log?limit=500')
+      if (!res.ok) { setError('Could not load the Activity Log — please try again'); setLoading(false); return }
+      const data = await res.json()
+      setLog(data)
+    } catch (e) {
+      setError('Network error — could not load the Activity Log. Check your connection and try again.')
+    }
+    setLoading(false)
+  }
+
+  useEffect(() => { loadLog() }, [])
+
+  const fmtWhen = (iso) => {
+    try {
+      const d = new Date(iso)
+      return `${d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })} at ${d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`
+    } catch (e) { return iso }
+  }
+
+  const entityTypes = log ? Array.from(new Set(log.map(e => e.entity_type))).sort() : []
+
+  const filtered = (log || []).filter(e => {
+    if (entityFilter !== 'all' && e.entity_type !== entityFilter) return false
+    if (actionFilter !== 'all' && e.action !== actionFilter) return false
+    if (search.trim()) {
+      const q = search.trim().toLowerCase()
+      const hay = `${e.actor || ''} ${e.entity_label || ''} ${e.details || ''}`.toLowerCase()
+      if (!hay.includes(q)) return false
+    }
+    return true
+  })
+
+  return (
+    <>
+      <Topbar title="Activity Log">
+        <button className="btn btn-sm" onClick={loadLog} disabled={loading}><i className="ti ti-refresh"></i> {loading ? 'Refreshing...' : 'Refresh'}</button>
+      </Topbar>
+      <div style={{ padding: 20 }}>
+        {error && <Alert type="danger">{error}</Alert>}
+        <div style={{ background: '#FAEEDA', border: '0.5px solid #FAC775', borderRadius: 8, padding: '10px 16px', marginBottom: 16, fontSize: 13, color: '#633806', display: 'flex', alignItems: 'center', gap: 10 }}>
+          <i className="ti ti-info-circle" style={{ fontSize: 18 }}></i>
+          <span>Shows who created, edited or deleted records across the app, most recent first. Showing the last 500 entries.</span>
+        </div>
+
+        <Card style={{ padding: 14, marginBottom: 16 }}>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+            <input
+              type="text"
+              placeholder="Search by name, actor or details..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              style={{ padding: '7px 10px', borderRadius: 6, border: '0.5px solid rgba(0,0,0,0.2)', fontSize: 13, fontFamily: 'inherit', flex: '1 1 220px', background: '#fffef8' }}
+            />
+            <select value={entityFilter} onChange={e => setEntityFilter(e.target.value)} style={{ padding: '7px 10px', borderRadius: 6, border: '0.5px solid rgba(0,0,0,0.2)', fontSize: 13, fontFamily: 'inherit', background: '#fffef8' }}>
+              <option value="all">All types</option>
+              {entityTypes.map(t => <option key={t} value={t}>{ENTITY_LABELS[t] || t}</option>)}
+            </select>
+            <select value={actionFilter} onChange={e => setActionFilter(e.target.value)} style={{ padding: '7px 10px', borderRadius: 6, border: '0.5px solid rgba(0,0,0,0.2)', fontSize: 13, fontFamily: 'inherit', background: '#fffef8' }}>
+              <option value="all">All actions</option>
+              <option value="created">Created</option>
+              <option value="updated">Updated</option>
+              <option value="deleted">Deleted</option>
+              <option value="paid">Paid</option>
+              <option value="restored">Restored</option>
+            </select>
+          </div>
+        </Card>
+
+        {loading && !log ? (
+          <div style={{ textAlign: 'center', padding: 40, color: '#999' }}>Loading Activity Log...</div>
+        ) : filtered.length === 0 ? (
+          <Card style={{ padding: 40, textAlign: 'center' }}>
+            <i className="ti ti-history-toggle" style={{ fontSize: 32, color: '#ccc' }}></i>
+            <div style={{ marginTop: 10, color: '#999', fontSize: 14 }}>{(log || []).length === 0 ? 'No activity recorded yet' : 'No entries match your filters'}</div>
+          </Card>
+        ) : (
+          <Card style={{ padding: 0, overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+              <thead>
+                <tr style={{ borderBottom: '0.5px solid rgba(0,0,0,0.09)', background: '#f5f0e8' }}>
+                  <Td style={{ fontWeight: 600, color: '#666' }}>When</Td>
+                  <Td style={{ fontWeight: 600, color: '#666' }}>Who</Td>
+                  <Td style={{ fontWeight: 600, color: '#666' }}>Action</Td>
+                  <Td style={{ fontWeight: 600, color: '#666' }}>Type</Td>
+                  <Td style={{ fontWeight: 600, color: '#666' }}>Item</Td>
+                  <Td style={{ fontWeight: 600, color: '#666' }}>Details</Td>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map(item => {
+                  const style = ACTION_STYLE[item.action] || { background: '#eee', color: '#444', border: '#ccc', icon: 'ti-dot' }
+                  return (
+                    <tr key={item.id} style={{ borderBottom: '0.5px solid rgba(0,0,0,0.07)' }}>
+                      <Td style={{ color: '#999', fontSize: 12, whiteSpace: 'nowrap' }}>{fmtWhen(item.created_at)}</Td>
+                      <Td style={{ fontWeight: 500 }}>{item.actor || 'Unknown'}</Td>
+                      <Td>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 9px', borderRadius: 12, fontSize: 12, fontWeight: 600, background: style.background, color: style.color, border: `0.5px solid ${style.border}` }}>
+                          <i className={`ti ${style.icon}`} style={{ fontSize: 13 }}></i>
+                          {item.action.charAt(0).toUpperCase() + item.action.slice(1)}
+                        </span>
+                      </Td>
+                      <Td style={{ color: '#666' }}>{ENTITY_LABELS[item.entity_type] || item.entity_type}</Td>
+                      <Td style={{ fontWeight: 500 }}>{item.entity_label || '—'}</Td>
+                      <Td style={{ color: '#666' }}>{item.details || ''}</Td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </Card>
+        )}
+      </div>
+    </>
+  )
+}
+
 // ── Purchases ─────────────────────────────────────────────
 const PURCHASE_CATEGORIES = ['Fuel', 'Vehicle Maintenance', 'Insurance', 'Office Supplies', 'Utilities', 'Staff Costs', 'Marketing', 'Equipment', 'Accommodation', 'Food & Beverages', 'Professional Services', 'Bank Charges', 'Other']
 const PAYMENT_METHODS = ['Cheque', 'Cash', 'Bank Transfer', 'Other']
@@ -4052,7 +4231,10 @@ function Purchases({ purchases, suppliers, customCategories, reload, setModal, s
 
   const handleDelete = async (id) => {
     if (!confirm('Move this purchase to Trash? You can restore it from Trash within 30 days.')) return
-    await fetch('/api/purchases/' + id, { method: 'DELETE' }); reload()
+    const p = purchases.find(x => x.id === id)
+    await fetch('/api/purchases/' + id, { method: 'DELETE' })
+    logActivity('deleted', 'purchase', p?.supplier, p ? fmt(p.amount) : undefined)
+    reload()
   }
 
   const selectStyle = { padding: '6px 10px', borderRadius: 8, border: '0.5px solid #8B6914', fontSize: 13, fontFamily: 'inherit', background: '#8B6914', color: '#fff', fontWeight: 500, cursor: 'pointer' }
@@ -4382,6 +4564,7 @@ function NewPurchaseModal({ suppliers, customCategories, purchases, purchase, on
         setForm(f => ({ ...f, supplier_id: saved.id, supplier: saved.name, category: saved.category || f.category }))
         setShowAddSupplier(false)
         setNewSupplier({ name: '', category: 'Other', phone: '', email: '' })
+        logActivity('created', 'supplier', saved.name)
       }
     } catch(e) {}
     setSavingSupplier(false)
@@ -4402,6 +4585,7 @@ function NewPurchaseModal({ suppliers, customCategories, purchases, purchase, on
         body: JSON.stringify({ ...form, amount, vat, amount_ex_vat: amountExVat, receipt_url: receiptUrl || null })
       })
       if (!res.ok) { const d = await res.json(); setError(d.error || 'Failed to save'); setSaving(false); return }
+      logActivity(isEdit ? 'updated' : 'created', 'purchase', form.supplier, fmt(amount))
       onSave()
     } catch(e) { setError('Network error — please try again'); setSaving(false) }
   }
@@ -4724,7 +4908,10 @@ function Suppliers({ suppliers, purchases, reload, setModal }) {
 
   const handleDelete = async (id) => {
     if (!confirm('Move this supplier to Trash? Their purchases will remain, and you can restore the supplier within 30 days.')) return
-    await fetch('/api/suppliers/' + id, { method: 'DELETE' }); reload()
+    const s = suppliers.find(x => x.id === id)
+    await fetch('/api/suppliers/' + id, { method: 'DELETE' })
+    logActivity('deleted', 'supplier', s?.name)
+    reload()
   }
 
   const startEdit = (s) => {
@@ -4742,7 +4929,9 @@ function Suppliers({ suppliers, purchases, reload, setModal }) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(editForm)
     })
-    setSaving(false); setEditingId(null); reload()
+    setSaving(false); setEditingId(null)
+    logActivity('updated', 'supplier', editForm.name)
+    reload()
   }
 
   const inputStyle2 = { padding: '5px 8px', borderRadius: 6, border: '0.5px solid rgba(0,0,0,0.2)', fontSize: 13, fontFamily: 'inherit', width: '100%', background: '#fffef8' }
@@ -4848,6 +5037,7 @@ function NewSupplierModal({ onClose, onSave }) {
       })
       const data = await res.json()
       if (!res.ok) { setError(data.error || 'Failed to save'); setSaving(false); return }
+      logActivity('created', 'supplier', form.name)
       onSave()
     } catch(e) { setError('Network error — please try again'); setSaving(false) }
   }
@@ -4917,7 +5107,10 @@ function VNPF({ employees, salaryRecords, reload, setModal, setSelected }) {
 
   const handleDelete = async (id) => {
     if (!confirm('Move this employee to Trash? You can restore them within 30 days.')) return
-    await fetch('/api/employees/' + id, { method: 'DELETE' }); reload()
+    const emp = employees.find(e => e.id === id)
+    await fetch('/api/employees/' + id, { method: 'DELETE' })
+    logActivity('deleted', 'employee', emp?.name)
+    reload()
   }
 
   const buildScheduleHtml = () => `<!DOCTYPE html><html><head><title>VNPF Contribution Schedule — ${monthLabel}</title>
@@ -5263,8 +5456,10 @@ function SalariesTab({ employees, salaryRecords, reload, fmt }) {
 
   const deletePayRun = async (id) => {
     if (!confirm('Move this pay run to Trash? It will disappear from the VNPF schedule, and you can restore it within 30 days.')) return
+    const rec = salaryRecords.find(r => r.id === id)
+    const emp = rec ? employees.find(e => e.id === rec.employee_id) : null
     const res = await fetch('/api/salary-records', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) })
-    if (res.ok) reload()
+    if (res.ok) { logActivity('deleted', 'salary_record', emp?.name, rec ? fmt(rec.net_pay) : undefined); reload() }
     else alert('Failed to delete pay run')
   }
 
@@ -5700,6 +5895,7 @@ function PayRunModal({ emp, defaultMonth, onClose, onSave, fmt }) {
         })
       })
       if (!res.ok) { const d = await res.json(); setError(d.error || 'Failed to save'); setSaving(false); return }
+      logActivity('created', 'salary_record', emp.name, fmt(netPay))
       onSave()
     } catch(e) { setError('Network error: ' + e.message); setSaving(false) }
   }
@@ -5927,6 +6123,7 @@ function NewEmployeeModal({ employee, onClose, onSave }) {
         body: JSON.stringify({ ...form, salary })
       })
       if (!res.ok) { const d = await res.json(); setError(d.error || 'Failed to save'); setSaving(false); return }
+      logActivity(isEdit ? 'updated' : 'created', 'employee', form.name)
       onSave()
     } catch (e) { setError('Network error — please try again'); setSaving(false) }
   }
@@ -5991,7 +6188,10 @@ function Clients({ clients, invoices, payments, reload, setModal }) {
 
   const handleDelete = async (id) => {
     if (!confirm('Move this client to Trash? Their invoices will remain, and you can restore the client within 30 days.')) return
-    await fetch('/api/clients/' + id, { method: 'DELETE' }); reload()
+    const cl = clients.find(c => c.id === id)
+    await fetch('/api/clients/' + id, { method: 'DELETE' })
+    logActivity('deleted', 'client', cl?.name)
+    reload()
   }
 
   const startEdit = (client) => {
@@ -6099,6 +6299,7 @@ function Clients({ clients, invoices, payments, reload, setModal }) {
     })
     setSaving(false)
     setEditingClient(null)
+    logActivity('updated', 'client', editForm.name)
     reload()
   }
 
@@ -6398,6 +6599,8 @@ function NewInvoiceModal({ clients, invoice, onClose, onSave }) {
         setSaving(false)
         return
       }
+      const saved = await res.json().catch(() => null)
+      logActivity(isEdit ? 'updated' : 'created', 'invoice', saved?.number || invoice?.number, fmt(total))
       clearDraft()
       onSave()
     } catch (e) {
@@ -6509,6 +6712,7 @@ function PaymentModal({ invoice, payments, onClose, onSave }) {
         setSaving(false)
         return
       }
+      logActivity('paid', 'payment', invoice.number, fmt(parseFloat(form.amount)))
       onSave()
     } catch (e) {
       setError('Network error — the payment was NOT recorded. Check your connection and try again.')
@@ -7052,6 +7256,7 @@ function NewClientModal({ onClose, onSave }) {
       })
       const data = await res.json()
       if (!res.ok) { setError(data.error || 'Failed to save client'); setSaving(false); return }
+      logActivity('created', 'client', form.name)
       onSave()
     } catch(e) { setError('Network error — please try again'); setSaving(false) }
   }
