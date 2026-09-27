@@ -6008,31 +6008,28 @@ function Clients({ clients, invoices, payments, reload, setModal }) {
     const clientInvoices = invoices.filter(i => i.client_id === client.id).sort((a, b) => a.date > b.date ? 1 : -1)
     const invoiceIds = new Set(clientInvoices.map(i => i.id))
     const clientPayments = (payments || []).filter(p => invoiceIds.has(p.invoice_id)).sort((a, b) => a.date > b.date ? 1 : -1)
-    const invById = Object.fromEntries(clientInvoices.map(i => [i.id, i]))
 
     const totalInvoiced = clientInvoices.reduce((s, i) => s + Number(i.total || 0), 0)
     const totalPaid = clientPayments.reduce((s, p) => s + Number(p.amount || 0), 0)
     const balance = totalInvoiced - totalPaid
 
     const rows = clientInvoices.map(i => {
-      const paidForThis = clientPayments.filter(p => p.invoice_id === i.id).reduce((s, p) => s + Number(p.amount), 0)
+      const invPayments = clientPayments.filter(p => p.invoice_id === i.id)
+      const paidForThis = invPayments.reduce((s, p) => s + Number(p.amount), 0)
       const bal = Number(i.total || 0) - paidForThis
+      const datePaid = invPayments.length ? invPayments.map(p => fmtDate(p.date)).join('<br>') : '—'
+      const method = invPayments.length ? invPayments.map(p => p.method || '—').join('<br>') : '—'
       return `<tr>
         <td>${i.number}</td>
         <td>${fmtDate(i.date)}</td>
         <td>${fmtDate(i.due_date)}</td>
         <td class="text-right">VT ${r10(i.total || 0).toLocaleString()}</td>
         <td class="text-right">VT ${r10(paidForThis).toLocaleString()}</td>
+        <td>${datePaid}</td>
+        <td>${method}</td>
         <td class="text-right" style="color:${bal > 0 ? '#D85A30' : '#3B6D11'};font-weight:600">VT ${r10(bal).toLocaleString()}</td>
       </tr>`
     }).join('')
-
-    const paymentRows = clientPayments.map(p => `<tr>
-        <td>${fmtDate(p.date)}</td>
-        <td>${invById[p.invoice_id]?.number || '—'}</td>
-        <td>${p.method || '—'}</td>
-        <td class="text-right">VT ${r10(p.amount || 0).toLocaleString()}</td>
-      </tr>`).join('')
 
     w.document.write(`<!DOCTYPE html><html><head><title>Statement — ${client.name}</title><style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -6077,15 +6074,9 @@ function Clients({ clients, invoices, payments, reload, setModal }) {
 
         <h2>Invoices</h2>
         <table>
-          <thead><tr><th>Invoice #</th><th>Issue Date</th><th>Due Date</th><th class="text-right">Total</th><th class="text-right">Paid</th><th class="text-right">Balance</th></tr></thead>
-          <tbody>${rows || '<tr><td colspan="6" style="text-align:center;color:#999">No invoices</td></tr>'}</tbody>
+          <thead><tr><th>Invoice #</th><th>Issue Date</th><th>Due Date</th><th class="text-right">Total</th><th class="text-right">Paid</th><th>Date Paid</th><th>Payment Method</th><th class="text-right">Balance</th></tr></thead>
+          <tbody>${rows || '<tr><td colspan="8" style="text-align:center;color:#999">No invoices</td></tr>'}</tbody>
         </table>
-
-        ${paymentRows ? `<h2>Payments received</h2>
-        <table>
-          <thead><tr><th>Date</th><th>Invoice #</th><th>Method</th><th class="text-right">Amount</th></tr></thead>
-          <tbody>${paymentRows}</tbody>
-        </table>` : ''}
 
         <div class="summary">
           <div class="srow"><span>Total invoiced</span><span>VT ${r10(totalInvoiced).toLocaleString()}</span></div>
