@@ -6500,6 +6500,46 @@ function previewInvoice(inv) {
 }
 
 
+// Line-item dates are free text (e.g. "10JUL", "10 Jul", "10/07", "10-Jul-2026", "2026-07-10").
+// Turns one into a sortable number, using the invoice date to fill in a missing year. Returns null if unreadable.
+const MONTH_IDX = { jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5, jul: 6, aug: 7, sep: 8, sept: 8, oct: 9, nov: 10, dec: 11 }
+function parseItemDate(raw, refDateStr) {
+  const s = String(raw || '').trim().toLowerCase()
+  if (!s) return null
+  const ref = /^\d{4}-\d{2}-\d{2}/.test(refDateStr || '') ? refDateStr : todayStr()
+  const refYear = parseInt(ref.slice(0, 4), 10)
+  const refMonth = parseInt(ref.slice(5, 7), 10) - 1
+  let d, m, y
+  let mt
+  if ((mt = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/))) { y = +mt[1]; m = +mt[2] - 1; d = +mt[3] }
+  else if ((mt = s.match(/^(\d{1,2})[\s\-\/.]*([a-z]{3,9})[\s\-\/.,]*(\d{2,4})?$/)) && MONTH_IDX[mt[2].slice(0, mt[2].startsWith('sept') ? 4 : 3)] !== undefined) {
+    d = +mt[1]; m = MONTH_IDX[mt[2].slice(0, mt[2].startsWith('sept') ? 4 : 3)]; y = mt[3] ? +mt[3] : undefined
+  }
+  else if ((mt = s.match(/^([a-z]{3,9})[\s\-\/.]*(\d{1,2})[\s\-\/.,]*(\d{2,4})?$/)) && MONTH_IDX[mt[1].slice(0, mt[1].startsWith('sept') ? 4 : 3)] !== undefined) {
+    m = MONTH_IDX[mt[1].slice(0, mt[1].startsWith('sept') ? 4 : 3)]; d = +mt[2]; y = mt[3] ? +mt[3] : undefined
+  }
+  else if ((mt = s.match(/^(\d{1,2})[\/\-.](\d{1,2})(?:[\/\-.](\d{2,4}))?$/))) { d = +mt[1]; m = +mt[2] - 1; y = mt[3] ? +mt[3] : undefined } // day/month (Vanuatu format)
+  else return null
+  if (!(m >= 0 && m <= 11) || !(d >= 1 && d <= 31)) return null
+  if (y === undefined) y = (m - refMonth > 6) ? refYear - 1 : refYear // e.g. a DEC line on a January invoice belongs to last year
+  else if (y < 100) y += 2000
+  return y * 10000 + (m + 1) * 100 + d
+}
+
+// Puts line items in date order (oldest first). Stable: same-date rows keep their entered order,
+// and rows with a blank/unreadable date stay at the bottom in the order they were entered.
+function sortItemsByDate(items, refDateStr) {
+  return items
+    .map((it, idx) => ({ it, idx, key: parseItemDate(it.date, refDateStr) }))
+    .sort((a, b) => {
+      if (a.key === null && b.key === null) return a.idx - b.idx
+      if (a.key === null) return 1
+      if (b.key === null) return -1
+      return a.key - b.key || a.idx - b.idx
+    })
+    .map(x => x.it)
+}
+
 function NewInvoiceModal({ clients, invoice, onClose, onSave }) {
   const isEdit = !!invoice
   const draftKey = isEdit ? `malakesa_draft_invoice_edit_${invoice.id}` : 'malakesa_draft_invoice_new'
@@ -6507,7 +6547,7 @@ function NewInvoiceModal({ clients, invoice, onClose, onSave }) {
     ? { client_id: invoice.client_id || '', client_name: invoice.client_name || '', client_email: invoice.client_email || '', date: invoice.date || todayStr(), due_date: invoice.due_date || addDays(todayStr(), 14), notes: invoice.notes || '' }
     : { client_id: '', client_name: '', client_email: '', date: todayStr(), due_date: addDays(todayStr(), 14), notes: '' })
   const [items, setItems] = useState(isEdit && invoice.items && invoice.items.length
-    ? invoice.items.map(it => ({ id: uid(), date: it.date || '', description: it.description || '', name: it.name || '', voucher: it.voucher || '', qty: it.qty || 1, rate: it.rate || '', total: it.total || 0 }))
+    ? sortItemsByDate(invoice.items.map(it => ({ id: uid(), date: it.date || '', description: it.description || '', name: it.name || '', voucher: it.voucher || '', qty: it.qty || 1, rate: it.rate || '', total: it.total || 0 })), invoice.date)
     : [{ id: uid(), date: '', description: '', name: '', voucher: '', qty: 1, rate: '', total: 0 }, { id: uid(), date: '', description: '', name: '', voucher: '', qty: 1, rate: '', total: 0 }])
   const [applyVat, setApplyVat] = useState(isEdit ? (typeof invoice.vat_applied === 'boolean' ? invoice.vat_applied : Number(invoice.tax) > 0) : true)
   const vatInclusive = true // Rates are always VAT-inclusive at Malakesa
@@ -6592,7 +6632,9 @@ function NewInvoiceModal({ clients, invoice, onClose, onSave }) {
     try {
       const url = isEdit ? `/api/invoices/${invoice.id}` : '/api/invoices'
       const method = isEdit ? 'PUT' : 'POST'
-      const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...form, items: validItems.map(({ id, ...r }) => r), subtotal, tax, total, vat_applied: applyVat }) })
+      const sortedItems = sortItemsByDate(validItems, form.date)
+      setItems(sortItemsByDate(items, form.date))
+      const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...form, items: sortedItems.map(({ id, ...r }) => r), subtotal, tax, total, vat_applied: applyVat }) })
       if (!res.ok) {
         const d = await res.json().catch(() => ({}))
         setError(d.error || 'Failed to save invoice — please try again')
@@ -6663,7 +6705,10 @@ function NewInvoiceModal({ clients, invoice, onClose, onSave }) {
           </tr>
         ))}</tbody>
       </table>
-      <button className="btn btn-sm" onClick={() => setItems(i => [...i, { id: uid(), date: '', description: '', name: '', voucher: '', qty: 1, rate: '', total: 0 }])}><i className="ti ti-plus"></i> Add item</button>
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+        <button className="btn btn-sm" onClick={() => setItems(i => [...sortItemsByDate(i, form.date), { id: uid(), date: '', description: '', name: '', voucher: '', qty: 1, rate: '', total: 0 }])}><i className="ti ti-plus"></i> Add item</button>
+        <button className="btn btn-sm" onClick={() => setItems(i => sortItemsByDate(i, form.date))} title="Put line items in date order"><i className="ti ti-sort-ascending"></i> Sort by date</button>
+      </div>
       <div style={{ marginLeft: 'auto', width: 280, marginTop: 12 }}>
         {applyVat ? (
           <>
