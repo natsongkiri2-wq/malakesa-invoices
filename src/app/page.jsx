@@ -1069,7 +1069,7 @@ function Invoices({ invoices, payments, reload, setModal, setSelected, initialSt
     const totalBal = invs.reduce((s,i)=>s+getBalance(i,payments),0)
     w.document.write(`<!DOCTYPE html><html><head><title>Bulk Invoice Print</title><style>
       body{font-family:Arial,sans-serif;color:#222;font-size:13px;margin:0}
-      .rpt-hdr{display:none} @page{margin:18mm 14mm 20mm 14mm;size:A4}
+      .rpt-hdr{display:none} @page{margin:18mm 14mm 20mm 14mm;size:A4;@bottom-center{content:"Page " counter(page) " of " counter(pages);font-family:Arial,sans-serif;font-size:10px;color:#666}}
       table{width:100%;border-collapse:collapse;font-size:12px}
       thead{display:table-header-group} th{background:#FBF3E4;padding:8px 10px;text-align:left;font-size:11px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
       td{padding:8px 10px;border-bottom:0.5px solid #eee} h1{color:#8B6914;font-size:18px;margin:0 0 4px} .sub{color:#888;font-size:12px;margin-bottom:20px}
@@ -1217,7 +1217,7 @@ function Invoices({ invoices, payments, reload, setModal, setSelected, initialSt
       }).join('')
       w.document.write(`<!DOCTYPE html><html><head><title>Invoices Export</title><style>
         body{font-family:Arial,sans-serif;color:#222;font-size:13px;margin:0}
-        .rpt-hdr{display:none} @page{margin:18mm 14mm 20mm 14mm;size:A4}
+        .rpt-hdr{display:none} @page{margin:18mm 14mm 20mm 14mm;size:A4;@bottom-center{content:"Page " counter(page) " of " counter(pages);font-family:Arial,sans-serif;font-size:10px;color:#666}}
         table{width:100%;border-collapse:collapse;font-size:12px}
         thead{display:table-header-group} th{background:#FBF3E4;padding:8px 10px;text-align:left;font-size:11px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
         td{padding:8px 10px;border-bottom:0.5px solid #eee} h1{color:#8B6914;font-size:18px;margin:0 0 4px} .sub{color:#888;font-size:12px;margin-bottom:20px}
@@ -1454,7 +1454,7 @@ function Payments({ payments, invoices, reload, setModal, setSelected }) {
     .noprint { background: #333; color: #fff; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; }
     .printbtn { background: #8B6914; color: #fff; border: none; padding: 7px 18px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; }
     .rpt-hdr { display: none; }
-    @page { margin: 12mm 10mm 16mm 10mm; size: A4; }
+    @page{margin: 12mm 10mm 16mm 10mm; size: A4;@bottom-center{content:"Page " counter(page) " of " counter(pages);font-family:Arial,sans-serif;font-size:10px;color:#666}}
     @media print {
       .noprint { display: none; }
       body { background: #fff; }
@@ -1467,7 +1467,6 @@ function Payments({ payments, invoices, reload, setModal, setSelected }) {
   </style></head><body>
   <div class="rpt-hdr">
     <span style="font-size:11px;font-weight:700;color:#3D2214">Malakesa Transfers &amp; Tours &nbsp;—&nbsp; Payment Receipt &nbsp;—&nbsp; ${receiptNum}</span>
-    <span style="font-size:10px;color:#888">Page <span class="pgnum"></span></span>
   </div>
   <div class="noprint"><span>${receiptNum}</span><button class="printbtn" onclick="window.print()">Print / Save PDF</button></div>
   <div class="page">
@@ -1685,7 +1684,7 @@ function Unpaid({ invoices, payments, reload, setModal, setSelected }) {
     .badge{display:inline-block;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:500}
     .unpaid{background:#FAECE7;color:#712B13}.overdue-b{background:#FCEBEB;color:#791F1F}.partial{background:#FAEEDA;color:#633806}
     .rpt-hdr{display:none}
-    @page{margin:20mm 15mm 22mm 15mm;size:A4}
+    @page{margin:20mm 15mm 22mm 15mm;size:A4;@bottom-center{content:"Page " counter(page) " of " counter(pages);font-family:Arial,sans-serif;font-size:10px;color:#666}}
     @media print{
       .rpt-hdr{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #8B6914;padding:6px 0 6px 0}
       .rpt-hdr{position:fixed;top:0;left:0;right:0;background:#fff;z-index:999;padding:6px 40px}
@@ -1916,7 +1915,7 @@ function Reports({ invoices, payments, purchases, salaryRecords }) {
       .footer{-webkit-print-color-adjust:exact;print-color-adjust:exact}
       .vat-box{-webkit-print-color-adjust:exact;print-color-adjust:exact}
       th{-webkit-print-color-adjust:exact;print-color-adjust:exact}
-      @page{margin:18mm 14mm 22mm 14mm;size:A4}
+      @page{margin:18mm 14mm 22mm 14mm;size:A4;@bottom-center{content:"Page " counter(page) " of " counter(pages);font-family:Arial,sans-serif;font-size:10px;color:#666}}
       @media print{
         .noprint{display:none}
         body{background:#fff}
@@ -2124,7 +2123,7 @@ function Reports({ invoices, payments, purchases, salaryRecords }) {
       .header{-webkit-print-color-adjust:exact;print-color-adjust:exact}
       .footer{-webkit-print-color-adjust:exact;print-color-adjust:exact}
       th{-webkit-print-color-adjust:exact;print-color-adjust:exact}
-      @page{margin:18mm 14mm 22mm 14mm;size:A4}
+      @page{margin:18mm 14mm 22mm 14mm;size:A4;@bottom-center{content:"Page " counter(page) " of " counter(pages);font-family:Arial,sans-serif;font-size:10px;color:#666}}
       @media print{
         .noprint{display:none}
         body{background:#fff}
@@ -2223,7 +2222,7 @@ function Reports({ invoices, payments, purchases, salaryRecords }) {
       .red{color:#A32D2D}
       .footer{margin-top:30px;padding-top:16px;border-top:1px solid #eee;font-size:11px;color:#999}
       .rpt-hdr{display:none}
-      @page{margin:20mm 15mm 22mm 15mm;size:A4}
+      @page{margin:20mm 15mm 22mm 15mm;size:A4;@bottom-center{content:"Page " counter(page) " of " counter(pages);font-family:Arial,sans-serif;font-size:10px;color:#666}}
       @media print{
         .rpt-hdr{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #8B6914;padding:6px 40px}
         .rpt-hdr{position:fixed;top:0;left:0;right:0;background:#fff;z-index:999}
@@ -2778,7 +2777,7 @@ function Reports({ invoices, payments, purchases, salaryRecords }) {
               th{background:#FBF3E4;padding:9px 12px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.4px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
               .noprint{background:#333;color:#fff;padding:10px 20px;display:flex;justify-content:space-between;align-items:center}
               .printbtn{background:#8B6914;color:#fff;border:none;padding:7px 18px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600}
-              .rpt-hdr{display:none} @page{margin:18mm 14mm 20mm 14mm;size:A4}
+              .rpt-hdr{display:none} @page{margin:18mm 14mm 20mm 14mm;size:A4;@bottom-center{content:"Page " counter(page) " of " counter(pages);font-family:Arial,sans-serif;font-size:10px;color:#666}}
               @media print{.noprint{display:none}.rpt-hdr{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #8B6914;padding:6px 40px;position:fixed;top:0;left:0;right:0;background:#fff;z-index:999} body{padding-top:42px 0 0 40px}}
             </style></head><body>
             <div class='rpt-hdr'><span style='font-size:12px;font-weight:700;color:#3D2214'>Malakesa Transfers &amp; Tours — Cash Flow Report — Last 12 Months</span><span style='font-size:10px;color:#888'>${dateStr}</span></div>
@@ -2976,7 +2975,7 @@ function Reports({ invoices, payments, purchases, salaryRecords }) {
               th{background:#FBF3E4;padding:9px 12px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.4px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
               .noprint{background:#333;color:#fff;padding:10px 20px;display:flex;justify-content:space-between;align-items:center}
               .printbtn{background:#8B6914;color:#fff;border:none;padding:7px 18px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600}
-              .rpt-hdr{display:none} @page{margin:18mm 14mm 20mm 14mm;size:A4}
+              .rpt-hdr{display:none} @page{margin:18mm 14mm 20mm 14mm;size:A4;@bottom-center{content:"Page " counter(page) " of " counter(pages);font-family:Arial,sans-serif;font-size:10px;color:#666}}
               @media print{.noprint{display:none}.rpt-hdr{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #8B6914;padding:6px 40px;position:fixed;top:0;left:0;right:0;background:#fff;z-index:999} body{padding-top:42px 0 0 40px}}
             </style></head><body>
             <div class='rpt-hdr'><span style='font-size:12px;font-weight:700;color:#3D2214'>Malakesa Transfers &amp; Tours — Aged Receivables Report</span><span style='font-size:10px;color:#888'>${dateStr}</span></div>
@@ -3968,7 +3967,7 @@ function VatPage({ invoices, payments, purchases, vatFilings, reload }) {
       .noprint{background:#333;color:#fff;padding:10px 20px;display:flex;justify-content:space-between;align-items:center}
       .printbtn{background:#8B6914;color:#fff;border:none;padding:7px 18px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600}
       .rpt-hdr{display:none}
-      @page{margin:18mm 14mm 22mm 14mm;size:A4}
+      @page{margin:18mm 14mm 22mm 14mm;size:A4;@bottom-center{content:"Page " counter(page) " of " counter(pages);font-family:Arial,sans-serif;font-size:10px;color:#666}}
       @media print{
         .noprint{display:none}body{background:#fff}.page{box-shadow:none;margin:0;border-radius:0}
         .header{-webkit-print-color-adjust:exact;print-color-adjust:exact}
@@ -4264,7 +4263,7 @@ function Purchases({ purchases, suppliers, customCategories, reload, setModal, s
       ).join('')
       w.document.write(`<!DOCTYPE html><html><head><title>Purchases Export</title><style>
         body{font-family:Arial,sans-serif;color:#222;font-size:12px;margin:0}
-        .rpt-hdr{display:none} @page{margin:15mm 10mm 18mm 10mm;size:A4 landscape}
+        .rpt-hdr{display:none} @page{margin:15mm 10mm 18mm 10mm;size:A4 landscape;@bottom-center{content:"Page " counter(page) " of " counter(pages);font-family:Arial,sans-serif;font-size:10px;color:#666}}
         table{width:100%;border-collapse:collapse} thead{display:table-header-group}
         th{background:#FBF3E4;padding:7px 8px;text-align:left;font-size:10px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
         td{padding:7px 8px;border-bottom:0.5px solid #eee;font-size:11px}
@@ -5143,11 +5142,7 @@ function VNPF({ employees, salaryRecords, reload, setModal, setSelected }) {
       .printbtn{background:#8B6914;color:#fff;border:none;padding:7px 18px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600}
       thead{display:table-header-group}
       .rpt-hdr{display:none}
-      @page{margin:18mm 14mm 22mm 14mm;size:A4}
-      @page{counter-increment:page;}
-      body{counter-reset:page}
-      .pgnum,.pgnum2{font-size:10px;color:#888}
-      .pgnum::after,.pgnum2::after{content:counter(page)}
+      @page{margin:18mm 14mm 22mm 14mm;size:A4;@bottom-center{content:"Page " counter(page) " of " counter(pages);font-family:Arial,sans-serif;font-size:10px;color:#666}}
       @media print{
         .noprint{display:none}
         body{background:#fff}
@@ -5168,11 +5163,11 @@ function VNPF({ employees, salaryRecords, reload, setModal, setSelected }) {
         <span style="font-size:12px;font-weight:700;color:#3D2214">Malakesa Transfers &amp; Tours</span>
         <span style="font-size:11px;color:#8B6914;font-weight:600">VNPF Contribution Schedule — ${monthLabel}</span>
       </div>
-      <span style="font-size:10px;color:#888">TIN: 445579 &nbsp;|&nbsp; Page <span class="pgnum"></span></span>
+      <span style="font-size:10px;color:#888">TIN: 445579</span>
     </div>
     <div class="rpt-footer">
       <span>VNPF Schedule — ${monthLabel} &nbsp;|&nbsp; Malakesa Transfers &amp; Tours &nbsp;|&nbsp; TIN: 445579</span>
-      <span>Page <span class="pgnum2"></span> &nbsp;|&nbsp; Computer generated — verify before filing</span>
+      <span>Computer generated — verify before filing</span>
     </div>
     <div class="noprint"><span>VNPF Contribution Schedule — ${monthLabel}</span><button class="printbtn" onclick="window.print()">🖨️ Print / Save PDF</button></div>
     <div class="page">
@@ -5233,10 +5228,6 @@ function VNPF({ employees, salaryRecords, reload, setModal, setSelected }) {
     </div>
     <script>
     window.onload=()=>{
-      // Show page number in fixed headers using CSS counter
-      document.querySelectorAll('.pgnum,.pgnum2').forEach(el=>{
-        el.style.cssText='display:inline'
-      })
       window.print()
     }
     <\/script></body></html>`
@@ -5570,7 +5561,7 @@ body{font-family:Arial,sans-serif;background:#FBF3E4;color:#222;font-size:12px}
 .cheque-final{border-top:1.5px solid #C9AF7A;margin-top:6px;padding-top:10px;font-size:16px;font-weight:800;color:#3D2214}
 .noprint{background:#333;color:#fff;padding:10px 20px;display:flex;justify-content:space-between;align-items:center;font-size:13px}
 .printbtn{background:#8B6914;color:#fff;border:none;padding:7px 18px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600}
-@page{margin:12mm 10mm;size:A4}
+@page{margin:12mm 10mm;size:A4;@bottom-center{content:"Page " counter(page) " of " counter(pages);font-family:Arial,sans-serif;font-size:10px;color:#666}}
 @media print{
 .noprint{display:none}
 body{background:#fff}
@@ -6249,6 +6240,7 @@ function Clients({ clients, invoices, payments, reload, setModal }) {
     .srow { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid #eee; font-size: 13px; color: #555; }
     .srow.grand { border-bottom: none; font-size: 17px; font-weight: 800; color: #3D2214; padding-top: 12px; }
     h2 { font-size: 14px; color: #3D2214; margin-bottom: 4px; }
+    @page{margin:15mm 12mm 18mm 12mm;size:A4;@bottom-center{content:"Page " counter(page) " of " counter(pages);font-family:Arial,sans-serif;font-size:10px;color:#666}}
     @media print { .header { -webkit-print-color-adjust: exact; print-color-adjust: exact; } thead tr { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
     </style></head><body>
     <div class="page">
@@ -6414,15 +6406,13 @@ function previewInvoice(inv) {
     .noprint { background: #333; color: #fff; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; }
     .printbtn { background: #8B6914; color: #fff; border: none; padding: 7px 18px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; }
     .rpt-hdr { display: none; }
-    @page { margin: 18mm 15mm 22mm 15mm; size: A4; }
+    @page { margin: 18mm 15mm 22mm 15mm; size: A4; @bottom-center { content: "Page " counter(page) " of " counter(pages); font-family: Arial, sans-serif; font-size: 10px; color: #666; } }
     @media print {
       .noprint { display: none; }
       body { background: #fff; }
       .page { box-shadow: none; margin: 0; border-radius: 0; }
       .header { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
       thead { display: table-header-group; }
-      .pgnum::after { content: counter(page); }
-      body { counter-reset: page; }
       .rpt-hdr { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #8B6914; padding-bottom: 6px; }
       .rpt-hdr { position: fixed; top: 0; left: 0; right: 0; background: #fff; z-index: 999; padding: 6px 40px; }
       .page { padding-top: 40px; }
@@ -6430,7 +6420,6 @@ function previewInvoice(inv) {
   </style></head><body>
   <div class="rpt-hdr">
     <span style="font-size:11px;font-weight:700;color:#3D2214">Malakesa Transfers &amp; Tours &nbsp;—&nbsp; DRAFT PREVIEW</span>
-    <span style="font-size:10px;color:#888">Page <span class="pgnum"></span></span>
   </div>
   <div class="noprint">
     <span>⚠️ DRAFT PREVIEW — Invoice not saved yet</span>
@@ -6836,15 +6825,13 @@ function ViewInvoiceModal({ invoice, payments, onClose, onPay }) {
     .noprint { background: #333; color: #fff; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; }
     .printbtn { background: #8B6914; color: #fff; border: none; padding: 7px 18px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; }
     .rpt-hdr { display: none; }
-    @page { margin: 18mm 15mm 22mm 15mm; size: A4; }
+    @page { margin: 18mm 15mm 22mm 15mm; size: A4; @bottom-center { content: "Page " counter(page) " of " counter(pages); font-family: Arial, sans-serif; font-size: 10px; color: #666; } }
     @media print {
       .noprint { display: none; }
       body { background: #fff; }
       .page { box-shadow: none; margin: 0; border-radius: 0; }
       .header { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
       thead { display: table-header-group; }
-      .pgnum::after { content: counter(page); }
-      body { counter-reset: page; }
       .rpt-hdr { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #8B6914; padding-bottom: 6px; margin-bottom: 4px; }
       .rpt-hdr { position: fixed; top: 0; left: 0; right: 0; background: #fff; z-index: 999; padding: 6px 40px; }
       .page { padding-top: 40px; }
@@ -6853,7 +6840,6 @@ function ViewInvoiceModal({ invoice, payments, onClose, onPay }) {
   </style></head><body>
   <div class="rpt-hdr">
     <span style="font-size:11px;font-weight:700;color:#3D2214">Malakesa Transfers &amp; Tours &nbsp;—&nbsp; Invoice ${invoice.number} &nbsp;—&nbsp; ${invoice.client_name || ''}</span>
-    <span style="font-size:10px;color:#888">Page <span class="pgnum"></span></span>
   </div>
   <div class="noprint">
     <span>Invoice ${invoice.number}</span>
@@ -7113,7 +7099,7 @@ function ViewInvoiceModal({ invoice, payments, onClose, onPay }) {
     .noprint { background: #333; color: #fff; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; }
     .printbtn { background: #8B6914; color: #fff; border: none; padding: 7px 18px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; }
     .rpt-hdr { display: none; }
-    @page { margin: 12mm 10mm 16mm 10mm; size: A4; }
+    @page{margin: 12mm 10mm 16mm 10mm; size: A4;@bottom-center{content:"Page " counter(page) " of " counter(pages);font-family:Arial,sans-serif;font-size:10px;color:#666}}
     @media print {
       .noprint { display: none; }
       body { background: #fff; }
@@ -7126,7 +7112,6 @@ function ViewInvoiceModal({ invoice, payments, onClose, onPay }) {
   </style></head><body>
   <div class="rpt-hdr">
     <span style="font-size:11px;font-weight:700;color:#3D2214">Malakesa Transfers &amp; Tours &nbsp;—&nbsp; Payment Receipt &nbsp;—&nbsp; ${receiptNum}</span>
-    <span style="font-size:10px;color:#888">Page <span class="pgnum"></span></span>
   </div>
   <div class="noprint"><span>${receiptNum}</span><button class="printbtn" onclick="window.print()">Print / Save PDF</button></div>
   <div class="page">
