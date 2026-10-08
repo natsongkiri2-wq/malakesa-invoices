@@ -20,9 +20,12 @@ export async function sendMail({ to, subject, html, attachments }) {
   const transporter = getTransporter()
   const fromName = process.env.COMPANY_NAME || 'Malakesa Transfers and Tours'
   const fromAddress = process.env.EMAIL_USER
+  // Client replies always go to this address (override with REPLY_TO_EMAIL in Vercel if needed)
+  const replyTo = process.env.REPLY_TO_EMAIL || 'res@malakesa.vu'
 
   return transporter.sendMail({
     from: `"${fromName}" <${fromAddress}>`,
+    replyTo,
     to,
     subject,
     html,
